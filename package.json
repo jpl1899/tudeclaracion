@@ -19,7 +19,6 @@
     "lint:check": "eslint .",
     "lint:fix": "eslint --fix .",
     "onboarding": "bun scripts/onboarding.ts",
-    "opencode": "bash -c 'set -a; . ./.env; set +a; exec opencode \"$@\"' --",
     "prepare": "husky",
     "repo:check": "bun run format:check && bun run lint:check && bun run types:check && bun run vars:check && bun run vars:env:check && bun run skills:check && bun run skills:registry:check",
     "repo:fix": "bun run format:fix && bun run lint:fix && bun run types:check && bun run vars:check && bun run vars:env:check && bun run skills:check && bun run skills:registry:check",
