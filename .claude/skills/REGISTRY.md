@@ -1,6 +1,6 @@
 # Skill Registry (auto-generated)
 
-> Generated: `2026-06-20T22:21:19.984Z`
+> Generated: `2026-07-01T16:02:45.168Z`
 > Generator: `bun scripts/build-skill-registry.ts`
 > Protocol: `.claude/skills/agentic-dev-core/references/skill-resolver.md`
 
@@ -35,7 +35,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/acli/SKILL.md` · phase: `unknown` · extraction strategy: B
+> Source: `.claude\skills\acli\SKILL.md` · phase: `unknown` · extraction strategy: B
 
 ---
 
@@ -63,7 +63,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/agentic-dev-core/SKILL.md` · phase: `foundation` · extraction strategy: B
+> Source: `.claude\skills\agentic-dev-core\SKILL.md` · phase: `foundation` · extraction strategy: B
 
 ---
 
@@ -91,7 +91,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/agentic-dev-onboard/SKILL.md` · phase: `foundation` · extraction strategy: B
+> Source: `.claude\skills\agentic-dev-onboard\SKILL.md` · phase: `foundation` · extraction strategy: B
 
 ---
 
@@ -119,7 +119,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/design-system/SKILL.md` · phase: `foundation` · extraction strategy: B
+> Source: `.claude\skills\design-system\SKILL.md` · phase: `foundation` · extraction strategy: B
 
 ---
 
@@ -147,7 +147,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/git-flow-master/SKILL.md` · phase: `implementation` · extraction strategy: B
+> Source: `.claude\skills\git-flow-master\SKILL.md` · phase: `implementation` · extraction strategy: B
 
 ---
 
@@ -175,7 +175,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/product-management/SKILL.md` · phase: `management` · extraction strategy: B
+> Source: `.claude\skills\product-management\SKILL.md` · phase: `management` · extraction strategy: B
 
 ---
 
@@ -203,7 +203,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/project-bootstrap/SKILL.md` · phase: `foundation` · extraction strategy: B
+> Source: `.claude\skills\project-bootstrap\SKILL.md` · phase: `foundation` · extraction strategy: B
 
 ---
 
@@ -231,7 +231,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/project-foundation/SKILL.md` · phase: `foundation` · extraction strategy: B
+> Source: `.claude\skills\project-foundation\SKILL.md` · phase: `foundation` · extraction strategy: B
 
 ---
 
@@ -259,7 +259,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/sprint-development/SKILL.md` · phase: `implementation` · extraction strategy: B
+> Source: `.claude\skills\sprint-development\SKILL.md` · phase: `implementation` · extraction strategy: B
 
 ---
 
@@ -287,7 +287,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/testability-guide/SKILL.md` · phase: `foundation-extension` · extraction strategy: B
+> Source: `.claude\skills\testability-guide\SKILL.md` · phase: `foundation-extension` · extraction strategy: B
 
 ---
 
@@ -315,7 +315,7 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/unit-testing/SKILL.md` · phase: `implementation` · extraction strategy: B
+> Source: `.claude\skills\unit-testing\SKILL.md` · phase: `implementation` · extraction strategy: B
 
 ---
 
@@ -343,4 +343,4 @@ Skills indexed: 12
 
 **Read full SKILL.md when**: the compact rules above are insufficient (e.g. novel scenario, debugging, or the briefing tells you to load the full skill).
 
-> Source: `.claude/skills/vercel-cli/SKILL.md` · phase: `implementation` · extraction strategy: B
+> Source: `.claude\skills\vercel-cli\SKILL.md` · phase: `implementation` · extraction strategy: B
