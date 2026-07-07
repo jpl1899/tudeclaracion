@@ -61,7 +61,7 @@ Who authors: a human architect directly, **or** an AI workflow that detected an 
 
 | ADR | Title | Status | Supersedes | Superseded by |
 | --- | ----- | ------ | ---------- | ------------- |
-| _— none yet —_ | The first ADR is usually seeded during `/project-foundation` (SRS architecture) or the first `/sprint-development` story that forces a hard-to-reverse decision. | | | |
+| [ADR-0001](./ADR-0001-modular-reusable-tax-platform.md) | Modular architecture built for a reusable multi-form tax platform | Accepted | — | — |
 
 > Keep this table in sync whenever an ADR is added or its status changes. It is the fast index every session reads first.
 
