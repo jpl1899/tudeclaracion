@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tuDeclaracion - Sistema de diseño</title>
+  <style>
+    :root {
+      --bg: oklch(98.4% 0.004 248);
+      --surface: oklch(100% 0 0);
+      --surface-alt: oklch(97.2% 0.006 248);
+      --fg: oklch(32% 0.03 255);
+      --muted: oklch(55% 0.02 255);
+      --border: oklch(91% 0.01 248);
+      --accent: oklch(45% 0.13 252);
+      --accent-2: oklch(62% 0.19 258);
+      --success: oklch(62% 0.17 145);
+      --warning: oklch(76% 0.16 72);
+      --error: oklch(63% 0.22 27);
+      --shadow-sm: 0 8px 20px color-mix(in oklab, black 6%, transparent);
+      --shadow-md: 0 16px 36px color-mix(in oklab, black 8%, transparent);
+      --radius: 12px;
+      --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px; --space-5: 40px;
+      --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font-sans); background: var(--bg); color: var(--fg); }
+    .wrap { width: min(1280px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 64px; }
+    .top { display: flex; justify-content: space-between; gap: 16px; align-items: start; margin-bottom: 24px; }
+    .back, .btn { min-height: 48px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); display: inline-flex; align-items: center; font-weight: 600; letter-spacing: 0.02em; color: inherit; text-decoration: none; }
+    .btn.primary { background: var(--accent); color: white; border-color: transparent; }
+    h1 { margin: 0 0 12px; font-size: clamp(2.2rem, 4vw, 4rem); line-height: 1.04; letter-spacing: -0.03em; }
+    h2 { margin: 0 0 14px; font-size: 1.7rem; line-height: 1.12; letter-spacing: -0.02em; }
+    h3 { margin: 0 0 12px; font-size: 1.2rem; line-height: 1.2; }
+    p { margin: 0; }
+    .muted { color: var(--muted); }
+    .lead { max-width: 68ch; font-size: 1.1rem; color: var(--muted); }
+    .grid { display: grid; gap: 16px; }
+    .grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .panel, .sample, .token, .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .panel { padding: 24px; }
+    .section { margin-top: 24px; }
+    .token { padding: 16px; }
+    .swatch { height: 72px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; }
+    .scale-row { display: grid; grid-template-columns: 160px 1fr 120px; gap: 16px; padding: 14px 0; border-top: 1px solid var(--border); align-items: baseline; }
+    .scale-row:first-child { border-top: 0; }
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .stack { display: grid; gap: 12px; }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn.ghost { background: var(--surface); }
+    .btn.secondary { background: color-mix(in oklab, var(--accent) 8%, white 92%); color: var(--accent); }
+    .field, select {
+      width: 100%; min-height: 48px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: white; font: inherit; color: var(--fg);
+    }
+    textarea.field { min-height: 112px; padding: 12px 14px; resize: vertical; }
+    .field:focus, select:focus { outline: 3px solid color-mix(in oklab, var(--accent) 24%, white 76%); outline-offset: 1px; border-color: var(--accent); }
+    .label { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+    .help { font-size: 14px; color: var(--muted); }
+    .table { width: 100%; border-collapse: collapse; overflow: hidden; }
+    .table th, .table td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .table th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .badge { min-height: 28px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .badge.info { background: color-mix(in oklab, var(--accent) 12%, white 88%); color: var(--accent); }
+    .badge.success { background: color-mix(in oklab, var(--success) 12%, white 88%); color: var(--success); }
+    .badge.warning { background: color-mix(in oklab, var(--warning) 14%, white 86%); color: oklch(45% 0.12 72); }
+    .alert { padding: 16px 18px; border-radius: 12px; display: grid; gap: 6px; }
+    .alert.info { background: color-mix(in oklab, var(--accent) 10%, white 90%); border: 1px solid color-mix(in oklab, var(--accent) 24%, white 76%); }
+    .alert.warning { background: color-mix(in oklab, var(--warning) 10%, white 90%); border: 1px solid color-mix(in oklab, var(--warning) 24%, white 76%); }
+    .alert.error { background: color-mix(in oklab, var(--error) 10%, white 90%); border: 1px solid color-mix(in oklab, var(--error) 22%, white 78%); }
+    .nav-bar { display: flex; gap: 10px; flex-wrap: wrap; padding: 10px; background: var(--surface-alt); border-radius: 12px; border: 1px solid var(--border); }
+    .nav-item { min-height: 44px; padding: 0 14px; border-radius: 10px; display: inline-flex; align-items: center; font-weight: 600; color: var(--muted); }
+    .nav-item.active { background: white; color: var(--fg); border: 1px solid var(--border); }
+    .card { padding: 20px; }
+    .layout-demo { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+    .sidebar, .content { min-height: 220px; border-radius: 12px; border: 1px dashed var(--border); background: var(--surface-alt); padding: 16px; }
+    .icon-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .icon-box { width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; }
+    .icon-box svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.75; }
+    @media (max-width: 1024px) { .grid.cols-4, .grid.cols-3 { grid-template-columns: 1fr 1fr; } .layout-demo { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { .wrap { width: calc(100% - 24px); } .top, .grid.cols-4, .grid.cols-3, .grid.cols-2 { display: grid; grid-template-columns: 1fr; } .scale-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <a class="back" href="index.html">Volver al resumen</a>
+        <h1>Sistema de diseño para tuDeclaracion</h1>
+        <p class="lead">Diseñado para estudios contables y usuarios con distintos niveles de soltura digital. Prioriza claridad, confianza, targets grandes, tablas legibles y navegación sin sorpresas.</p>
+      </div>
+      <div class="panel" style="max-width:320px;">
+        <strong>Principios</strong>
+        <div class="stack muted" style="margin-top:12px;">
+          <span>1. Una acción primaria por pantalla.</span>
+          <span>2. Alto contraste y lectura inmediata.</span>
+          <span>3. Componentes repetibles para escalar más declaraciones.</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="section panel">
+      <h2>Color tokens</h2>
+      <div class="grid cols-4">
+        <article class="token"><div class="swatch" style="background:var(--bg)"></div><strong>Fondo</strong><div class="mono muted">oklch(98.4% 0.004 248)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--surface)"></div><strong>Superficie</strong><div class="mono muted">oklch(100% 0 0)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--fg)"></div><strong>Texto</strong><div class="mono muted">oklch(32% 0.03 255)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--accent)"></div><strong>Primario</strong><div class="mono muted">oklch(45% 0.13 252)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--accent-2)"></div><strong>Secundario</strong><div class="mono muted">oklch(62% 0.19 258)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--success)"></div><strong>Éxito</strong><div class="mono muted">oklch(62% 0.17 145)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--warning)"></div><strong>Advertencia</strong><div class="mono muted">oklch(76% 0.16 72)</div></article>
+        <article class="token"><div class="swatch" style="background:var(--error)"></div><strong>Error</strong><div class="mono muted">oklch(63% 0.22 27)</div></article>
+      </div>
+    </section>
+
+    <section class="section panel">
+      <h2>Tipografía</h2>
+      <div class="scale-row"><strong>Display</strong><span style="font-size:56px; line-height:1.02; letter-spacing:-0.03em; font-weight:600;">Declaración 2181</span><span class="mono muted">56/57</span></div>
+      <div class="scale-row"><strong>H1</strong><span style="font-size:40px; line-height:1.1; letter-spacing:-0.02em; font-weight:600;">Panel principal</span><span class="mono muted">40/44</span></div>
+      <div class="scale-row"><strong>H2</strong><span style="font-size:30px; line-height:1.12; letter-spacing:-0.02em; font-weight:600;">Carga de archivos</span><span class="mono muted">30/34</span></div>
+      <div class="scale-row"><strong>Body</strong><span style="font-size:17px; line-height:1.55;">Texto normal para formularios, paneles, ayudas y tablas largas.</span><span class="mono muted">17/26</span></div>
+      <div class="scale-row"><strong>Small</strong><span style="font-size:14px; line-height:1.5; letter-spacing:0.01em;">Texto auxiliar, disclaimers y ayudas.</span><span class="mono muted">14/21</span></div>
+      <div class="scale-row"><strong>UI label</strong><span style="font-size:15px; line-height:1.4; letter-spacing:0.02em; font-weight:600;">Correo electrónico</span><span class="mono muted">15/21</span></div>
+    </section>
+
+    <section class="section grid cols-2">
+      <div class="panel stack">
+        <h2>Espaciado y elevación</h2>
+        <div class="stack">
+          <div><strong>8px</strong> base del sistema</div>
+          <div><strong>16px</strong> separación corta entre label y campo</div>
+          <div><strong>24px</strong> bloque interno de card estándar</div>
+          <div><strong>32px</strong> separación entre secciones primarias</div>
+          <div><strong>40px+</strong> respiración para pantallas clave</div>
+        </div>
+        <div class="stack">
+          <div><strong>Shadow sm</strong> <span class="mono muted">0 8px 20px / 6%</span></div>
+          <div><strong>Shadow md</strong> <span class="mono muted">0 16px 36px / 8%</span></div>
+          <div><strong>Radius</strong> <span class="mono muted">12px</span></div>
+        </div>
+      </div>
+      <div class="panel stack">
+        <h2>Botones</h2>
+        <div class="btn-row">
+          <button class="btn primary" type="button">Crear declaración 2181</button>
+          <button class="btn secondary" type="button">Ver instrucciones</button>
+          <button class="btn ghost" type="button">Cancelar</button>
+        </div>
+        <p class="muted">Todos los botones llevan texto. El primario usa azul institucional y aparece una sola vez en la zona focal. Secundarios sirven para ayuda o navegación complementaria.</p>
+      </div>
+    </section>
+
+    <section class="section grid cols-2">
+      <div class="panel stack">
+        <h2>Inputs y formularios</h2>
+        <label class="label" for="mail">Correo electrónico</label>
+        <input class="field" id="mail" type="email" placeholder="nombre@estudio.com" />
+        <label class="label" for="decl">Declaración</label>
+        <select id="decl"><option>2181 - Declaración mensual</option></select>
+        <label class="label" for="notes">Observaciones</label>
+        <textarea class="field" id="notes" placeholder="Añadí una nota si necesitás dejar contexto para otra persona del estudio."></textarea>
+        <p class="help">Campos amplios, ayudas breves y foco visible. Sin formularios densos ni columnas innecesarias.</p>
+      </div>
+      <div class="panel stack">
+        <h2>Alertas y badges</h2>
+        <div class="alert info"><strong>Archivo listo para procesar</strong><span class="muted">Podés revisar el resumen o continuar con la generación del PADI.</span></div>
+        <div class="alert warning"><strong>Revisá el TXT cargado</strong><span class="muted">Detectamos registros con formato incompleto en 2 líneas.</span></div>
+        <div class="alert error"><strong>No fue posible generar el archivo</strong><span class="muted">Probá nuevamente o consultá con soporte si el problema persiste.</span></div>
+        <div class="btn-row">
+          <span class="badge info">En curso</span>
+          <span class="badge success">Validado</span>
+          <span class="badge warning">Pendiente</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section grid cols-2">
+      <div class="panel">
+        <h2>Tablas</h2>
+        <table class="table">
+          <thead>
+            <tr><th>Cliente</th><th>Período</th><th>Estado</th><th>Última acción</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Estudio Rivera</td><td class="mono">05/2026</td><td><span class="badge success">Validado</span></td><td>Hace 8 min</td></tr>
+            <tr><td>Comercial del Sur</td><td class="mono">05/2026</td><td><span class="badge warning">Pendiente</span></td><td>Hace 21 min</td></tr>
+            <tr><td>Agro Litoral</td><td class="mono">04/2026</td><td><span class="badge info">En curso</span></td><td>Ayer</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel stack">
+        <h2>Navegación e iconografía</h2>
+        <div class="nav-bar">
+          <div class="nav-item active">Inicio</div>
+          <div class="nav-item">Declaraciones</div>
+          <div class="nav-item">Clientes</div>
+          <div class="nav-item">Ayuda</div>
+        </div>
+        <div class="icon-row">
+          <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12 3v18"></path><path d="M3 12h18"></path></svg></div>
+          <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path></svg></div>
+          <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"></path></svg></div>
+          <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.29 3.86l-7.4 12.82A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.71-3.32l-7.4-12.82a2 2 0 0 0-3.42 0z"></path></svg></div>
+        </div>
+        <p class="muted">Trazo monolineal cercano a Lucide. Nunca emojis ni iconos decorativos para llenar espacio.</p>
+      </div>
+    </section>
+
+    <section class="section panel">
+      <h2>Layout grid y variantes</h2>
+      <div class="layout-demo">
+        <div class="sidebar">
+          <strong>Sidebar</strong>
+          <p class="muted">240px en desktop, colapsable en tablet, navegación superior compacta en móvil.</p>
+        </div>
+        <div class="content">
+          <strong>Área principal</strong>
+          <p class="muted">Máximo ancho cómodo para lectura, cards agrupadas por tarea y módulos específicos del dominio: carga de TXT, validación, historial y generación de PADI.</p>
+        </div>
+      </div>
+      <div class="grid cols-3" style="margin-top:16px;">
+        <article class="card"><strong>Variante vacía</strong><p class="muted">Mensajes directos, siguiente paso visible y ayuda breve.</p></article>
+        <article class="card"><strong>Variante con error</strong><p class="muted">Campo marcado, causa concreta y corrección sugerida.</p></article>
+        <article class="card"><strong>Variante con progreso</strong><p class="muted">Estado visible, tiempo relativo y CTA único.</p></article>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+# Master Design Plan — tuDeclaracion.com
+
+> Generado por `/design-system` (fase opcional de mapeo de pantallas), 2026-07-02. Fuente de las pantallas: `C:\Projects\Personal\Design\` (prototipo HTML/CSS hand-authored por el usuario, copiado a la drop zone de este repo). **No hay `BRIEF.md`** para este batch — las pantallas ya existían antes de esta sesión, no fueron generadas a partir de un brief de este flujo. Provenance: copia directa, ver §4.
+
+## §0 — Engagement rule
+
+Toda historia de usuario con interfaz debe citar su pantalla en el mapa §8 **antes** de codearse. Si una historia UI no tiene fila en §8, no se construye a ciegas — se corre la fase de screen-mapping para esa pantalla primero (`/sprint-development` input #10 gate).
+
+## §1 — Scorecard
+
+| Pantalla | Estado | Notas |
+|---|---|---|
+| Portada (landing) | mockup listo, sin código | — |
+| Acceso (login) | mockup listo, sin código | falta pantalla de "recuperar acceso" (el link existe, no tiene destino) |
+| Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta en sí sigue sin mockear (ver §4.4) |
+| Dashboard / Panel principal | mockup listo, requiere ajuste | el wizard real de "Iniciar nueva declaración" (US 3.x) NO está mockeado — el botón del prototipo solo dispara un `alert()`; falta agregar el indicador/link de empresa activa en el sidebar (ver §5, D2) |
+
+## §2 — Frozen design contract
+
+La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplica valores**, solo referencia:
+
+- Colores: `colors.primary` (#08569A), `colors.background`/`colors.surface`, semánticos `colors.success/warning/error` + sus variantes `*Bg`/`*Text` (ver hallazgo de accesibilidad en `DESIGN.md` §Colors).
+- Tipografía: `typography.display/h1/h2/body/body-sm/label/mono` — familia Inter + JetBrains Mono para datos tabulares (RUT, importes).
+- Spacing: escala `spacing.xs..2xl` (base 8px).
+- Radios: `rounded.sm/md/lg/full`.
+- Componentes: `button`/`buttonSecondary`/`buttonGhost`, `input`, `card`, `badge*`, `alert*`, `table`, `nav*`, `divider` — ver `DESIGN.md` §Components.
+
+## §4 — Screen specs
+
+### 4.1 — Portada (landing)
+
+- **Slug**: `landing`
+- **Ruta esperada**: `/` (pública, pre-login)
+- **Propósito**: presentar el valor del producto y dirigir a login. Superficie de confianza, no de venta agresiva.
+- **Provenance**: `.context/designs/tudeclaracion/mvp-core-screens/landing-2.html` (copiado de `C:\Projects\Personal\Design\landing-2.html`, sin `BRIEF.md` — prototipo pre-existente).
+- **Historias de usuario**: ninguna del MVP scope actual la cubre directamente (`mvp-scope.md` no tiene una épica de "landing/marketing") — es superficie de soporte, no bloquea ninguna US.
+- **Contenido observado**: hero con propuesta de valor + CTA único ("Ingresar al sistema"), sección "Criterios de confianza" (3 cards: lectura inmediata, próximo paso obvio, escalable), disclaimer legal ("Herramienta de apoyo. No reemplaza asesoramiento contable ni legal.").
+- **Checklist de fidelidad**:
+  - [ ] Un solo CTA primario (a login) — no competir con otros botones.
+  - [ ] Disclaimer legal visible en el footer.
+  - [ ] Responsive: hero pasa a 1 columna bajo 720px (observado en el mockup).
+
+### 4.2 — Acceso (login)
+
+- **Slug**: `login`
+- **Ruta esperada**: `/login`
+- **Propósito**: autenticación simple, sin fricción, con soporte visible.
+- **Provenance**: `.context/designs/tudeclaracion/mvp-core-screens/login.html`, copiado de la misma fuente. Sin `BRIEF.md`.
+- **Historias de usuario**: US 1.2 (iniciar sesión) — primaria. US 1.4 (recuperar contraseña) — el link "Recuperar acceso" existe en el mockup, pero **no hay pantalla mockeada para ese flujo todavía** (gap, ver §1).
+- **Contenido observado**: layout 2 columnas (panel de intro + formulario), validación inline (ambos campos obligatorios, mensaje de error visible), checkbox "mantener sesión iniciada", link a recuperación, link "¿Primera vez? Creá tu cuenta" (self-service, confirmado por el usuario — ver §5, D1 resuelto).
+- **Checklist de fidelidad**:
+  - [ ] Labels de formulario siempre visibles (nunca solo placeholder) — coherente con NFR-02/03.
+  - [ ] Mensaje de error con guía clara si faltan campos (ya materializado en el mockup: "Revisá los datos ingresados. Ambos campos son obligatorios.").
+  - [ ] Objetivos táctiles ≥48px (mockup usa 52px).
+
+### 4.3 — Dashboard / Panel principal
+
+- **Slug**: `dashboard`
+- **Ruta esperada**: `/dashboard` (autenticado, empresa activa en contexto)
+- **Propósito**: punto de entrada a la operación diaria — iniciar una declaración nueva y ver el estado de las existentes.
+- **Provenance**: `.context/designs/tudeclaracion/mvp-core-screens/dashboard.html`, copiado de la misma fuente. Sin `BRIEF.md`.
+- **Historias de usuario**: US 3.1 (subir TXT — vía el botón "Iniciar nueva declaración") — primaria pero **el wizard real no está mockeado** (el botón dispara un `alert()` placeholder). US 7.1 / US 7.2 (historial — épica promovida a Must-Have en esta sesión, ver `mvp-scope.md` EPIC-TD-07) — la tabla "Actividad reciente" y el resumen rápido ("Declaraciones en curso", "Pendientes de revisión") ya materializan esto.
+- **Gap resuelto (2026-07-05, ver §5 D2)**: el dashboard queda scoped a la empresa activa, elegida en la pantalla "Selección de empresa" previa (post-login). Falta agregar al sidebar un indicador/link con el nombre de la empresa activa que, al clickearse, vuelve a esa pantalla para cambiar de empresa — hoy no está en el mockup, es ajuste pendiente antes de construir la historia.
+- **Contenido observado**: sidebar fijo (Inicio / Declaraciones generadas / Ayuda), saludo personalizado ("Hola, Andrea."), card de acción principal (única, con badge "Acción principal"), panel de resumen rápido, tabla de actividad reciente con badges de estado (Validado/Pendiente/Generado). La tabla mezcla clientes distintos (Estudio Rivera, Comercial del Sur, Agro Litoral) sin scoping — a corregir para que muestre solo la empresa activa una vez agregado el selector.
+- **Checklist de fidelidad**:
+  - [ ] Una sola acción primaria por pantalla ("Crear declaración 2181").
+  - [ ] Tabla usa tipografía `mono` para valores tabulares si se agregan RUTs/importes (el mockup actual no los muestra en esta tabla, pero SÍ debería aplicar cuando se agreguen — ver `DESIGN.md` Do's).
+  - [ ] Responsive: sidebar colapsa bajo 1080px (observado).
+  - [ ] Sidebar incluye indicador de empresa activa (nombre + link/entrada a "Selección de empresa") — pendiente de mockear.
+  - [ ] Tabla "Actividad reciente" filtrada a la empresa activa únicamente — el mockup actual muestra multi-cliente sin filtro.
+
+### 4.4 — Selección de empresa
+
+- **Slug**: `company-select` (ruta) — archivo `companySelector.html`
+- **Ruta esperada**: `/empresas` (autenticado, entre `login` y `dashboard`)
+- **Propósito**: elegir la empresa/cliente activa antes de entrar al dashboard.
+- **Provenance**: `.context/designs/tudeclaracion/mvp-core-screens/companySelector.html`, copiado de `C:\Projects\Personal\Design\` (misma fuente externa que el resto del batch), 2026-07-05. Sin `BRIEF.md`.
+- **Historias de usuario**: US 2.1 (seleccionar empresa activa) — primaria, cubierta. US 1.3 (alta de empresas/clientes) — cubierta parcialmente, ver nota.
+- **Flujo confirmado por el usuario**: tras el login, se muestra este listado de empresas del contador; al seleccionar una, redirige al `dashboard` scoped a esa empresa. Desde el `dashboard`, un indicador/link de empresa activa en el sidebar permite volver acá para cambiar de empresa sin cerrar sesión.
+- **Contenido observado**: layout 2 columnas (lista + detalle), buscador por nombre/RUT con contador de resultados, cards de empresa con badge de estado (Operativa/Pendiente) + último movimiento + responsable, panel de detalle con datos de la empresa seleccionada, CTA único "Ingresar al dashboard" (deshabilitado si no hay selección), estado vacío para búsqueda sin resultados. Card final con borde punteado "Agregar nueva empresa" (agregada 2026-07-05 a pedido del usuario) — dispara un `alert()` placeholder, mismo patrón que el wizard de `dashboard.html`; el flujo de alta en sí todavía no está mockeado.
+- **Nota**: la card "Agregar nueva empresa" solo abre la puerta a US 1.3 — no resuelve el formulario/flujo de alta, que sigue sin pantalla propia.
+- **Checklist de fidelidad**:
+  - [ ] Objetivos táctiles ≥48px en cards de empresa y CTA (mockup usa 52px en botones, cards sin altura mínima explícita — revisar en implementación).
+  - [ ] RUT en tipografía `mono` (ya materializado en el mockup).
+  - [ ] Responsive: layout pasa a 1 columna bajo 980px (observado).
+  - [ ] CTA primario deshabilitado hasta que haya una empresa seleccionada (ya materializado — accesibilidad de estado).
+
+| # | Pantalla | Divergencia | Ratificada por | Razón |
+|---|---|---|---|---|
+| D1 | Login | Nota original "¿Primera vez? Contactá al administrador del estudio" sugería que el alta de cuenta (US 1.1) podría NO ser self-service | **Ratificado 2026-07-05** | Usuario confirmó que el alta de cuenta ES self-service, tal como asume `mvp-scope.md`. El mockup estaba desactualizado — corregido a "¿Primera vez? Creá tu cuenta". No requiere cambios en PRD/SRS. |
+| D2 | Dashboard | No hay selector/alta de empresa visible (US 1.3, US 2.1) | **Ratificado 2026-07-05** | Usuario definió el flujo: tras el login se muestra un listado de empresas (pantalla nueva, `company-select`, §4.4); al elegir una, redirige al `dashboard` scoped a esa empresa. El dashboard suma un indicador/link de empresa activa en el sidebar para volver al listado y cambiar de empresa. Falta mockear `company-select` y ajustar `dashboard.html` (ver checklist §4.3). |
+
+## §8 — US → Screen map
+
+| Historia | Pantalla primaria | Notas |
+|---|---|---|
+| US 1.1 — crear cuenta | — | Sin mockup; self-service confirmado (D1 resuelto) |
+| US 1.2 — iniciar sesión | `login` | — |
+| US 1.3 — alta de empresas/clientes | `company-select` (entry point) | Card "Agregar nueva empresa" abre la puerta; el formulario/flujo de alta todavía no está mockeado — ver §4.4 |
+| US 1.4 — recuperar contraseña | — | Link existe en `login`, pantalla destino sin mockear |
+| US 2.1 — seleccionar empresa activa | `company-select` | Mockup listo — ver §4.4 |
+| US 2.2 — plan de cuentas cargado | — | Sin mockup (fuera de MVP como UI self-service, ver `SRS/06-normalizer.md`) |
+| US 3.1 — subir TXT | `dashboard` | Solo el CTA de entrada; el wizard de carga en sí no está mockeado |
+| US 3.2 — interpretación automática | — | Sin superficie propia (proceso transparente) |
+| US 3.3 — confirmación de carga | — | Sin mockup |
+| US 4.1 — normalización automática | — | Sin superficie propia (proceso transparente) |
+| US 4.2 — validación de RUTs/importes | — | Sin mockup del estado de error en contexto real (existe el patrón `alert.error` en `design-system.html`, no una pantalla completa) |
+| US 4.3 — guía clara ante error | — | Mismo caso que US 4.2 |
+| US 5.1 / US 5.2 / US 5.3 — motor tributario | — | Proceso transparente, sin superficie propia |
+| US 6.1 — descargar archivo PADI | — | Sin mockup del estado "declaración lista para descargar" |
+| US 6.2 — flujo completo <5 min | — | Cross-cutting, no una pantalla |
+| US 7.1 — listado de declaraciones | `dashboard` | Tabla "Actividad reciente" |
+| US 7.2 — estado de cada declaración | `dashboard` | Badges de estado en la misma tabla |
+
+## §9 — Maintenance
+
+- **Re-run incremental**: cuando se diseñe el wizard de carga (US 3.x), el flujo de error (US 4.2/4.3), la pantalla de recuperación de contraseña (US 1.4) o el selector/alta de empresa (US 1.3/2.1), correr de nuevo esta fase — genera un `BRIEF.md` nuevo por batch si no hay mockup, o mapea directamente si el usuario ya lo tiene (como en esta sesión).
+- **UPSERT, nunca wipe**: agregar filas a §4/§8 y entradas a §5 — no reescribir desde cero.
+- **No mapeadas intencionalmente**: `design-system.html` (consumido íntegramente en `DESIGN.md`, no es una pantalla de producto), `index.html` y `tudeclaracion-sistema-base.html` (páginas de resumen/pitch del prototipo, contenido idéntico entre ambas, no son rutas reales de la app — quedan en la drop zone como referencia pero sin fila propia acá).
+- **Link roto detectado en la fuente**: `index.html`/`tudeclaracion-sistema-base.html` linkean a `landing-page.html`, pero el archivo real es `landing-2.html` — no corregido (la fuente vive fuera de este repo, en `C:\Projects\Personal\Design\`).

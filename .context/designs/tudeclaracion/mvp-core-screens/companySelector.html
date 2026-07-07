@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tuDeclaracion - Selección de empresa</title>
+  <style>
+    :root {
+      --bg: oklch(98.4% 0.004 248);
+      --surface: oklch(100% 0 0);
+      --surface-alt: oklch(97.2% 0.006 248);
+      --fg: oklch(32% 0.03 255);
+      --muted: oklch(55% 0.02 255);
+      --border: oklch(91% 0.01 248);
+      --accent: oklch(45% 0.13 252);
+      --success: oklch(62% 0.17 145);
+      --warning: oklch(76% 0.16 72);
+      --radius: 12px;
+      --shadow-sm: 0 8px 20px color-mix(in oklab, black 6%, transparent);
+      --shadow-md: 0 16px 36px color-mix(in oklab, black 8%, transparent);
+      --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--bg), white);
+      color: var(--fg);
+      font-family: var(--font);
+    }
+    button, input { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .shell {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+    }
+    .back {
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: inline-flex;
+      align-items: center;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      gap: 20px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .hero {
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--accent) 10%, white 90%);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      max-width: 11ch;
+    }
+    .lead {
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .field {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--fg);
+    }
+    .field:focus {
+      outline: 3px solid color-mix(in oklab, var(--accent) 24%, white 76%);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+    .summary-pill {
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .company-list {
+      display: grid;
+      gap: 12px;
+    }
+    .company {
+      width: 100%;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: white;
+      display: grid;
+      gap: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .company:hover {
+      border-color: color-mix(in oklab, var(--accent) 22%, white 78%);
+      box-shadow: var(--shadow-sm);
+    }
+    .company.selected {
+      border-color: color-mix(in oklab, var(--accent) 38%, white 62%);
+      background: color-mix(in oklab, var(--accent) 7%, white 93%);
+      box-shadow: var(--shadow-md);
+    }
+    .company-head, .company-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      flex-wrap: wrap;
+    }
+    .company-title {
+      display: grid;
+      gap: 6px;
+    }
+    .company-title strong {
+      font-size: 1.05rem;
+      line-height: 1.35;
+    }
+    .muted { color: var(--muted); }
+    .mono {
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .badge {
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .badge.success {
+      background: color-mix(in oklab, var(--success) 12%, white 88%);
+      color: var(--success);
+    }
+    .badge.warning {
+      background: color-mix(in oklab, var(--warning) 12%, white 88%);
+      color: oklch(45% 0.12 72);
+    }
+    .add-company {
+      width: 100%;
+      padding: 18px;
+      border-radius: 16px;
+      border: 2px dashed color-mix(in oklab, var(--accent) 26%, white 74%);
+      background: var(--surface-alt);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .add-company:hover {
+      border-color: color-mix(in oklab, var(--accent) 40%, white 60%);
+      background: color-mix(in oklab, var(--accent) 6%, white 94%);
+    }
+    .add-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: color-mix(in oklab, var(--accent) 14%, white 86%);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .detail {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+    .detail-card {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      display: grid;
+      gap: 8px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .status {
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in oklab, var(--accent) 18%, white 82%);
+      background: color-mix(in oklab, var(--accent) 8%, white 92%);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .btn {
+      min-height: 52px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: white;
+      color: var(--fg);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      color: white;
+    }
+    .btn.primary:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+    .helper {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .empty {
+      display: none;
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--muted);
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .shell { width: calc(100% - 24px); }
+      .topbar, .toolbar, .company-head, .company-meta, .detail-row { grid-template-columns: 1fr; display: grid; }
+      h1 { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">TD</div>
+        <div>
+          <div>tuDeclaracion</div>
+          <div class="muted" style="font-size:13px; letter-spacing:0.02em;">Selección de empresa</div>
+        </div>
+      </div>
+      <a class="back" href="login.html">Volver al acceso</a>
+    </header>
+
+    <section class="layout">
+      <div class="panel hero">
+        <div class="eyebrow">Paso previo al panel principal</div>
+        <div>
+          <h1>Elige empresa para continuar.</h1>
+          <p class="lead">Después de iniciar sesión, el sistema te muestra las empresas habilitadas para trabajar. Selecciona una y continúa al panel principal con contexto claro desde el primer momento.</p>
+        </div>
+
+        <div class="toolbar">
+          <input class="field" id="searchInput" type="search" placeholder="Buscar por nombre de empresa o RUT" aria-label="Buscar empresa" />
+          <div class="summary-pill" id="resultsCount">4 empresas</div>
+        </div>
+
+        <div class="company-list" id="companyList">
+          <button class="company selected" type="button" data-company="Estudio Rivera" data-rut="213456780012" data-state="Operativa" data-last="Declaración 2181 validada hace 12 min" data-contact="Andrea Rivera">
+            <div class="company-head">
+              <div class="company-title">
+                <strong>Estudio Rivera</strong>
+                <span class="muted mono">RUT 213456780012</span>
+              </div>
+              <span class="badge success">Operativa</span>
+            </div>
+            <div class="company-meta">
+              <span class="muted">Último movimiento: Declaración 2181 validada hace 12 min</span>
+              <span class="muted">Responsable: Andrea Rivera</span>
+            </div>
+          </button>
+
+          <button class="company" type="button" data-company="Comercial del Sur" data-rut="215998440019" data-state="Pendiente" data-last="TXT cargado en revisión" data-contact="Martín Suárez">
+            <div class="company-head">
+              <div class="company-title">
+                <strong>Comercial del Sur</strong>
+                <span class="muted mono">RUT 215998440019</span>
+              </div>
+              <span class="badge warning">Pendiente</span>
+            </div>
+            <div class="company-meta">
+              <span class="muted">Último movimiento: TXT cargado en revisión</span>
+              <span class="muted">Responsable: Martín Suárez</span>
+            </div>
+          </button>
+
+          <button class="company" type="button" data-company="Agro Litoral" data-rut="217774120016" data-state="Operativa" data-last="PADI generado ayer" data-contact="Valeria Gómez">
+            <div class="company-head">
+              <div class="company-title">
+                <strong>Agro Litoral</strong>
+                <span class="muted mono">RUT 217774120016</span>
+              </div>
+              <span class="badge success">Operativa</span>
+            </div>
+            <div class="company-meta">
+              <span class="muted">Último movimiento: PADI generado ayer</span>
+              <span class="muted">Responsable: Valeria Gómez</span>
+            </div>
+          </button>
+
+          <button class="company" type="button" data-company="Servicios Delta" data-rut="210345670018" data-state="Operativa" data-last="Sin actividad reciente" data-contact="Sofía Pereira">
+            <div class="company-head">
+              <div class="company-title">
+                <strong>Servicios Delta</strong>
+                <span class="muted mono">RUT 210345670018</span>
+              </div>
+              <span class="badge success">Operativa</span>
+            </div>
+            <div class="company-meta">
+              <span class="muted">Último movimiento: Sin actividad reciente</span>
+              <span class="muted">Responsable: Sofía Pereira</span>
+            </div>
+          </button>
+
+          <button class="add-company" type="button" id="addCompanyBtn">
+            <span class="add-icon">+</span>
+            <span>
+              <strong>Agregar nueva empresa</strong>
+              <p class="muted" style="margin:4px 0 0;">Dar de alta un cliente nuevo bajo tu cuenta.</p>
+            </span>
+          </button>
+        </div>
+
+        <div class="empty" id="emptyState">No hay empresas que coincidan con la búsqueda. Prueba con otro nombre o con el RUT.</div>
+      </div>
+
+      <aside class="panel detail">
+        <div>
+          <strong style="font-size:1.1rem;">Empresa seleccionada</strong>
+          <p class="helper" style="margin-top:8px;">Mostramos contexto suficiente antes de entrar al dashboard para evitar errores de empresa activa.</p>
+        </div>
+
+        <div class="status" id="selectionStatus">Entrarás con Estudio Rivera.</div>
+
+        <div class="detail-card">
+          <div class="detail-row"><span class="muted">Empresa</span><strong id="detailCompany">Estudio Rivera</strong></div>
+          <div class="detail-row"><span class="muted">RUT</span><strong class="mono" id="detailRut">213456780012</strong></div>
+          <div class="detail-row"><span class="muted">Responsable</span><strong id="detailContact">Andrea Rivera</strong></div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-row"><span class="muted">Estado</span><strong id="detailState">Operativa</strong></div>
+          <div class="detail-row"><span class="muted">Último movimiento</span><strong id="detailLast">Declaración 2181 validada hace 12 min</strong></div>
+        </div>
+
+        <button class="btn primary" id="continueBtn" type="button">Ingresar al dashboard</button>
+        <div class="helper">Siguiente paso único: abrir panel principal con empresa activa ya definida.</div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var searchInput = document.getElementById('searchInput');
+      var companyList = Array.prototype.slice.call(document.querySelectorAll('.company'));
+      var resultsCount = document.getElementById('resultsCount');
+      var emptyState = document.getElementById('emptyState');
+      var selectionStatus = document.getElementById('selectionStatus');
+      var continueBtn = document.getElementById('continueBtn');
+      var detailCompany = document.getElementById('detailCompany');
+      var detailRut = document.getElementById('detailRut');
+      var detailContact = document.getElementById('detailContact');
+      var detailState = document.getElementById('detailState');
+      var detailLast = document.getElementById('detailLast');
+      var addCompanyBtn = document.getElementById('addCompanyBtn');
+      var selectedCompany = companyList[0];
+
+      function updateDetails(button) {
+        if (!button) {
+          selectionStatus.textContent = 'Selecciona una empresa para continuar.';
+          continueBtn.disabled = true;
+          return;
+        }
+        detailCompany.textContent = button.getAttribute('data-company');
+        detailRut.textContent = button.getAttribute('data-rut');
+        detailContact.textContent = button.getAttribute('data-contact');
+        detailState.textContent = button.getAttribute('data-state');
+        detailLast.textContent = button.getAttribute('data-last');
+        selectionStatus.textContent = 'Entrarás con ' + button.getAttribute('data-company') + '.';
+        continueBtn.disabled = false;
+      }
+
+      function selectCompany(button) {
+        selectedCompany = button;
+        companyList.forEach(function (item) {
+          item.classList.toggle('selected', item === button);
+        });
+        updateDetails(button);
+      }
+
+      function filterCompanies() {
+        var term = searchInput.value.trim().toLowerCase();
+        var visible = 0;
+        companyList.forEach(function (item) {
+          var haystack = (item.getAttribute('data-company') + ' ' + item.getAttribute('data-rut')).toLowerCase();
+          var match = !term || haystack.indexOf(term) !== -1;
+          item.style.display = match ? 'grid' : 'none';
+          if (match) visible += 1;
+        });
+
+        resultsCount.textContent = visible + (visible === 1 ? ' empresa' : ' empresas');
+        emptyState.style.display = visible ? 'none' : 'block';
+
+        if (selectedCompany && selectedCompany.style.display === 'none') {
+          var firstVisible = companyList.find(function (item) { return item.style.display !== 'none'; });
+          if (firstVisible) {
+            selectCompany(firstVisible);
+          } else {
+            companyList.forEach(function (item) { item.classList.remove('selected'); });
+            selectedCompany = null;
+            updateDetails(null);
+          }
+        }
+      }
+
+      companyList.forEach(function (item) {
+        item.addEventListener('click', function () {
+          selectCompany(item);
+        });
+      });
+
+      searchInput.addEventListener('input', filterCompanies);
+      continueBtn.addEventListener('click', function () {
+        if (selectedCompany) {
+          window.location.href = 'dashboard.html';
+        }
+      });
+      addCompanyBtn.addEventListener('click', function () {
+        window.alert('Siguiente paso: iniciar flujo de alta de empresa nueva.');
+      });
+
+      updateDetails(selectedCompany);
+      filterCompanies();
+    })();
+  </script>
+</body>
+</html>

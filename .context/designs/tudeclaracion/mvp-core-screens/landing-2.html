@@ -1,0 +1,61 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tuDeclaracion - Portada operativa</title>
+  <style>
+    :root { --bg: oklch(98.4% 0.004 248); --surface: oklch(100% 0 0); --fg: oklch(32% 0.03 255); --muted: oklch(55% 0.02 255); --border: oklch(91% 0.01 248); --accent: oklch(45% 0.13 252); --radius: 12px; --shadow-sm: 0 8px 20px color-mix(in oklab, black 6%, transparent); --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--fg); }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1200px, calc(100% - 32px)); margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; }
+    .logo { display: flex; gap: 12px; align-items: center; font-weight: 600; }
+    .mark { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; }
+    .btn { min-height: 56px; width: 100%; padding: 0 18px; border-radius: 12px; border: 1px solid transparent; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #fff; font-weight: 600; letter-spacing: 0.02em; box-shadow: var(--shadow-sm); }
+    .hero { display: grid; grid-template-columns: minmax(0, 720px); justify-content: start; padding: 48px 0 32px; }
+    h1 { margin: 16px 0; font-size: clamp(2.4rem, 5vw, 4.5rem); line-height: 1.04; letter-spacing: -0.03em; max-width: 12ch; }
+    .eyebrow { display: inline-flex; min-height: 36px; padding: 0 12px; border-radius: 999px; align-items: center; background: color-mix(in oklab, var(--accent) 10%, white 90%); color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .lead { max-width: 60ch; font-size: 1.1rem; color: var(--muted); }
+    .cta-wrap { margin-top: 24px; width: min(100%, 440px); }
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 24px 0; }
+    .card { padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    h2 { margin: 0 0 12px; font-size: 1.9rem; letter-spacing: -0.02em; }
+    .muted { color: var(--muted); }
+    .footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+    @media (max-width: 960px) { .features { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { .wrap { width: calc(100% - 24px); } .top { padding: 12px 0; } .hero { grid-template-columns: 1fr; } .cta-wrap { width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="logo"><div class="mark">TD</div><div>tuDeclaracion</div></div>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Declaraciones DGI sin fricción</div>
+          <h1>Prepara tus declaraciones DGI, con un flujo claro y seguro.</h1>
+          <p class="lead">tuDeclaracion acompaña al estudio contable desde la carga del TXT exportado desde Memory hasta la generación del archivo PADI. Sin pantallas recargadas, sin navegación confusa y con foco total en productividad diaria.</p>
+          <div class="cta-wrap">
+            <a class="btn" href="login.html">Ingresar al sistema</a>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Criterios de confianza</h2>
+        <div class="features">
+          <article class="card"><strong>Lectura inmediata</strong><p class="muted">Tipografía grande, contraste alto y bloques con buena respiración.</p></article>
+          <article class="card"><strong>Próximo paso obvio</strong><p class="muted">Cada pantalla tiene una acción principal y contexto breve de apoyo.</p></article>
+          <article class="card"><strong>Escalable</strong><p class="muted">La estructura permite sumar nuevas declaraciones sin rehacer la base.</p></article>
+        </div>
+      </section>
+    </main>
+    <footer class="footer">Herramienta de apoyo. No reemplaza asesoramiento contable ni legal.</footer>
+  </div>
+</body>
+</html>
