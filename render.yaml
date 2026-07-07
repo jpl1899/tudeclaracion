@@ -1,0 +1,25 @@
+# Render Blueprint — Plan B hosting (see .context/deploy/render/README.md).
+# Vercel remains the SRS-confirmed default; this file only activates if you
+# import it via Render's dashboard ("New" -> "Blueprint").
+# Native `node` runtime auto-detects Bun from bun.lock, no Docker needed.
+services:
+  - type: web
+    name: tudeclaracion-staging
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: bun install && bun run build
+    startCommand: bun run start
+    envVars:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false # set to the *.onrender.com URL Render assigns after first deploy
