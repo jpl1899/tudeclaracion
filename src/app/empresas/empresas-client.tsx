@@ -27,7 +27,6 @@ export function EmpresasClient({ empresas }: { empresas: Empresa[] }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Empresa | null>(empresas[0] ?? null);
-  const [addPending, setAddPending] = useState(false);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -125,7 +124,7 @@ export function EmpresasClient({ empresas }: { empresas: Empresa[] }) {
 
             <button
               type="button"
-              onClick={() => setAddPending(true)}
+              onClick={() => router.push('/empresas/nueva')}
               className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-primary/25 bg-muted p-4.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-xl font-bold text-primary">
@@ -138,13 +137,6 @@ export function EmpresasClient({ empresas }: { empresas: Empresa[] }) {
                 </p>
               </span>
             </button>
-
-            {addPending && (
-              <p className="rounded-md border border-primary/20 bg-accent px-4 py-3 text-sm text-accent-foreground">
-                Siguiente paso: el flujo de alta de empresa (US 1.3) todavía no está mockeado — ver
-                .context/design/master-design-plan.md §4.4.
-              </p>
-            )}
 
             {empresas.length === 0 && (
               <div className="rounded-2xl border border-border bg-muted p-4.5 text-muted-foreground">
