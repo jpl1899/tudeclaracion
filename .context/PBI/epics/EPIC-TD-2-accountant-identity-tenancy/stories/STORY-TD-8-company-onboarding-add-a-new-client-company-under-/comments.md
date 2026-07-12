@@ -51,5 +51,15 @@ Scenario: Required-field validation
 
 ---
 
+### Juan Leites - 12/7/2026, 17:11:37
+
+## Scope note (2026-07-12): now includes chart-of-accounts entry
+
+TD-7 (chart-of-accounts-to-fiscal-concept mapping) was unblocked by reversing its self-service-out-of-scope decision -- see TD-7's comment for the full reversal note. Practical consequence for TD-8: the 'Agregar nueva empresa' flow (currently a placeholder alert() in src/app/empresas/empresas-client.tsx) now needs to include a step/section where the accountant defines that new company's chart-of-accounts-to-fiscal-concept mapping, not just company identity fields (nombre, RUT, etc.).
+
+Not yet mocked -- master-design-plan.md still lists TD-8's onboarding flow as unmocked (SS4.4). Will need a just-in-time design brief covering both concerns (company fields + chart-of-accounts rows) when TD-8 is picked up.
+
+---
+
 
 _Synced from Jira by sync-jira-issues_

@@ -47,7 +47,7 @@ As Rosana Ferreira, I want to add a new client company to my account, so that I 
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 12/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** mathias Kantor
 
