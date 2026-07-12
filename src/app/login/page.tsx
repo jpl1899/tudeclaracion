@@ -109,7 +109,7 @@ export default function LoginPage() {
               <input type="checkbox" className="h-4 w-4 rounded border-border" />
               Mantener sesión iniciada
             </label>
-            <a href="#" className="text-sm font-semibold text-primary hover:underline">
+            <a href="/forgot-password" className="text-sm font-semibold text-primary hover:underline">
               Recuperar acceso
             </a>
           </div>
