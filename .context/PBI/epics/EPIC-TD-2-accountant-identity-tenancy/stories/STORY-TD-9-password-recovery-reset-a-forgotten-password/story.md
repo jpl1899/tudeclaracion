@@ -3,7 +3,7 @@
 **Jira Key:** [TD-9](https://lk-tudeclaracion.atlassian.net/browse/TD-9)
 **Epic:** [TD-2](https://lk-tudeclaracion.atlassian.net/browse/TD-2) (Accountant Identity & Tenancy)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** En curso
 **Priority:** Medium
 **Story Points:** -
 
@@ -38,7 +38,7 @@ As Rosana Ferreira, I want to reset my password when I forget it, so that I can 
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 12/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** mathias Kantor
 

@@ -11,10 +11,11 @@ Toda historia de usuario con interfaz debe citar su pantalla en el mapa §8 **an
 | Pantalla | Estado | Notas |
 |---|---|---|
 | Portada (landing) | mockup listo, sin código | — |
-| Acceso (login) | mockup listo, sin código | falta pantalla de "recuperar acceso" (el link existe, no tiene destino) |
+| Acceso (login) | mockup listo, sin código | link "Recuperar acceso" ahora tiene destino — ver §4.6 |
 | Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta en sí sigue sin mockear (ver §4.4) |
 | Dashboard / Panel principal | mockup listo, requiere ajuste | el wizard real de "Iniciar nueva declaración" (US 3.x) NO está mockeado — el botón del prototipo solo dispara un `alert()`; falta agregar el indicador/link de empresa activa en el sidebar (ver §5, D2) |
 | Crear cuenta (signup) | mockup listo, sin código | generado just-in-time para TD-4 vía brief (`references/screen-design-brief.md`), Open Design — ver §4.5 |
+| Recuperar acceso (forgot/reset password) | mockup recibido, build diverge del mockup (ver D3) | generado just-in-time para TD-9; el mockup trae tokens y composición nuevos no coherentes con el resto del batch — build real usa el shell/tokens ya vivos, mockup solo aporta estados/copy — ver §4.6, §5 D3 |
 
 ## §2 — Frozen design contract
 
@@ -102,10 +103,27 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
   - [ ] Labels de formulario siempre visibles (coherente con NFR-02/03, mismo patrón que `login.html`).
   - [ ] Responsive: layout pasa a 1 columna bajo 860px (observado en el mockup).
 
+### 4.6 — Recuperar acceso (forgot-password / reset-password)
+
+- **Slugs**: `forgot-password`, `reset-password`
+- **Rutas esperadas**: `/forgot-password` (pública, pre-login), `/reset-password` (pública, alcanzable solo vía el link del correo de recuperación)
+- **Propósito**: recuperación de contraseña self-service vía Supabase Auth, sin intervención de administrador.
+- **Provenance**: `.context/designs/tudeclaracion/password-recovery/{forgot-password,reset-password}.html`, generados en Open Design a partir de `.context/designs/tudeclaracion/password-recovery/BRIEF.md` (brief just-in-time, disparado por el gate de `/sprint-development` en TD-9). Ver §5 D3 — el build real diverge del mockup en tokens/composición, no en flujo/estados.
+- **Historias de usuario**: TD-9 / US 1.4 (recuperar contraseña) — primaria, ahora cubierta.
+- **Contenido tomado del mockup (estados/copy, no tokens)**:
+  - `forgot-password`: formulario de un campo (correo) → panel de confirmación "Revisá tu correo" con lista de próximos pasos (estado enviado, acción siguiente, recordatorio de spam) y opción de volver a intentar con otro correo.
+  - `reset-password`: formulario de contraseña nueva + confirmar contraseña, con el mismo checklist en vivo de `signup` (reutiliza `password-rules.ts`, no la regla del mockup) → panel de éxito ("Contraseña actualizada", link a login) → panel de error para link vencido/inválido ("Enlace inválido o vencido", CTA "Solicitar nuevo enlace" de vuelta a `forgot-password`).
+- **Checklist de fidelidad**:
+  - [ ] Construido con el shell de 2 columnas y componentes ya vivos (`Button`/`Input`/`Label`, mismo patrón que `login`/`signup`) — NO con los tokens del mockup (ver D3).
+  - [ ] Checklist de contraseña en `reset-password` usa `password-rules.ts` (mínimo 10, incluye Ü) — nunca la regla de 8 caracteres del mockup.
+  - [ ] Objetivos táctiles ≥48px, labels siempre visibles — mismo estándar que el resto del batch.
+  - [ ] Los 3 escenarios del AC cubiertos: solicitud enviada, reset con token válido, token vencido/inválido con opción de reintentar.
+
 | # | Pantalla | Divergencia | Ratificada por | Razón |
 |---|---|---|---|---|
 | D1 | Login | Nota original "¿Primera vez? Contactá al administrador del estudio" sugería que el alta de cuenta (US 1.1) podría NO ser self-service | **Ratificado 2026-07-05** | Usuario confirmó que el alta de cuenta ES self-service, tal como asume `mvp-scope.md`. El mockup estaba desactualizado — corregido a "¿Primera vez? Creá tu cuenta". No requiere cambios en PRD/SRS. |
 | D2 | Dashboard | No hay selector/alta de empresa visible (US 1.3, US 2.1) | **Ratificado 2026-07-05** | Usuario definió el flujo: tras el login se muestra un listado de empresas (pantalla nueva, `company-select`, §4.4); al elegir una, redirige al `dashboard` scoped a esa empresa. El dashboard suma un indicador/link de empresa activa en el sidebar para volver al listado y cambiar de empresa. Falta mockear `company-select` y ajustar `dashboard.html` (ver checklist §4.3). |
+| D3 | Recuperar acceso (forgot/reset password) | El mockup recibido para TD-9 trae tokens propios (`--primary: #1E40AF` vs. el `#08569A` congelado en `DESIGN.md`) y una composición nueva (panel de "trust" con badge eyebrow + 3 tarjetas con ícono) ausente en el resto del batch. Además, las reglas de fortaleza de contraseña del demo JS del mockup (mínimo 8 caracteres, sin Ü) no coinciden con `src/lib/validation/password-rules.ts` (mínimo 10, con Ü), ya construido y testeado para `signup`. | **Ratificado 2026-07-12** | Usuario confirmó construir con Live-UI-First: reutilizar el shell de 2 columnas y los componentes ya vivos (`login`/`signup`), tomando del mockup solo los estados/flujo/copy (panel "revisá tu correo" con próximos pasos, panel de link vencido con CTA de reenvío, campo de confirmar contraseña) — nunca los tokens ni la regla de contraseña del mockup, que sigue siempre `password-rules.ts`. |
 
 ## §8 — US → Screen map
 
@@ -114,7 +132,7 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 | US 1.1 — crear cuenta | `signup` | Mockup listo — ver §4.5 |
 | US 1.2 — iniciar sesión | `login` | — |
 | US 1.3 — alta de empresas/clientes | `company-select` (entry point) | Card "Agregar nueva empresa" abre la puerta; el formulario/flujo de alta todavía no está mockeado — ver §4.4 |
-| US 1.4 — recuperar contraseña | — | Link existe en `login`, pantalla destino sin mockear |
+| US 1.4 — recuperar contraseña | `forgot-password` / `reset-password` | Mockup recibido, build diverge en tokens (ratificado) — ver §4.6, §5 D3 |
 | US 2.1 — seleccionar empresa activa | `company-select` | Mockup listo — ver §4.4 |
 | US 2.2 — plan de cuentas cargado | — | Sin mockup (fuera de MVP como UI self-service, ver `SRS/06-normalizer.md`) |
 | US 3.1 — subir TXT | `dashboard` | Solo el CTA de entrada; el wizard de carga en sí no está mockeado |

@@ -4,11 +4,12 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 
 /**
- * Confirms a Supabase Auth email-verification link (signup, per TD-4) and
- * exchanges the token for a session before redirecting. This project uses
- * the PKCE flow via @supabase/ssr, so the confirmation link must route here
- * rather than to Supabase's own hosted confirmation page — see the TD-4
- * implementation plan, Dependencies, for the required email-template change.
+ * Confirms a Supabase Auth email-verification link (signup, per TD-4;
+ * password recovery, per TD-9) and exchanges the token for a session before
+ * redirecting. This project uses the PKCE flow via @supabase/ssr, so the
+ * confirmation link must route here rather than to Supabase's own hosted
+ * confirmation page — see the TD-4/TD-9 implementation plans, Dependencies,
+ * for the required per-flow email-template change.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -25,5 +26,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  redirect('/login?error=verification-failed');
+  redirect(type === 'recovery' ? '/forgot-password?error=expired' : '/login?error=verification-failed');
 }
