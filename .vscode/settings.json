@@ -197,6 +197,12 @@
     "editor.formatOnSave": true
   },
   // =====================
+  // ? Deno (Supabase Edge Functions only — scoped path, does not affect
+  // the rest of the TypeScript codebase's Prettier formatting)
+  // =====================
+  "deno.enablePaths": ["supabase/functions"],
+  "deno.lint": true,
+  // =====================
   // ? JSON & YAML Settings
   // =====================
   "json.validate.enable": true,
