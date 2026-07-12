@@ -1,6 +1,6 @@
 # MVP Scope — tuDeclaracion.com
 
-> Épicas derivadas del pipeline confirmado en `ADR-0001-modular-reusable-tax-platform.md` y de las 3 decisiones de producto (multi-tenancy en MVP, plan de cuentas fuera de MVP, error + guía clara). Alcance funcional del MVP: **únicamente Declaración Jurada 2181** (`business-model.md`) — la reutilización a futuros formularios es una decisión de arquitectura, no de scope de este release.
+> Épicas derivadas del pipeline confirmado en `ADR-0001-modular-reusable-tax-platform.md` y de las decisiones de producto (multi-tenancy en MVP, carga self-service del plan de cuentas — revertido 2026-07-12, ver nota en EPIC-TD-02 — error + guía clara). Alcance funcional del MVP: **únicamente Declaración Jurada 2181** (`business-model.md`) — la reutilización a futuros formularios es una decisión de arquitectura, no de scope de este release.
 
 ## In Scope (Must Have)
 
@@ -12,7 +12,7 @@
 
 ### EPIC-TD-02 — Configuración de Empresa
 - US 2.1: Como contador, quiero seleccionar la empresa/cliente activa antes de subir un archivo, para asegurarme de que la declaración se genera para el RUT correcto.
-- US 2.2: Como contador, quiero que el plan de cuentas de cada empresa esté cargado en el sistema (carga manual/asistida en el MVP, sin autoconfiguración — ver `SRS/06-normalizer.md`), para que el sistema pueda mapear sus cuentas a conceptos fiscales.
+- US 2.2: Como contador, quiero cargar el plan de cuentas de cada empresa yo mismo al dar de alta esa empresa (self-service, como parte del flujo de US 1.3), para que el sistema pueda mapear sus cuentas a conceptos fiscales. *(revertido 2026-07-12 — antes era "carga manual/asistida sin autoconfiguración"; ver `SRS/06-normalizer.md` y TD-7/TD-8)*
 
 ### EPIC-TD-03 — Carga y Procesamiento del Archivo TXT
 - US 3.1: Como contador, quiero subir el TXT mensual exportado de Memory, para iniciar la generación de la declaración.
@@ -43,7 +43,6 @@
 Detalle y motivación de cada uno en `future-roadmap.md`.
 
 - Soporte a formularios DGI más allá del 2181 (la arquitectura ya lo contempla, `ADR-0001`, pero no se construye en el MVP).
-- UI de autoconfiguración del plan de cuentas por el propio contador.
 - Remediación automática/asistida de errores de validación (autocorrección, wizard guiado).
 - Roles múltiples dentro de una cuenta de contador.
 - Niveles de suscripción / pricing diferenciado.
