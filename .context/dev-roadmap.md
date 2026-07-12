@@ -74,7 +74,7 @@ Legend: `A ──> B` hard gate (A must be dev-done before B starts). No soft (`
 
 | Blocker | Unblocks | Type | Reason | Citation |
 |---|---|---|---|---|
-| TD-7 | TD-15 | hard | Normalizer (TD-15) needs a resolved chart-of-accounts-to-fiscal-concept mapping to consume; TD-7's own loading mechanism is itself undefined | `STORY-TD-15/story.md` §"Status: BLOCKED": *"This story depends on two unresolved items: 1. `TD-7`... the Normalizer needs a resolved chart-of-accounts mapping to consume, and TD-7's own loading mechanism is not yet defined"* |
+| TD-7 | TD-15 | hard | Normalizer (TD-15) needs a resolved chart-of-accounts-to-fiscal-concept mapping to consume — TD-7 must be dev-done first. Loading mechanism itself is now resolved (2026-07-12, see §6) — the edge remains because TD-7's actual UI/data still needs to be built | `STORY-TD-15/story.md` §"Status: BLOCKED" (original citation); mechanism resolution per TD-7's Jira comment 2026-07-12 |
 | TD-22 | TD-20 | hard | PADI Export formats the output of the Tax Rules Engine; cannot generate a file before line mapping exists | `EPIC-TD-19/epic.md`: *"ready for implementation as soon as its upstream dependency exists: EPIC 5's tax-line mapping and amount calculation"* — TD-19's only story is TD-20, and TD-21's two stories are TD-22 (mapping) + TD-23 (calculation) |
 | TD-23 | TD-20 | hard | Same as above, for the amount-calculation half of the Tax Rules Engine | Same citation as row above |
 
@@ -107,12 +107,12 @@ Legend: `A ──> B` hard gate (A must be dev-done before B starts). No soft (`
 
 | Story | Primary screen | Mockup status | Gated? |
 |---|---|---|---|
-| TD-4 — Signup | — (none) | No mockup exists; self-service flow confirmed via D1 in master-design-plan §5, but no screen | 🔒 gated |
+| TD-4 — Signup | `signup` | Mockup landed via JIT brief, built and merged to staging | not gated (dev-done) |
 | TD-6 — Login | `login` | Ready | not gated |
 | TD-5 — Company Selection | `company-select` | Ready | not gated (story is `Finalizada` in Jira per last sync anyway) |
-| TD-8 — Company Onboarding | `company-select` (entry point only) | "Agregar nueva empresa" card exists but fires a placeholder `alert()` — the actual alta form/flow is unmocked (master-design-plan §4.4) | 🔒 gated |
-| TD-9 — Password Recovery | — | Link exists on `login`, target screen not mocked | 🔒 gated |
-| TD-7 — Chart of Accounts | — | Intentionally out of MVP self-service UI scope per `SRS/06-normalizer.md` (master-design-plan §8, US 2.2) | not gated — no UI planned |
+| TD-8 — Company Onboarding | `company-select` (entry point only) | "Agregar nueva empresa" card exists but fires a placeholder `alert()` — the actual alta form/flow is unmocked (master-design-plan §4.4). Scope grew 2026-07-12: this form now must also cover TD-7's chart-of-accounts entry (self-service reversal, see TD-7 row) | 🔒 gated |
+| TD-9 — Password Recovery | `forgot-password` / `reset-password` | Mockup landed via JIT brief, built and merged to staging | not gated (dev-done) |
+| TD-7 — Chart of Accounts | `company-select` (via TD-8's onboarding form, once mocked) | **Flipped 2026-07-12**: self-service UI decision reversed (see `SRS/06-normalizer.md`, `mvp-scope.md` EPIC-TD-02) — no longer "no UI planned". Chart-of-accounts entry is now a section inside TD-8's onboarding form, which is itself unmocked | 🔒 gated (via TD-8) |
 | TD-11 — File Upload | `dashboard` (entry point only) | The "Iniciar nueva declaración" button fires a placeholder `alert()` — the real upload wizard (US 3.x) is unmocked (master-design-plan §4.3, §9) | 🔒 gated |
 | TD-12 — Confirm Upload | — | No mockup for this state | 🔒 gated |
 | TD-13 — Automatic Interpretation | — | Transparent backend process, no UI surface (master-design-plan §8, US 3.2) | not gated — no UI planned |
@@ -124,7 +124,7 @@ Legend: `A ──> B` hard gate (A must be dev-done before B starts). No soft (`
 | TD-23 — Amount Calculation | — | Transparent backend process, no UI surface (US 5.x) | not gated — no UI planned |
 | TD-20 — PADI Export | — | No mockup of the "declaration ready to download" state (master-design-plan §8, US 6.1) | 🔒 gated |
 
-**Mockup-gated total: 9** (TD-4, TD-8, TD-9, TD-11, TD-12, TD-16, TD-17, TD-18, TD-20).
+**Mockup-gated total: 8** (TD-7, TD-8, TD-11, TD-12, TD-16, TD-17, TD-18, TD-20). TD-4 and TD-9 cleared their gates 2026-07-12 (dev-done); TD-7 newly gated the same day (self-service scope reversal folded it into TD-8's still-unmocked form).
 
 ---
 
@@ -154,12 +154,12 @@ acli jira workitem search --jql "project = TD AND statusCategory != Done ORDER B
 
 | Story | Blocked? | Reason |
 |---|---|---|
-| TD-7 | BLOCKED | Needs a product decision on the chart-of-accounts loading mechanism (`story.md` §Status) |
+| TD-7 | **Resolved 2026-07-12** | Was: needs a product decision on the loading mechanism. Now: self-service, a form section inside TD-8's onboarding flow (`SRS/06-normalizer.md`, `mvp-scope.md` EPIC-TD-02). Content-wise unblocked; still mockup-gated via TD-8 per §5. |
 | TD-13 | BLOCKED | Needs a real sample of the Memory export TXT format (delimiter, field order, encoding) before it can be estimated or built |
-| TD-15 | BLOCKED | Depends on TD-7 (§3) AND on `06-normalizer.md`'s own undefined mapping-rule mechanism — a spec gap on top of the story edge |
+| TD-15 | BLOCKED | Depends on TD-7 (§3, content now resolved but TD-7 itself not yet dev-done) AND on `06-normalizer.md`'s own undefined mapping-rule mechanism (which field of the input TXT resolves "Nombre de Impuesto") — a spec gap on top of the story edge |
 | TD-17 | BLOCKED | Needs DGI's minimum/range validation rules for the 2181 form, pending in both `07-validator.md` and `Tax-rules/2181/validations.md` |
-| TD-22 | BLOCKED | 0% domain content specified — `Tax-rules/2181/mapping.md` has no confirmed rules yet |
-| TD-23 | BLOCKED | 0% domain content specified — `Tax-rules/2181/formulas.md`: "Ninguna fórmula de cálculo fue confirmada todavía" |
+| TD-22 | BLOCKED | 0% domain content specified in `Tax-rules/2181/mapping.md` itself — note: the underlying CODIGOIVA→cuenta→tasa→rubro-PADI mapping *is* now known (confirmed 2026-07-12, saved to engram topic `domain/parser-codigoiva-mapping`) but not yet transcribed into the tax-rules spec files; re-check this blocker once that write-up happens |
+| TD-23 | BLOCKED | 0% domain content specified — `Tax-rules/2181/formulas.md`: "Ninguna fórmula de cálculo fue confirmada todavía". Same caveat as TD-22 — the amount-resolution logic (read `IVA` or `Total` per line, never calculate) is known but not yet written into this file |
 | TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-12, TD-16, TD-18, TD-20 | Not blocked (content-wise) | No `BLOCKED` status found in their synced `story.md`. Several of these are still mockup-gated per §5 — that is a separate axis, check §5 before starting. |
 
 **Edge-mapping TODO**:

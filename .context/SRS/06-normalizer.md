@@ -1,6 +1,6 @@
 # 06 — Normalizer
 
-> Estado: **pendiente**. Depende de `05-parser.md` (formato de entrada no confirmado aún).
+> Estado: **carga self-service confirmada** (2026-07-12); mecanismo exacto de mapeo campo→"Nombre de Impuesto" todavía pendiente (ver `05-parser.md`, campos ya confirmados).
 
 ## Responsabilidad
 
@@ -8,7 +8,8 @@ Mapea cuenta contable (del TXT de Memory) → concepto fiscal, usando una config
 
 ## Confirmado
 
-- La **UI de autoconfiguración del plan de cuentas** (que el propio contador cargue/edite el mapeo desde la app) queda **fuera del alcance del MVP**. Se contempla para el futuro — el dato debe seguir siendo configurable por empresa a nivel de modelo (ver `ADR-0001`), aunque en el MVP la carga inicial pueda resolverse de forma manual/asistida (mecanismo exacto aún sin definir).
+- **Revertido 2026-07-12**: la carga del plan de cuentas **SÍ es self-service** en el MVP — el propio contador la completa como parte del flujo de alta de una empresa nueva (US 1.3 / TD-8, ver `mvp-scope.md` EPIC-TD-02). Decisión anterior (carga fuera de alcance de autoconfiguración) queda revertida; no hay UI separada de "autoconfiguración" post-alta — se carga una vez, al momento de crear la empresa, dentro del mismo flujo de "Agregar nueva empresa".
+- El dato sigue siendo configurable por empresa a nivel de modelo (ver `ADR-0001`) — no es un mapeo global fijo.
 
 ## Confirmado (parcial)
 
@@ -16,7 +17,6 @@ Mapea cuenta contable (del TXT de Memory) → concepto fiscal, usando una config
 
 ## Qué falta confirmar
 
-- Cómo se carga el plan de cuentas de una empresa en el MVP, si no hay UI de autoconfiguración (¿carga manual del equipo, import de un archivo, planilla?).
 - Con qué campo(s) del TXT de entrada (ver `05-parser.md`) se determina el "Nombre de Impuesto" antes de buscarlo en esta tabla — **pendiente, lo investiga el contador**.
 - Qué pasa si una cuenta no tiene mapeo definido (¿error, línea ignorada, cola de revisión manual? — ver también `07-validator.md` sobre mensajes de error con guía clara).
 

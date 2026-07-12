@@ -3,7 +3,7 @@
 **Jira Key:** [TD-8](https://lk-tudeclaracion.atlassian.net/browse/TD-8)
 **Epic:** [TD-2](https://lk-tudeclaracion.atlassian.net/browse/TD-2) (Accountant Identity & Tenancy)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** En curso
 **Priority:** Medium
 **Story Points:** -
 
@@ -47,7 +47,7 @@ As Rosana Ferreira, I want to add a new client company to my account, so that I 
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 12/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** mathias Kantor
 
