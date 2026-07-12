@@ -42,6 +42,10 @@ Render **no tiene integración automática con Supabase** (a diferencia de Verce
 | Cold starts                     | Prácticamente nulos (serverless warm)      | Free tier: sí, tras inactividad (~30-60s)           |
 | Preview deployments por PR      | Incluidos en el plan gratuito              | Requiere plan pago (Preview Environments)           |
 
+## Estado actual
+
+Deploy confirmado en `https://tudeclaracion-staging.onrender.com` (verificado 2026-07-08 — `/login` responde 200 con el HTML renderizado). Registrado como `environments.staging` en `.agents/project.yaml`.
+
 ## Volver a Vercel cuando se recupere la cuenta
 
 Supabase es independiente del hosting del frontend — no hay migración de datos. Alcanza con: (1) reconectar el repo en Vercel, (2) recrear las env vars ahí (o restaurar la integración automática), (3) actualizar `NEXT_PUBLIC_APP_URL`. Esta carpeta queda como referencia si en algún momento hay que volver a usar Render.
