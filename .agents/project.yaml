@@ -32,7 +32,7 @@ issue_tracker:
   atlassian_url: null # TODO: fill per project — Atlassian instance base URL (e.g. https://company.atlassian.net). The acli `--site` slug is derived from this (strip `https://`); no separate ATLASSIAN_SITE variable.
 
 testing:
-  default_env: null # TODO: fill per project — Default working environment — must match a key under `environments:` (e.g. staging)
+  default_env: staging
 
 # Git workflow for THIS project — the SOURCE OF TRUTH read by the git-flow-master skill
 # before any git/gh operation. Ships `null` (template): on the first git intent git-flow-master
@@ -84,10 +84,10 @@ external_consumers:
 # For explicit cross-env references use {{environments.<env>.<var>}} (e.g. {{environments.local.web_url}}).
 environments:
   local:
-    web_url: null # TODO: fill per project — Frontend URL for local env (e.g. http://localhost:3000)
-    api_url: null # TODO: fill per project — API base URL for local env (e.g. http://localhost:3000/api)
-    db_project_ref: null # TODO: fill per project — Supabase project ref for local (e.g. czuusjchqpgvanvbdrnz — visible in your Supabase dashboard URL)
+    web_url: http://localhost:3000
+    api_url: http://localhost:3000/api
+    db_project_ref: kqrleobwemscldkfissh
   staging:
-    web_url: null # TODO: fill per project — Frontend URL for staging env (e.g. https://staging.myproject.com)
-    api_url: null # TODO: fill per project — API base URL for staging env (e.g. https://api-staging.myproject.com)
-    db_project_ref: null # TODO: fill per project — Supabase project ref for staging (e.g. czuusjchqpgvanvbdrnz — visible in your Supabase dashboard URL)
+    web_url: https://tudeclaracion-staging.onrender.com
+    api_url: https://tudeclaracion-staging.onrender.com/api
+    db_project_ref: kqrleobwemscldkfissh
