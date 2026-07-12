@@ -7,7 +7,7 @@ services:
     name: tudeclaracion-staging
     runtime: node
     plan: free
-    branch: main
+    branch: staging
     buildCommand: bun install && bun run build
     startCommand: bun run start
     envVars:
