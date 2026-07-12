@@ -1,6 +1,6 @@
 # ADR-0002 — Auth email delivery via Supabase Send Email Hook + Resend
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-12
 - **Deciders:** Usuario (product owner de tuDeclaracion.com)
 - **Tags:** authentication, email, cross-cutting-invariant, infrastructure
