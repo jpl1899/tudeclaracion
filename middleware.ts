@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { supabasePublishableKey, supabaseUrl } from '@/infrastructure/supabase/env';
 
 const PROTECTED_ROUTES = ['/empresas', '/dashboard'];
-const AUTH_ROUTES = ['/login'];
+const AUTH_ROUTES = ['/login', '/signup'];
 
 /**
  * Refreshes the Supabase session on every request and enforces route access:
