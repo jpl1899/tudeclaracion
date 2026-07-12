@@ -30,6 +30,8 @@
     "skills:registry:check": "bun scripts/build-skill-registry.ts --check",
     "skills:registry": "bun scripts/build-skill-registry.ts",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "types:check": "tsc --noEmit",
     "up": "bun cli/update-boilerplate.ts",
     "vars:check": "bun scripts/lint-vars.ts",
@@ -70,7 +72,8 @@
     "prettier": "^3.7.4",
     "tailwindcss": "3",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
