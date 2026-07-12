@@ -14,6 +14,7 @@ Toda historia de usuario con interfaz debe citar su pantalla en el mapa §8 **an
 | Acceso (login) | mockup listo, sin código | falta pantalla de "recuperar acceso" (el link existe, no tiene destino) |
 | Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta en sí sigue sin mockear (ver §4.4) |
 | Dashboard / Panel principal | mockup listo, requiere ajuste | el wizard real de "Iniciar nueva declaración" (US 3.x) NO está mockeado — el botón del prototipo solo dispara un `alert()`; falta agregar el indicador/link de empresa activa en el sidebar (ver §5, D2) |
+| Crear cuenta (signup) | mockup listo, sin código | generado just-in-time para TD-4 vía brief (`references/screen-design-brief.md`), Open Design — ver §4.5 |
 
 ## §2 — Frozen design contract
 
@@ -85,6 +86,22 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
   - [ ] Responsive: layout pasa a 1 columna bajo 980px (observado).
   - [ ] CTA primario deshabilitado hasta que haya una empresa seleccionada (ya materializado — accesibilidad de estado).
 
+### 4.5 — Crear cuenta (signup)
+
+- **Slug**: `signup`
+- **Ruta esperada**: `/signup` (pública, pre-login)
+- **Propósito**: alta de cuenta self-service para un contador, sin intervención de administrador.
+- **Provenance**: `.context/designs/tudeclaracion/signup-screen/signup-2.html`, generado en Open Design (mismo proyecto que login/dashboard/company-select) a partir de `.context/designs/tudeclaracion/signup-screen/BRIEF.md` (brief just-in-time, modo FOLLOW-UP, disparado por el gate de `/sprint-development` en TD-4).
+- **Nota de nombre de archivo**: el `BRIEF.md` pedía el slug exacto `signup`; el archivo devuelto se llama `signup-2.html`. Se mapea igual — contenido corresponde a la pantalla pedida — pero queda registrado por si se necesita renombrar para consistencia con el resto del batch (`login.html`, `dashboard.html`).
+- **Consistencia de tokens**: el mockup usa la misma paleta OKLCH (`--accent: oklch(45% 0.13 252)`, `--bg`, `--border`, etc.) ya establecida en `login.html` — sin tokens nuevos, coherente con el resto del batch.
+- **Historias de usuario**: TD-4 / US 1.1 (crear cuenta) — primaria, ahora cubierta.
+- **Contenido observado**: layout 2 columnas (panel de intro con contexto + formulario), selector de estado de demo (Vacío / Contraseña débil / Correo duplicado / Verificación pendiente), checklist de requisitos de contraseña con indicadores en vivo (longitud, mayúscula, minúscula, dígito), mensaje de error específico para correo duplicado, panel de éxito que bloquea el formulario y explica que el acceso queda pendiente de verificación por correo, link a login para quien ya tiene cuenta.
+- **Checklist de fidelidad**:
+  - [ ] Los 4 estados del AC están cubiertos: vacío, contraseña débil (con motivo explícito), correo duplicado (con mensaje específico, sin crear cuenta), verificación pendiente post-submit.
+  - [ ] Objetivos táctiles ≥48px (mockup usa 52px, coherente con login/company-select).
+  - [ ] Labels de formulario siempre visibles (coherente con NFR-02/03, mismo patrón que `login.html`).
+  - [ ] Responsive: layout pasa a 1 columna bajo 860px (observado en el mockup).
+
 | # | Pantalla | Divergencia | Ratificada por | Razón |
 |---|---|---|---|---|
 | D1 | Login | Nota original "¿Primera vez? Contactá al administrador del estudio" sugería que el alta de cuenta (US 1.1) podría NO ser self-service | **Ratificado 2026-07-05** | Usuario confirmó que el alta de cuenta ES self-service, tal como asume `mvp-scope.md`. El mockup estaba desactualizado — corregido a "¿Primera vez? Creá tu cuenta". No requiere cambios en PRD/SRS. |
@@ -94,7 +111,7 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 
 | Historia | Pantalla primaria | Notas |
 |---|---|---|
-| US 1.1 — crear cuenta | — | Sin mockup; self-service confirmado (D1 resuelto) |
+| US 1.1 — crear cuenta | `signup` | Mockup listo — ver §4.5 |
 | US 1.2 — iniciar sesión | `login` | — |
 | US 1.3 — alta de empresas/clientes | `company-select` (entry point) | Card "Agregar nueva empresa" abre la puerta; el formulario/flujo de alta todavía no está mockeado — ver §4.4 |
 | US 1.4 — recuperar contraseña | — | Link existe en `login`, pantalla destino sin mockear |
