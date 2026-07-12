@@ -12,7 +12,8 @@ Toda historia de usuario con interfaz debe citar su pantalla en el mapa §8 **an
 |---|---|---|
 | Portada (landing) | mockup listo, sin código | — |
 | Acceso (login) | mockup listo, sin código | link "Recuperar acceso" ahora tiene destino — ver §4.6 |
-| Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta en sí sigue sin mockear (ver §4.4) |
+| Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta (TD-8, ahora incluye TD-7) ya tiene mockup — ver §4.4, §4.7 |
+| Agregar nueva empresa (TD-8 + TD-7) | mockup recibido, build diverge del mockup (ver D4) | combina alta de empresa (RUT/nombre) + mapeo fijo de 5 cuentas contables (self-service, revertido 2026-07-12) — ver §4.7 |
 | Dashboard / Panel principal | mockup listo, requiere ajuste | el wizard real de "Iniciar nueva declaración" (US 3.x) NO está mockeado — el botón del prototipo solo dispara un `alert()`; falta agregar el indicador/link de empresa activa en el sidebar (ver §5, D2) |
 | Crear cuenta (signup) | mockup listo, sin código | generado just-in-time para TD-4 vía brief (`references/screen-design-brief.md`), Open Design — ver §4.5 |
 | Recuperar acceso (forgot/reset password) | mockup recibido, build diverge del mockup (ver D3) | generado just-in-time para TD-9; el mockup trae tokens y composición nuevos no coherentes con el resto del batch — build real usa el shell/tokens ya vivos, mockup solo aporta estados/copy — ver §4.6, §5 D3 |
@@ -119,11 +120,29 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
   - [ ] Objetivos táctiles ≥48px, labels siempre visibles — mismo estándar que el resto del batch.
   - [ ] Los 3 escenarios del AC cubiertos: solicitud enviada, reset con token válido, token vencido/inválido con opción de reintentar.
 
+### 4.7 — Agregar nueva empresa (TD-8 + TD-7)
+
+- **Slug**: `company-onboarding`
+- **Ruta esperada**: `/empresas/nueva` (autenticado, sin empresa activa todavía — se llega desde la card "Agregar nueva empresa" en `company-select`)
+- **Propósito**: alta de una empresa cliente self-service (RUT + nombre) y, en el mismo flujo, carga del mapeo inicial de cuentas contables a conceptos fiscales (self-service, revertido 2026-07-12 — ver `SRS/06-normalizer.md`).
+- **Provenance**: `.context/designs/tudeclaracion/company-onboarding/company-onboarding-2.html`, generado en Open Design a partir de `.context/designs/tudeclaracion/company-onboarding/BRIEF.md` (brief just-in-time, disparado por el gate de `/sprint-development` en TD-8/TD-7). Ver §5 D4 — el build real diverge del mockup en tokens/composición (chrome de sidebar tipo dashboard), no en flujo/estados/contenido.
+- **Historias de usuario**: TD-8 / US 1.3 (alta de empresa) — primaria. TD-7 / US 2.2 (plan de cuentas) — plegada en el mismo flujo.
+- **Contenido tomado del mockup (estados/copy/estructura, no tokens ni chrome)**:
+  - Parte A — datos de empresa: RUT + nombre, validación de campos requeridos, error específico de RUT duplicado.
+  - Parte B — mapa de cuentas: **catálogo fijo de 5 filas** (IVA Compras 10%/22%, IVA Ventas 10%/22%, Compra Exenta 0% — coincide con el catálogo `CODIGOIVA` confirmado en la sesión de dominio del parser), cada fila con tipo+tasa fijos como etiqueta y un solo campo editable (número de cuenta contable). Las 5 son requeridas.
+  - Panel de éxito: confirma creación + resumen (mapa 5/5 completo, próximo paso sugerido).
+- **Checklist de fidelidad**:
+  - [ ] Construido con el shell ya vivo de `/empresas` (card centrada, sin sidebar) — NO con el chrome de sidebar tipo dashboard del mockup, que no existe todavía en esta parte del flujo (ver D4).
+  - [ ] Tokens reales (`DESIGN.md`, `#08569A`), no la paleta del mockup.
+  - [ ] Las 5 filas del mapa de cuentas son fijas (tipo/tasa/rubro PADI no editables) — solo el número de cuenta es input.
+  - [ ] Los 3 escenarios de TD-8 cubiertos: alta exitosa, RUT duplicado, campos requeridos.
+
 | # | Pantalla | Divergencia | Ratificada por | Razón |
 |---|---|---|---|---|
 | D1 | Login | Nota original "¿Primera vez? Contactá al administrador del estudio" sugería que el alta de cuenta (US 1.1) podría NO ser self-service | **Ratificado 2026-07-05** | Usuario confirmó que el alta de cuenta ES self-service, tal como asume `mvp-scope.md`. El mockup estaba desactualizado — corregido a "¿Primera vez? Creá tu cuenta". No requiere cambios en PRD/SRS. |
 | D2 | Dashboard | No hay selector/alta de empresa visible (US 1.3, US 2.1) | **Ratificado 2026-07-05** | Usuario definió el flujo: tras el login se muestra un listado de empresas (pantalla nueva, `company-select`, §4.4); al elegir una, redirige al `dashboard` scoped a esa empresa. El dashboard suma un indicador/link de empresa activa en el sidebar para volver al listado y cambiar de empresa. Falta mockear `company-select` y ajustar `dashboard.html` (ver checklist §4.3). |
 | D3 | Recuperar acceso (forgot/reset password) | El mockup recibido para TD-9 trae tokens propios (`--primary: #1E40AF` vs. el `#08569A` congelado en `DESIGN.md`) y una composición nueva (panel de "trust" con badge eyebrow + 3 tarjetas con ícono) ausente en el resto del batch. Además, las reglas de fortaleza de contraseña del demo JS del mockup (mínimo 8 caracteres, sin Ü) no coinciden con `src/lib/validation/password-rules.ts` (mínimo 10, con Ü), ya construido y testeado para `signup`. | **Ratificado 2026-07-12** | Usuario confirmó construir con Live-UI-First: reutilizar el shell de 2 columnas y los componentes ya vivos (`login`/`signup`), tomando del mockup solo los estados/flujo/copy (panel "revisá tu correo" con próximos pasos, panel de link vencido con CTA de reenvío, campo de confirmar contraseña) — nunca los tokens ni la regla de contraseña del mockup, que sigue siempre `password-rules.ts`. |
+| D4 | Agregar nueva empresa (TD-8 + TD-7) | El mockup recibido trae, otra vez, tokens propios (`--primary: #1E40AF`) distintos del `#08569A` congelado, y además un chrome completo de sidebar tipo dashboard (nav Inicio/Empresas/Declaraciones/Ayuda, header con usuario) que no existe todavía en `/empresas` (hoy es una card centrada sin sidebar) ni coincide 1:1 con el sidebar ya construido en `src/app/dashboard/page.tsx` (paleta e iconografía distintas). | **Ratificado 2026-07-12 (mismo patrón que D3)** | Build real usa el shell simple ya vivo de `/empresas` (sin sidebar) — introducir el chrome del mockup sería construir un patrón de navegación nuevo, no establecido, en un punto del flujo (pre-selección de empresa) donde todavía no aplica un "sidebar de dashboard". Se toma del mockup solo el contenido del formulario (Parte A + Parte B) y los estados (éxito, RUT duplicado, campos requeridos). |
 
 ## §8 — US → Screen map
 
@@ -131,10 +150,10 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 |---|---|---|
 | US 1.1 — crear cuenta | `signup` | Mockup listo — ver §4.5 |
 | US 1.2 — iniciar sesión | `login` | — |
-| US 1.3 — alta de empresas/clientes | `company-select` (entry point) | Card "Agregar nueva empresa" abre la puerta; el formulario/flujo de alta todavía no está mockeado — ver §4.4 |
+| US 1.3 — alta de empresas/clientes | `company-onboarding` | Mockup listo — ver §4.7 |
 | US 1.4 — recuperar contraseña | `forgot-password` / `reset-password` | Mockup recibido, build diverge en tokens (ratificado) — ver §4.6, §5 D3 |
 | US 2.1 — seleccionar empresa activa | `company-select` | Mockup listo — ver §4.4 |
-| US 2.2 — plan de cuentas cargado | — | Sin mockup (fuera de MVP como UI self-service, ver `SRS/06-normalizer.md`) |
+| US 2.2 — plan de cuentas cargado | `company-onboarding` | **Revertido 2026-07-12** — ahora self-service, plegado en el flujo de alta de empresa (TD-8) — ver §4.7 |
 | US 3.1 — subir TXT | `dashboard` | Solo el CTA de entrada; el wizard de carga en sí no está mockeado |
 | US 3.2 — interpretación automática | — | Sin superficie propia (proceso transparente) |
 | US 3.3 — confirmación de carga | — | Sin mockup |
