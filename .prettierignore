@@ -108,3 +108,13 @@ docs/mcp/
 # checkout. Prettier (which honors only .prettierignore, not .git metadata)
 # would otherwise recurse into it and flag formatting on files we don't own here.
 .claude/worktrees/
+
+# ===========================================
+# Supabase CLI local scratch state - generated, gitignored (supabase/.gitignore)
+# ===========================================
+# `supabase link` / `supabase functions deploy` write machine-generated JSON
+# under supabase/.temp/ and supabase/.branches/. Already gitignored, but
+# Prettier honors only .prettierignore, so without this glob format:check
+# fails on files that were never committed in the first place.
+supabase/.temp/
+supabase/.branches/

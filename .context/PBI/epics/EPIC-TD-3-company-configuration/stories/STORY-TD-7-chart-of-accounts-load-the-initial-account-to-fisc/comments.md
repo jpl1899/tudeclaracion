@@ -40,5 +40,19 @@ Feature: Chart-of-accounts mapping available to the Normalizer
 
 ---
 
+### Juan Leites - 12/7/2026, 17:11:28
+
+## Scope decision reversed (2026-07-12)
+
+The self-service chart-of-accounts UI was originally called out as explicitly out of MVP scope (mvp-scope.md, one of the 3 headline product decisions). User reversed this: the chart-of-accounts-to-fiscal-concept mapping IS self-service in the MVP after all, completed by the accountant as part of the company-onboarding flow (US 1.3 / TD-8's 'Agregar nueva empresa' — currently a placeholder alert() in src/app/empresas/empresas-client.tsx).
+
+Practical placement in the flow: once, right when a new company is created (TD-8), before that company's first file upload. Not a recurring step.
+
+Updated: .context/PRD/mvp-scope.md (removed from Out of Scope, US 2.2 updated), .context/SRS/06-normalizer.md (Confirmado section).
+
+This unblocks TD-7 -- no longer needs a separate product decision on the loading mechanism, since it is now: a form, inside TD-8's company-creation flow.
+
+---
+
 
 _Synced from Jira by sync-jira-issues_

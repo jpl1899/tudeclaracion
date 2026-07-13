@@ -54,7 +54,7 @@ This story cannot be estimated or built until that decision is made. It exists i
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 12/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** mathias Kantor
 

@@ -38,6 +38,10 @@
     "ms-playwright.playwright", // Playwright - Testing E2E
     "postman.postman-for-vscode", // Postman - API testing (usado por postman.settings.*)
     // =====================
+    // Supabase Edge Functions (Deno runtime, scoped via deno.enablePaths)
+    // =====================
+    "denoland.vscode-deno", // Deno - LSP para supabase/functions/**
+    // =====================
     // Markdown & Documentation
     // =====================
     "yzhang.markdown-all-in-one", // Markdown All in One - Herramientas para Markdown

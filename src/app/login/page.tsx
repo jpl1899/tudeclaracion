@@ -11,9 +11,7 @@ import { createClient } from '@/infrastructure/supabase/client';
  * Acceso (login) — .context/design/master-design-plan.md §4.2, mockup en
  * .context/designs/tudeclaracion/mvp-core-screens/login.html
  *
- * Wired to real Supabase Auth (signInWithPassword). Self-service signup
- * (US 1.1) has no dedicated page yet in this repo — the "Creá tu cuenta"
- * link stays a placeholder anchor until that story is built.
+ * Wired to real Supabase Auth (signInWithPassword).
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -111,7 +109,7 @@ export default function LoginPage() {
               <input type="checkbox" className="h-4 w-4 rounded border-border" />
               Mantener sesión iniciada
             </label>
-            <a href="#" className="text-sm font-semibold text-primary hover:underline">
+            <a href="/forgot-password" className="text-sm font-semibold text-primary hover:underline">
               Recuperar acceso
             </a>
           </div>
@@ -123,7 +121,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground">
             ¿Primera vez?
             {' '}
-            <a href="#" className="font-semibold text-primary hover:underline">
+            <a href="/signup" className="font-semibold text-primary hover:underline">
               Creá tu cuenta
             </a>
             .

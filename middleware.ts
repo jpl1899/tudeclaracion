@@ -4,7 +4,10 @@ import { NextResponse } from 'next/server';
 import { supabasePublishableKey, supabaseUrl } from '@/infrastructure/supabase/env';
 
 const PROTECTED_ROUTES = ['/empresas', '/dashboard'];
-const AUTH_ROUTES = ['/login'];
+// /reset-password is intentionally excluded — a user lands there via a
+// fresh recovery session (established by /auth/confirm), and redirecting
+// them away as "already authenticated" would break that flow.
+const AUTH_ROUTES = ['/login', '/signup', '/forgot-password'];
 
 /**
  * Refreshes the Supabase session on every request and enforces route access:
