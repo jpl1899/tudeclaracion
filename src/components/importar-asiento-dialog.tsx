@@ -55,13 +55,23 @@ export function ImportarAsientoDialog({
     seleccionarArchivo(event.dataTransfer.files[0]);
   }
 
+  function resetEstado() {
+    setArchivo(null);
+    setArchivoInvalido(false);
+    setArrastrando(false);
+  }
+
   function handleClose(nextOpen: boolean) {
     if (!nextOpen) {
-      setArchivo(null);
-      setArchivoInvalido(false);
-      setArrastrando(false);
+      resetEstado();
     }
     onOpenChange(nextOpen);
+  }
+
+  function handleImportar() {
+    if (!archivo) { return; }
+    onImportar(archivo);
+    resetEstado();
   }
 
   return (
@@ -118,11 +128,7 @@ export function ImportarAsientoDialog({
           <Button type="button" variant="outline" onClick={() => handleClose(false)}>
             Cancelar
           </Button>
-          <Button
-            type="button"
-            disabled={!puedeImportar}
-            onClick={() => archivo && onImportar(archivo)}
-          >
+          <Button type="button" disabled={!puedeImportar} onClick={handleImportar}>
             Importar
           </Button>
         </DialogFooter>
