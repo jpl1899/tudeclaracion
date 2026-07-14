@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,8 +15,9 @@ import { Card } from '@/components/ui/card';
  * en /empresas (gap D2, ratificado 2026-07-05): agrega un indicador de
  * empresa activa en el sidebar (ausente del mockup original, checklist §4.3)
  * y filtra "Actividad reciente" a esa única empresa. El wizard real de
- * "Iniciar nueva declaración" (US 3.x) no está mockeado todavía — el botón
- * dispara el mismo placeholder que en el prototipo original.
+ * "Iniciar nueva declaración" (US 3.x) no está mockeado — "Importar asiento"
+ * (TD-11) es un build spec-only ratificado en master-design-plan.md §5 D5;
+ * el resto del wizard (parseo/carga real, TD-12/TD-13) sigue sin mockup.
  */
 const EMPRESA_ACTIVA = 'Estudio Rivera';
 
@@ -31,7 +33,7 @@ const badgeVariant: Record<'Validado' | 'Generado', 'success' | 'warning'> = {
 };
 
 export default function DashboardPage() {
-  const [wizardPending, setWizardPending] = useState(false);
+  const [importarAbierto, setImportarAbierto] = useState(false);
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
@@ -99,19 +101,13 @@ export default function DashboardPage() {
               un mismo flujo.
             </p>
             <div className="mt-2 flex flex-wrap gap-3">
-              <Button size="lg" className="h-[52px]" onClick={() => setWizardPending(true)}>
+              <Button size="lg" className="h-[52px]" onClick={() => setImportarAbierto(true)}>
                 Iniciar nueva declaración
               </Button>
               <Button variant="outline" size="lg" className="h-[52px]">
                 Ver instructivo
               </Button>
             </div>
-            {wizardPending && (
-              <p className="rounded-md border border-primary/20 bg-accent px-4 py-3 text-sm text-accent-foreground">
-                Siguiente paso: el flujo de carga del TXT (US 3.x) todavía no está mockeado — ver
-                .context/design/master-design-plan.md §1.
-              </p>
-            )}
           </article>
 
           <Card className="grid content-start gap-3 p-6">
@@ -163,6 +159,13 @@ export default function DashboardPage() {
           </table>
         </Card>
       </main>
+
+      <ImportarAsientoDialog
+        open={importarAbierto}
+        onOpenChange={setImportarAbierto}
+        empresaActiva={EMPRESA_ACTIVA}
+        onImportar={() => setImportarAbierto(false)}
+      />
     </div>
   );
 }

@@ -31,6 +31,7 @@
     "packages/*/node_modules",
     "packages/*/dist",
     ".next",
-    "supabase/functions"
+    "supabase/functions",
+    "tudeclaracion-qa"
   ]
 }

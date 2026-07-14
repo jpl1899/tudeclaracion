@@ -51,6 +51,11 @@ export default antfu({
     // supabase/config.toml is generated/rewritten by the `supabase` CLI —
     // formatting is CLI-owned, same rationale as docs/mcp/** above.
     'supabase/config.toml',
+    // tudeclaracion-qa/ is a separate boilerplate project nested in this repo
+    // checkout, with its own tsconfig/path aliases (@openapi, @TestFixture,
+    // etc.) that don't resolve against this project's config — same rationale
+    // as the .claude/skills/** and .agents/skills/** ignores above.
+    'tudeclaracion-qa/**',
   ],
 
   // Custom rules

@@ -56,6 +56,14 @@ Thumbs.db
 .books/
 
 # ===========================================
+# Nested sister project - not this project's formatting scope
+# ===========================================
+# tudeclaracion-qa/ is a separate boilerplate project checked out inside this
+# repo's working tree, with its own Prettier/ESLint/tsconfig. Same rationale
+# as the tsconfig.json / eslint.config.js exclusions.
+tudeclaracion-qa/
+
+# ===========================================
 # Skill directories - never format
 # ===========================================
 # Skills (T1 in .claude/skills/, T3/T4 community in .agents/skills/) ship as-is.
