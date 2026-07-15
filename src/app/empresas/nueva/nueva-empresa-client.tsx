@@ -1,38 +1,70 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
+import { cn } from '@/lib/utils';
 
 /**
  * Agregar nueva empresa — .context/design/master-design-plan.md §4.7,
  * mockup en .context/designs/tudeclaracion/company-onboarding/company-onboarding-2.html
  *
- * Built against /empresas' existing simple shell, not the mockup's
- * dashboard-sidebar chrome — see §5 D4 for the ratified divergence.
+ * Rediseño TD-7/TD-24 (2026-07-15): reemplaza el mapa fijo de 5 cuentas por
+ * dos tablas libres — ver engram topic tax-rules/2181-amount-resolution-two-paths
+ * y SRS/06-normalizer.md / SRS/08-tax-engine.md para la regla de negocio
+ * (Camino 1: Código IVA > 0 vía "formato rápido" / Camino 2: cuenta contable
+ * para asientos abiertos, incluye Compras exentas).
  *
- * Parte A (TD-8): datos de la empresa. Parte B (TD-7, self-service desde el
- * 2026-07-12): mapa fijo de 5 cuentas contables. Ambas partes se guardan en
- * una sola transacción vía el RPC crear_empresa_con_plan_cuentas.
+ * Parte A (TD-8): datos de la empresa. Parte B (TD-7/TD-24): plan de cuentas
+ * libre. Ambas partes se guardan en una sola transacción vía el RPC
+ * crear_empresa_con_plan_cuentas.
  */
-export interface CodigoIva {
-  id: number
-  tipo: string
-  tasa: number
-  rubro_padi: string
-  descripcion: string
-}
+const CODIGOS_PADI_IVA = [
+  { value: '505', label: '505 — IVA compras tasa básica' },
+  { value: '506', label: '506 — IVA compras tasa mínima' },
+  { value: '502', label: '502 — IVA ventas tasa básica' },
+  { value: '503', label: '503 — IVA ventas tasa mínima' },
+] as const;
+
+const CODIGO_PADI_EXENTA = '504';
 
 const DUPLICATE_RUT_ERROR_CODE = '23505';
 
-export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
+const selectClassName = cn(
+  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+);
+
+interface IvaRow {
+  key: string
+  codigoIva: string
+  cuentaContable: string
+  codigoPadi: string
+}
+
+interface ExentaRow {
+  key: string
+  cuentaContable: string
+}
+
+function emptyIvaRow(key: string): IvaRow {
+  return { key, codigoIva: '', cuentaContable: '', codigoPadi: CODIGOS_PADI_IVA[0].value };
+}
+
+function emptyExentaRow(key: string): ExentaRow {
+  return { key, cuentaContable: '' };
+}
+
+export function NuevaEmpresaClient() {
   const router = useRouter();
+  const nextKey = useRef(2);
+
   const [rut, setRut] = useState('');
   const [nombre, setNombre] = useState('');
-  const [cuentas, setCuentas] = useState<Record<number, string>>({});
+  const [ivaRows, setIvaRows] = useState<IvaRow[]>([emptyIvaRow('iva-0')]);
+  const [exentaRows, setExentaRows] = useState<ExentaRow[]>([emptyExentaRow('exenta-0')]);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateRutError, setDuplicateRutError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,12 +75,34 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
     setDuplicateRutError(false);
   }
 
-  function handleCuentaChange(codigoIvaId: number, value: string) {
-    setCuentas(prev => ({ ...prev, [codigoIvaId]: value }));
+  function addIvaRow() {
+    setIvaRows(prev => [...prev, emptyIvaRow(`iva-${nextKey.current++}`)]);
+  }
+
+  function removeIvaRow(key: string) {
+    setIvaRows(prev => prev.filter(r => r.key !== key));
+  }
+
+  function updateIvaRow(key: string, patch: Partial<IvaRow>) {
+    setIvaRows(prev => prev.map(r => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  function addExentaRow() {
+    setExentaRows(prev => [...prev, emptyExentaRow(`exenta-${nextKey.current++}`)]);
+  }
+
+  function removeExentaRow(key: string) {
+    setExentaRows(prev => prev.filter(r => r.key !== key));
+  }
+
+  function updateExentaRow(key: string, patch: Partial<ExentaRow>) {
+    setExentaRows(prev => prev.map(r => (r.key === key ? { ...r, ...patch } : r)));
   }
 
   const missingRut = submitted && rut.trim() === '';
   const missingNombre = submitted && nombre.trim() === '';
+  const ivaRowsIncomplete = ivaRows.some(r => r.codigoIva.trim() === '' || r.cuentaContable.trim() === '');
+  const exentaRowsIncomplete = exentaRows.some(r => r.cuentaContable.trim() === '');
 
   async function handleSubmit() {
     setSubmitted(true);
@@ -56,9 +110,8 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
 
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
-    const cuentasCompletas = catalogo.every(c => (cuentas[c.id] ?? '').trim() !== '');
 
-    if (trimmedRut === '' || trimmedNombre === '' || !cuentasCompletas) {
+    if (trimmedRut === '' || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
       return;
     }
 
@@ -67,7 +120,17 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
     const { error } = await supabase.rpc('crear_empresa_con_plan_cuentas', {
       p_rut: trimmedRut,
       p_nombre: trimmedNombre,
-      p_cuentas: catalogo.map(c => ({ codigo_iva: c.id, numero_cuenta: cuentas[c.id]?.trim() })),
+      p_cuentas: [
+        ...ivaRows.map(r => ({
+          cuenta_contable: r.cuentaContable.trim(),
+          codigo_padi: r.codigoPadi,
+          codigo_iva: Number(r.codigoIva),
+        })),
+        ...exentaRows.map(r => ({
+          cuenta_contable: r.cuentaContable.trim(),
+          codigo_padi: CODIGO_PADI_EXENTA,
+        })),
+      ],
     });
     setIsSubmitting(false);
 
@@ -86,7 +149,8 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
   function handleAddAnother() {
     setRut('');
     setNombre('');
-    setCuentas({});
+    setIvaRows([emptyIvaRow(`iva-${nextKey.current++}`)]);
+    setExentaRows([emptyExentaRow(`exenta-${nextKey.current++}`)]);
     setSubmitted(false);
     setDuplicateRutError(false);
     setSuccess(null);
@@ -115,12 +179,11 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
 
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-b from-background to-white p-6">
-      <div className="grid w-full max-w-[720px] gap-6 rounded-lg border border-border bg-card p-10 shadow-md">
+      <div className="grid w-full max-w-[760px] gap-6 rounded-lg border border-border bg-card p-10 shadow-md">
         <div>
           <strong className="text-lg">Agregá la empresa y dejá listo el vínculo con los conceptos fiscales del 2181.</strong>
           <p className="mt-2 text-muted-foreground">
-            Primero registrás RUT y nombre. En el mismo flujo completás las cinco cuentas contables base que usa
-            el motor para resolver compras, ventas y exentos sin carga manual posterior.
+            Registrás RUT y nombre. En el mismo flujo completás cómo el motor va a leer el archivo que subís cada mes.
           </p>
         </div>
 
@@ -133,12 +196,15 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
               id="rut"
               type="text"
               inputMode="numeric"
+              maxLength={12}
               placeholder="214589630019"
               className="h-[52px]"
               value={rut}
               onChange={e => handleRutChange(e.target.value)}
             />
-            <p className="text-sm text-muted-foreground">Ingresá el RUT completo, sin puntos ni guiones.</p>
+            <p className="text-sm text-muted-foreground">
+              12 dígitos, sin puntos ni guiones. Es el valor que va primero en cada línea de PADI.
+            </p>
             {missingRut && (
               <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
                 El RUT es obligatorio.
@@ -172,46 +238,128 @@ export function NuevaEmpresaClient({ catalogo }: { catalogo: CodigoIva[] }) {
         <section className="grid gap-4">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Mapa inicial de cuentas contables
+              Códigos de formato rápido de IVA
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Estas cinco relaciones conectan tu plan de cuentas con las líneas fiscales estándar que usa DGI
-              en el 2181.
+              Para cada código de IVA que uses en Memory (0 a 9), indicá a qué cuenta contable corresponde y a qué
+              línea de PADI se declara.
             </p>
           </div>
 
           <div className="grid gap-3">
-            {catalogo.map((c) => {
-              const missingCuenta = submitted && (cuentas[c.id] ?? '').trim() === '';
+            {ivaRows.map((row) => {
+              const rowIncomplete = submitted && (row.codigoIva.trim() === '' || row.cuentaContable.trim() === '');
               return (
-                <div key={c.id} className="grid grid-cols-[auto_1fr] items-start gap-4 rounded-md border border-border bg-muted/40 p-4">
-                  <div className="grid gap-0.5">
-                    <strong className="text-sm">{c.tipo}</strong>
-                    <span className="text-xs text-muted-foreground">
-                      {c.tasa}
-                      % — concepto fiscal fijo
-                    </span>
+                <div key={row.key} className="grid grid-cols-[96px_1fr_1fr_auto] items-end gap-3 rounded-md border border-border bg-muted/40 p-4">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`codigo-iva-${row.key}`}>Código IVA</Label>
+                    <Input
+                      id={`codigo-iva-${row.key}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      className="h-[52px]"
+                      value={row.codigoIva}
+                      onChange={e => updateIvaRow(row.key, { codigoIva: e.target.value.replace(/\D/g, '') })}
+                    />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor={`cuenta-${c.id}`}>Número de cuenta contable</Label>
+                    <Label htmlFor={`cuenta-iva-${row.key}`}>Cuenta contable</Label>
                     <Input
-                      id={`cuenta-${c.id}`}
+                      id={`cuenta-iva-${row.key}`}
                       type="text"
                       inputMode="numeric"
                       className="h-[52px]"
-                      value={cuentas[c.id] ?? ''}
-                      onChange={e => handleCuentaChange(c.id, e.target.value)}
+                      value={row.cuentaContable}
+                      onChange={e => updateIvaRow(row.key, { cuentaContable: e.target.value })}
                     />
-                    {missingCuenta && (
-                      <span className="text-sm text-error-text">
-                        {`Completá la cuenta para ${c.tipo} ${c.tasa}%.`}
-                      </span>
-                    )}
                   </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`padi-iva-${row.key}`}>Código PADI</Label>
+                    <select
+                      id={`padi-iva-${row.key}`}
+                      className={cn(selectClassName, 'h-[52px]')}
+                      value={row.codigoPadi}
+                      onChange={e => updateIvaRow(row.key, { codigoPadi: e.target.value })}
+                    >
+                      {CODIGOS_PADI_IVA.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-[52px]"
+                    onClick={() => removeIvaRow(row.key)}
+                    disabled={ivaRows.length === 1}
+                    aria-label="Quitar código de IVA"
+                  >
+                    ×
+                  </Button>
+                  {rowIncomplete && (
+                    <span className="col-span-full text-sm text-error-text">Completá los tres campos de esta fila.</span>
+                  )}
                 </div>
               );
             })}
           </div>
+
+          <Button type="button" variant="outline" size="sm" className="justify-self-start" onClick={addIvaRow}>
+            + Agregar código de IVA
+          </Button>
+        </section>
+
+        <section className="grid gap-4">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Compras Exentas
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Cargá acá todas las cuentas contables que representen bienes o servicios exentos (ej. gasoil, leche,
+              carne). Todas se declaran juntas en la línea 504.
+            </p>
+          </div>
+
+          <div className="grid gap-3">
+            {exentaRows.map((row) => {
+              const rowIncomplete = submitted && row.cuentaContable.trim() === '';
+              return (
+                <div key={row.key} className="grid grid-cols-[1fr_auto] items-end gap-3 rounded-md border border-border bg-muted/40 p-4">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`cuenta-exenta-${row.key}`}>Cuenta contable</Label>
+                    <Input
+                      id={`cuenta-exenta-${row.key}`}
+                      type="text"
+                      inputMode="numeric"
+                      className="h-[52px]"
+                      value={row.cuentaContable}
+                      onChange={e => updateExentaRow(row.key, { cuentaContable: e.target.value })}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-[52px]"
+                    onClick={() => removeExentaRow(row.key)}
+                    disabled={exentaRows.length === 1}
+                    aria-label="Quitar cuenta exenta"
+                  >
+                    ×
+                  </Button>
+                  {rowIncomplete && (
+                    <span className="col-span-full text-sm text-error-text">Completá la cuenta contable.</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <Button type="button" variant="outline" size="sm" className="justify-self-start" onClick={addExentaRow}>
+            + Agregar cuenta exenta
+          </Button>
         </section>
 
         <div className="flex flex-wrap gap-3">
