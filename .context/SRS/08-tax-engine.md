@@ -1,6 +1,6 @@
 # 08 — Tax Engine
 
-> Estado: **pendiente**. Este es el activo diferencial del producto (ver `business-model.md`, `ADR-0001`) y todavía no tiene reglas concretas documentadas — solo el catálogo de códigos de salida (`09-forms.md`) y el formato de salida (`10-exporter.md`). Posición en el pipeline: corre **después** del Validator y **antes** del Form Builder (2181) — ver `01-system-overview.md`. El motor en sí debe ser genérico (multi-formulario); solo las reglas cargadas por formulario son específicas (viven en `.context/tax-rules/`).
+> Estado: **reglas núcleo confirmadas para el 2181** (2026-07-14). Este es el activo diferencial del producto (ver `business-model.md`, `ADR-0001`). Posición en el pipeline: corre **después** del Validator y **antes** del Form Builder (2181) — ver `01-system-overview.md`. El motor en sí debe ser genérico (multi-formulario); solo las reglas cargadas por formulario son específicas (viven en `.context/tax-rules/`).
 
 > Las reglas tributarias en sí (mapeo concepto fiscal → casilla, fórmulas de cálculo, validaciones DGI) viven en `.context/tax-rules/2181/` (`mapping.md`, `formulas.md`, `validations.md`) — este archivo documenta el módulo técnico que las ejecuta, no el contenido de las reglas.
 
@@ -10,13 +10,16 @@ Aplica las reglas tributarias del formulario 2181: dado un **concepto fiscal** (
 
 ## Confirmado hasta ahora
 
-- El motor debe ser **configurable** (reglas en DB, no hardcodeadas) — decisión de Constitution.
+- El motor debe ser **configurable** (reglas en DB, no hardcodeadas para el mapeo por-empresa) — decisión de Constitution.
 - El importe declarado en una línea es "IVA o total de compra exenta" según el código PADI de esa línea (confirmado por el usuario al explicar `10-exporter.md`).
+- **Regla de importe por asiento — dos caminos combinados** (2026-07-14, corregido y ampliado 2026-07-15): se evalúa el campo `Código IVA` del TXT (ver `05-parser.md`) para distinguir cómo viene resuelto el asiento:
+  - **Camino 1 — formato rápido**: `Código IVA > 0` → el dígito ya identifica el "Nombre de Impuesto" vía la configuración de la empresa (paso 1 de la resolución de código PADI, más abajo) → el importe se toma directo de la columna **IVA**.
+  - **Camino 2 — asiento abierto**: `Código IVA = 0` → **no se asume automáticamente compra exenta**. Se busca la cuenta contable implicada en el asiento — campo **Debe** si el `Libro` es de compra (`C`/`E`), campo **Haber** si es de venta (`V`/`I`) (ver `05-parser.md`) — y se resuelve esa cuenta contra el plan de cuentas de la empresa (`06-normalizer.md`). Esa cuenta puede resolver a **cualquier** Nombre de Impuesto (Compras exentas, IVA compras tasa básica, IVA ventas tasa mínima, etc.), no solo a Compras exentas — el caso "Compras exentas" es el más común pero no el único. El importe se toma de la columna **Total**.
+  - Precondición, ambos caminos: el `RUT` del asiento debe tener 12 dígitos para considerarse válido para el PADI.
+- **Agrupación** (2026-07-14): los asientos se consolidan por RUT — RUTs repetidos generan **una sola línea** en la declaración, sumando el importe (IVA o Total, según el camino) de todos sus asientos. No se generan múltiples líneas por el mismo tercero+código.
+- **Resolución del código PADI** (2026-07-14, ampliado 2026-07-15) — se resuelve en dos pasos, alimentados por cualquiera de los dos caminos de arriba —
+  1. Configuración por empresa (carga única, ver `06-normalizer.md`): el usuario asocia cada `Código IVA` (0-9) **y/o** cada cuenta contable (Debe/Haber) a un "Nombre de Impuesto" (ej. "IVA compras tasa básica", "Compras exentas"). Una empresa puede tener **varias cuentas contables distintas** resolviendo al mismo Nombre de Impuesto (no solo para Compras exentas).
+  2. Tabla de referencia **fija para todas las empresas** (no configurable por empresa, a diferencia del paso 1) que traduce "Nombre de Impuesto" → código PADI — catálogo completo para el 2181 en `09-forms.md`. **Confirmado 2026-07-14**: "fija" no significa hardcodeada en el código de la aplicación — debe implementarse como dato en DB, actualizable sin deploy (NFR-07), pensando en un **backoffice futuro** desde el que se pueda reconfigurar cualquier regla pasible de cambio (no solo esta tabla).
+- **Prioridad del campo Tipo (2026-07-14)**: el campo opcional `Tipo` (ver `05-parser.md`, campo 12) tiene **prioridad** sobre la cadena de resolución por Código IVA. Si `Tipo = 504`, el asiento se clasifica automáticamente como **compra exenta** (código PADI 504) sin pasar por la configuración de cuentas — se manda al PADI el `RUT` del asiento junto con el valor de la columna `Total`. **Confirmado 2026-07-15 — fuera de alcance definitivo**: los demás valores posibles de `Tipo` (`CIE`, `RES`, `DIF`, `APE` — cierre/resultado/diferencia de cambio/apertura de ejercicio) quedan **excluidos del alcance del motor**, no como pendiente a confirmar más adelante. El motor solo deriva código PADI para `Tipo = 504`; el resto de los valores alfabéticos no se procesa. `Tipo` nunca contiene `502`, `503`, `505`, `506`, `552` o `553` — esos códigos solo salen de la cadena Código IVA → configuración de empresa.
 
-## Pendiente de confirmar
-
-- Reglas concretas: qué concepto fiscal mapea a cada código PADI (502, 503, 504, 505, 506, 552, 553, y los que faltan — ver `09-forms.md`).
-- Cómo se calcula el importe exacto por línea (¿suma de IVA de los asientos de ese concepto en el período? ¿fórmula?).
-- Agrupación: el flujo general menciona "agrupación por RUT y línea" — confirmar si un mismo tercero+código puede generar más de una línea en la declaración o siempre se consolida en una sola.
-
-No fabricar reglas tributarias — este archivo se completa a medida que el usuario las provea.
+No fabricar reglas tributarias fuera de lo confirmado — este archivo se completa a medida que el usuario las provea.

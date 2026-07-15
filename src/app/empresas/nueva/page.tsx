@@ -3,9 +3,9 @@ import { createClient } from '@/infrastructure/supabase/server';
 import { NuevaEmpresaClient } from './nueva-empresa-client';
 
 /**
- * Server Component: fetches the codigo_iva reference catalog (see ADR-0001 —
- * "reglas en DB, no hardcodeadas") and hands it to the interactive client
- * component so the 5 fixed rows are never duplicated in frontend code.
+ * Server Component: solo verifica sesión. Desde el rediseño TD-7/TD-24
+ * (2026-07-15) ya no hay catálogo fijo que precargar — Código de IVA, cuenta
+ * contable y código PADI son datos libres que carga el usuario en el cliente.
  */
 export default async function NuevaEmpresaPage() {
   const supabase = await createClient();
@@ -15,14 +15,5 @@ export default async function NuevaEmpresaPage() {
     redirect('/login');
   }
 
-  const { data, error } = await supabase
-    .from('codigo_iva')
-    .select('id, tipo, tasa, rubro_padi, descripcion')
-    .order('id');
-
-  if (error) {
-    throw new Error(`No se pudo cargar el catálogo de IVA: ${error.message}`);
-  }
-
-  return <NuevaEmpresaClient catalogo={data} />;
+  return <NuevaEmpresaClient />;
 }
