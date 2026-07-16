@@ -4,6 +4,7 @@ const LIBRO_VALUES = ['C', 'V', 'E', 'I', 'P'] as const;
 const TIPO_VALUES = ['504', 'CIE', 'RES', 'DIF', 'APE'] as const;
 
 type Libro = (typeof LIBRO_VALUES)[number];
+type Tipo = (typeof TIPO_VALUES)[number];
 
 export interface AsientoLine {
   dia: number
@@ -17,7 +18,7 @@ export interface AsientoLine {
   iva: number
   cotizacion: number
   libro: Libro
-  tipo: string | null
+  tipo: Tipo | null
 }
 
 export interface ParseSuccess {
@@ -131,7 +132,7 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     iva,
     cotizacion,
     libro: libroRaw as Libro,
-    tipo,
+    tipo: tipo as Tipo | null,
   };
 }
 
