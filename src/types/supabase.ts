@@ -39,6 +39,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      asiento: {
+        Row: {
+          codigo_iva: number
+          concepto: string
+          cotizacion: number
+          created_at: string
+          debe: string
+          dia: number
+          empresa_id: string
+          haber: string
+          id: string
+          iva: number
+          libro: string
+          moneda: number
+          rut: string
+          tipo: string | null
+          total: number
+        }
+        Insert: {
+          codigo_iva: number
+          concepto: string
+          cotizacion: number
+          created_at?: string
+          debe: string
+          dia: number
+          empresa_id: string
+          haber: string
+          id?: string
+          iva: number
+          libro: string
+          moneda: number
+          rut: string
+          tipo?: string | null
+          total: number
+        }
+        Update: {
+          codigo_iva?: number
+          concepto?: string
+          cotizacion?: number
+          created_at?: string
+          debe?: string
+          dia?: number
+          empresa_id?: string
+          haber?: string
+          id?: string
+          iva?: number
+          libro?: string
+          moneda?: number
+          rut?: string
+          tipo?: string | null
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asiento_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cuenta: {
         Row: {
           created_at: string
@@ -249,6 +311,10 @@ export type Database = {
       crear_empresa_con_plan_cuentas: {
         Args: { p_cuentas: Json; p_nombre: string; p_rut: string }
         Returns: string
+      }
+      insertar_asientos: {
+        Args: { p_empresa_id: string; p_lineas: Json }
+        Returns: undefined
       }
     }
     Enums: {
