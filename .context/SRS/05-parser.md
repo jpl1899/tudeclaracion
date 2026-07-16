@@ -39,9 +39,13 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 
 - Agregar botón **"Importar asiento"** (archivo `.txt`) en `/dashboard`, luego de presionar "Iniciar nueva declaración" (contador, 2026-07-14).
 
+## Manejo de líneas inválidas/malformadas — confirmado 2026-07-16
+
+Si una línea trae un dato inválido en cualquier campo, la interpretación del archivo completo se aborta — no se generan datos parciales. Rosana ve un mensaje que identifica el número de línea y el campo de origen del dato inválido, mostrado con el patrón genérico `alert.error` de `design-system.html` (mismo patrón que usarán TD-16/17/18) — no requiere mockup dedicado.
+
 ## Qué falta confirmar
 
-- Encoding, manejo de líneas inválidas/malformadas.
+- Encoding del TXT de entrada.
 - Volumen esperado (líneas por archivo mensual) — relevante para performance del parser.
 
 No fabricar el resto de esta spec — se completa a medida que el usuario la provea.
