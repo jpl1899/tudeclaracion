@@ -3,7 +3,7 @@
 **Jira Key:** [TD-13](https://lk-tudeclaracion.atlassian.net/browse/TD-13)
 **Epic:** [TD-10](https://lk-tudeclaracion.atlassian.net/browse/TD-10) (File Upload & Parsing)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -42,9 +42,9 @@ Resolved. `SRS/05-parser.md` now documents the confirmed input format (delimiter
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 16/7/2026
+- **Updated:** 17/7/2026
 - **Reporter:** Juan Leites
-- **Assignee:** Juan Leites
+- **Assignee:** Unassigned
 
 ---
 
