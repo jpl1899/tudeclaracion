@@ -11,6 +11,7 @@ Documentación del **conocimiento tributario de dominio** para la DJ 2181 (DGI U
 | `casillas.md` | Catálogo de casillas/códigos PADI del 2181 y su significado fiscal | Parcial (códigos conocidos, sin descripción aún) |
 | `formulas.md` | Cómo se calcula el importe de cada casilla | Pendiente |
 | `validations.md` | Reglas de validación tributarias (mínimos DGI, condiciones de aplicación) | Pendiente |
-| `mapping.md` | Mapeo concepto fiscal → casilla (la regla de negocio central del tax engine) | Pendiente |
+| `mapping.md` | Mapeo concepto fiscal → casilla (la regla de negocio central del tax engine) | Parcial (casilla 505 confirmada) |
+| `test-cases-structural.md` | Casos de prueba de formato (Parser/Validator/Exporter) para el MVP | Casos estructurales confirmados, casos tributarios pendientes |
 
 Ver también `../common/` para reglas transversales (IVA, RUT, fechas) que no son específicas del 2181 y aplicarán a futuros formularios.

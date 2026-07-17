@@ -54,5 +54,34 @@ This unblocks TD-7 -- no longer needs a separate product decision on the loading
 
 ---
 
+### Juan Leites - 12/7/2026, 17:49:35
+
+Implementation plan authored on TD-8 (see that ticket's comment) -- both stories share the same screen/DB schema, TD-7's content is fully covered by TD-8's plan (codigo*iva catalog seed + plan*cuentas table + the atomic RPC). No separate plan needed for TD-7 itself; it will move alongside TD-8's staging deploy.
+
+---
+
+### Juan Leites - 12/7/2026, 18:52:38
+
+Covered by TD-8's PR: https://github.com/jpl1899/tudeclaracion/pull/4 -- plan_cuentas table + atomic RPC + the chart-of-accounts section of the onboarding form. See TD-8 for full details.
+
+---
+
+### Juan Leites - 15/7/2026, 8:08:48
+
+## Rediseño implementado 2026-07-15 — reemplaza el modelo de esta historia
+
+Se validó con el contador (ficha de validación + boceto interactivo) que el modelo original (catálogo fijo de 5 filas, una cuenta por concepto) no soportaba las reglas reales del negocio. Se reemplazó por completo:
+
+- ***Antes***: `codigo*iva` catálogo fijo (5 filas) + `plan*cuentas` con `unique(empresa*id, codigo*iva)` — una sola cuenta contable por concepto fiscal.
+- ***Ahora***: dos tablas libres en `/empresas/nueva` —
+
+Migración: `supabase/migrations/20260715120000*rediseno*plan_cuentas.sql`. Frontend reescrito en `nueva-empresa-client.tsx`. Probado end-to-end (login + alta de empresa + verificación en base) contra staging.
+
+***Esto reemplaza el alcance original de TD-24*** ("agregar columna Código de IVA") — ya no aplica como historia separada, quedó absorbida en este rediseño.
+
+Pendiente: pasar de nuevo por QA — el flujo cambió de raíz respecto a lo que ya se había probado.
+
+---
+
 
 _Synced from Jira by sync-jira-issues_

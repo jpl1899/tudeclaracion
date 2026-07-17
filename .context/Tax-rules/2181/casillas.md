@@ -9,7 +9,7 @@
 | 502 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |
 | 503 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |
 | 504 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |
-| 505 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |
+| 505 | Compra tasa básica | Suma del IVA de los asientos del mismo RUT cuyo Libro/Código IVA correspondan a compra tasa básica | Confirmado (parcial) — 2026-07-13 |
 | 506 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |
 | 552 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |
 | 553 | *(pendiente)* | ver `formulas.md` | Código confirmado, sin descripción |

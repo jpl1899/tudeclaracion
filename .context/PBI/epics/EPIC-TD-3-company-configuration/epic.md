@@ -28,7 +28,9 @@ This epic sits between tenancy (EPIC 1 — accountant accounts that manage multi
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
 | [TD-5](https://lk-tudeclaracion.atlassian.net/browse/TD-5) | Company Selection | Choose the active client company before uploading a file | - | Medium | Finalizada |
-| [TD-7](https://lk-tudeclaracion.atlassian.net/browse/TD-7) | Chart of Accounts | Load the initial account-to-fiscal-concept mapping for a company | - | Medium | Tareas por hacer |
+| [TD-7](https://lk-tudeclaracion.atlassian.net/browse/TD-7) | Chart of Accounts | Load the initial account-to-fiscal-concept mapping for a company | - | Medium | Ready for QA-on QA |
+| [TD-24](https://lk-tudeclaracion.atlassian.net/browse/TD-24) | Chart of Accounts | Tag each account with its VAT code (Código de IVA) | - | Medium | Planificación |
+| [TD-25](https://lk-tudeclaracion.atlassian.net/browse/TD-25) | Chart of Accounts | Support the full 7-code PADI catalog (552/553) | - | Medium | Tareas por hacer |
 
 ---
 

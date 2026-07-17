@@ -10,21 +10,18 @@
 
 ### Catálogo de líneas / códigos PADI
 
-> **Lista incompleta** — el usuario confirmó explícitamente que faltan códigos por documentar. No fabricar los que faltan; agregarlos a medida que se confirmen.
+> **Confirmado 2026-07-14**: catálogo completo para el 2181 (7 códigos). El contador aclaró que a futuro se agregarán más códigos para otras declaraciones juradas (fuera del 2181) — no fabricar esos hasta que se confirmen; no bloquean el 2181.
 
-| Código | Concepto | Estado |
-|--------|----------|--------|
-| 502    | *(pendiente descripción)* | Confirmado (existe) |
-| 503    | *(pendiente descripción)* | Confirmado (existe) |
-| 504    | *(pendiente descripción)* | Confirmado (existe) |
-| 505    | *(pendiente descripción)* | Confirmado (existe) |
-| 506    | *(pendiente descripción)* | Confirmado (existe) |
-| 552    | *(pendiente descripción)* | Confirmado (existe) |
-| 553    | *(pendiente descripción)* | Confirmado (existe) |
-| —      | *(faltan códigos)* | **PENDIENTE — usuario dejó constancia de que la lista no está completa** |
+| Código | Concepto |
+|--------|----------|
+| 502    | IVA ventas tasa básica |
+| 503    | IVA ventas tasa mínima |
+| 504    | Compras exentas |
+| 505    | IVA compras tasa básica |
+| 506    | IVA compras tasa mínima |
+| 552    | Venta por cuenta ajena tasa básica (por cuenta y orden) |
+| 553    | Venta por cuenta ajena tasa mínima |
 
 ### Pendiente
 
-- Descripción/concepto fiscal de cada código.
-- Códigos faltantes del catálogo completo del 2181.
-- Regla de negocio asociada a cada código (ver `08-tax-engine.md`).
+- Códigos PADI adicionales para otras declaraciones juradas (fuera de alcance MVP, no fabricar hasta que se confirmen).
