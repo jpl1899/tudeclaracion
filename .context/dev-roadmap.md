@@ -67,7 +67,7 @@ TD-2 ──> TD-3 ──> TD-10 ──> TD-14 ──> TD-21 ──> TD-19
 ```
 TD-7  ──> TD-15       (hard — Normalizer needs the chart-of-accounts mapping; both merged to staging)
 TD-15 ──> TD-23       (hard, NEW — TD-23 (rescoped) consolidates TD-15's per-line resolution output; merged to staging)
-TD-23 ──> TD-20       (hard — PADI Export needs TD-23's consolidated declaration lines; TD-23 merged, ready for TD-20 to start)
+TD-23 ──> TD-20       (hard — PADI Export needs TD-23's consolidated declaration lines; TD-20 merged to staging)
 ```
 
 Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs here — mockup-gating lives in §5.
@@ -97,7 +97,7 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 | 1 | 13 | TD-4, TD-5, TD-6, TD-7, TD-8, TD-9, TD-11, TD-12, TD-13, TD-16, TD-17, TD-18, TD-25 | No inbound §3 edges. **Dependency-graph readiness ≠ Jira readiness**: cross-check §6 before picking any of these up — TD-17 is still content-BLOCKED, TD-25 is blocked on a product decision. TD-7 and TD-13 are dev-done/in-review, kept here for graph completeness (nothing downstream of them in Sprint 1 needs re-picking). |
 | 2 | 1 | TD-15 (dep: TD-7) | Merged (PR #8 → staging, 2026-07-17) — cleared. |
 | 3 | 1 | TD-23 (dep: TD-15) | Merged (PR #9 → staging, 2026-07-17) — cleared. |
-| 4 | 1 | TD-20 (dep: TD-23) | Its full TD-15→TD-23 chain is now merged — ready to plan. |
+| 4 | 1 | TD-20 (dep: TD-23) | Merged (PR #10 → staging, 2026-07-17) — cleared. Last story in the 2181 core pipeline; epic TD-19 is now dev-done. |
 
 ## Cycle warnings
 - None. 0 cycles detected.
@@ -169,7 +169,7 @@ acli jira workitem search --jql "project = TD AND statusCategory != Done ORDER B
 | TD-23 | **Merged 2026-07-17** | Consolidates TD-15's resolved output by RUT+código PADI, sums importe. Stage 3 reviewed (0 BLOCKER/MAJOR, 2 findings deferred — see `review.md`), PR #9 merged to staging, deployed to Render (live). Jira `Ready for QA-on QA`, unassigned (no shift-left QA phase yet). Consolidation rule documented as non-configurable (no variable value today) in `Tax-rules/2181/mapping.md`. |
 | TD-24 | **Closed 2026-07-16** | Confirmed superseded by TD-7's rework — its own 15/7 Jira comment already said so, never actioned until this pass. No residual gap found (unlike TD-22's 552/553 case) — see §3. No longer tracked as a pick-up candidate. |
 | TD-25 | **New — blocked on a product decision** | Whether the 2181's 552/553 PADI codes (Venta por cuenta ajena) are in MVP scope at all. `plan_cuentas`' check constraint only allows 5 of the 7 codes today. See `STORY-TD-25/comments.md`. |
-| TD-20 | **Unblocked 2026-07-17** | Its full dependency chain (TD-7 → TD-15 → TD-23) is now merged to staging, AND its mockup gate is now cleared (D6, `declaracion-detalle`). Ready to plan via `/sprint-development`. |
+| TD-20 | **Merged 2026-07-17** | Introduced ADR-0003 (`declaracion` entity + período). PR #10 merged to staging, deployed to Render (live). Stage 3 reviewed (1 MAJOR + 2 MINOR fixed, 2 MINOR deferred — see `review.md`). Jira `Ready for QA-on QA`, unassigned. **This closes out the 2181 core pipeline** (TD-13 → TD-15 → TD-23 → TD-20), all merged to staging. |
 | TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-12, TD-16, TD-18 | Not blocked (content-wise) | Unchanged this run. Several are still mockup-gated per §5 — separate axis. |
 
 **Edge-mapping TODO**:
