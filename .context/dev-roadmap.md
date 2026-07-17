@@ -120,7 +120,7 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 | TD-9 — Password Recovery | `forgot-password` / `reset-password` | Mockup landed via JIT brief, built and merged to staging | not gated (dev-done) |
 | TD-7 — Chart of Accounts | `company-select` (via TD-8's onboarding form) | Data model + RPC shipped (PR #7, merged); UI section still lives inside TD-8's unmocked form | 🔒 gated (via TD-8) |
 | TD-11 — File Upload | `dashboard` (entry point only) | Placeholder `alert()`; real upload wizard unmocked | 🔒 gated |
-| TD-12 — Confirm Upload | — | No mockup for this state | 🔒 gated |
+| TD-12 — Confirm Upload | `dashboard` | Same "Importar asiento" modal as TD-11 (D5) — spec-only confirmation state ratified as D7 | not gated (spec-only, D7) |
 | TD-13 — Automatic Interpretation | — | Transparent backend, no UI surface | not gated — merged to staging (PR #8) |
 | TD-15 — Account Mapping | — | Transparent backend, no UI surface | not gated — merged to staging (PR #8) |
 | TD-16 — RUT Validation | — | Only a generic `alert.error` pattern exists; no full error-state screen | 🔒 gated |
@@ -132,7 +132,7 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 
 **TD-22 and TD-24 removed from this table** — both closed 2026-07-16, superseded by TD-15 (TD-22) and TD-7's rework (TD-24). Neither ever had a real UI surface of its own.
 
-**Mockup-gated total: 7** (TD-7, TD-8, TD-11, TD-12, TD-16, TD-17, TD-18; TD-20 cleared 2026-07-17 via D6; tentatively 8 if TD-25's UI need is confirmed).
+**Mockup-gated total: 6** (TD-7, TD-8, TD-16, TD-17, TD-18; TD-20 cleared 2026-07-17 via D6, TD-12 cleared 2026-07-17 via D7; tentatively 7 if TD-25's UI need is confirmed).
 
 ---
 
