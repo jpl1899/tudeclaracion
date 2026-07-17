@@ -127,12 +127,12 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 | TD-17 — Amount Validation | — | Same gap as TD-16 | 🔒 gated |
 | TD-18 — Error Guidance | — | Same gap as TD-16 | 🔒 gated |
 | TD-23 — Amount Calculation | — | Transparent backend, no UI surface (rescoped 2026-07-16, still no UI) | not gated — merged to staging (PR #9) |
-| TD-20 — PADI Export | — | No mockup of the "declaration ready to download" state | 🔒 gated |
+| TD-20 — PADI Export | `declaracion-detalle` | Mockup landed via JIT brief 2026-07-17, ratified as D6 (own tokens/chrome — build reuses `/dashboard`'s live sidebar shell) | not gated (mockup cleared) |
 | TD-25 — Support full 7-code PADI catalog (NEW) | `company-select` (via TD-8's onboarding form) | Likely needs new options in the same Código PADI selector inside TD-8's form (unconfirmed — TD-25 hasn't been planned yet) | 🔒 gated (via TD-8, tentative) |
 
 **TD-22 and TD-24 removed from this table** — both closed 2026-07-16, superseded by TD-15 (TD-22) and TD-7's rework (TD-24). Neither ever had a real UI surface of its own.
 
-**Mockup-gated total: 8** (TD-7, TD-8, TD-11, TD-12, TD-16, TD-17, TD-18, TD-20; tentatively 9 if TD-25's UI need is confirmed).
+**Mockup-gated total: 7** (TD-7, TD-8, TD-11, TD-12, TD-16, TD-17, TD-18; TD-20 cleared 2026-07-17 via D6; tentatively 8 if TD-25's UI need is confirmed).
 
 ---
 
@@ -169,7 +169,7 @@ acli jira workitem search --jql "project = TD AND statusCategory != Done ORDER B
 | TD-23 | **Merged 2026-07-17** | Consolidates TD-15's resolved output by RUT+código PADI, sums importe. Stage 3 reviewed (0 BLOCKER/MAJOR, 2 findings deferred — see `review.md`), PR #9 merged to staging, deployed to Render (live). Jira `Ready for QA-on QA`, unassigned (no shift-left QA phase yet). Consolidation rule documented as non-configurable (no variable value today) in `Tax-rules/2181/mapping.md`. |
 | TD-24 | **Closed 2026-07-16** | Confirmed superseded by TD-7's rework — its own 15/7 Jira comment already said so, never actioned until this pass. No residual gap found (unlike TD-22's 552/553 case) — see §3. No longer tracked as a pick-up candidate. |
 | TD-25 | **New — blocked on a product decision** | Whether the 2181's 552/553 PADI codes (Venta por cuenta ajena) are in MVP scope at all. `plan_cuentas`' check constraint only allows 5 of the 7 codes today. See `STORY-TD-25/comments.md`. |
-| TD-20 | **Unblocked 2026-07-17** | Its full dependency chain (TD-7 → TD-15 → TD-23) is now merged to staging. Not yet planned via `/sprint-development`. Still mockup-gated per §5 (no mockup of the "declaration ready to download" state). |
+| TD-20 | **Unblocked 2026-07-17** | Its full dependency chain (TD-7 → TD-15 → TD-23) is now merged to staging, AND its mockup gate is now cleared (D6, `declaracion-detalle`). Ready to plan via `/sprint-development`. |
 | TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-12, TD-16, TD-18 | Not blocked (content-wise) | Unchanged this run. Several are still mockup-gated per §5 — separate axis. |
 
 **Edge-mapping TODO**:

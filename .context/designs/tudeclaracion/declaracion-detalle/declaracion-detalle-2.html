@@ -1,0 +1,534 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tuDeclaracion - Detalle de declaración</title>
+  <style>
+    :root {
+      --bg: oklch(98.4% 0.004 248);
+      --surface: oklch(100% 0 0);
+      --surface-alt: oklch(97.2% 0.006 248);
+      --fg: oklch(32% 0.03 255);
+      --muted: oklch(55% 0.02 255);
+      --border: oklch(91% 0.01 248);
+      --accent: oklch(45% 0.13 252);
+      --success: oklch(62% 0.17 145);
+      --warning: oklch(76% 0.16 72);
+      --error: oklch(63% 0.22 27);
+      --radius: 12px;
+      --shadow-sm: 0 12px 28px color-mix(in oklab, black 8%, transparent);
+      --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--bg), white);
+      color: var(--fg);
+      font-family: var(--font);
+    }
+    button, input { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .shell {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      gap: 20px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+    }
+    .back,
+    .ghost-btn,
+    .primary-btn {
+      min-height: 52px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: var(--surface);
+      color: var(--fg);
+    }
+    .primary-btn {
+      background: var(--accent);
+      color: white;
+      border-color: transparent;
+      width: 100%;
+      cursor: pointer;
+    }
+    .primary-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .meta-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .meta-card,
+    .panel,
+    .detail-card,
+    .alert,
+    .file-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+    .meta-card,
+    .detail-card,
+    .file-card,
+    .panel {
+      padding: 18px;
+    }
+    .meta-card {
+      display: grid;
+      gap: 8px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--accent) 10%, white 90%);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      max-width: 12ch;
+    }
+    h2 {
+      margin: 0;
+      font-size: 1.45rem;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .lead,
+    .muted {
+      color: var(--muted);
+    }
+    .lead {
+      max-width: 64ch;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .panel {
+      display: grid;
+      gap: 18px;
+    }
+    .mono {
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .badge.success {
+      background: color-mix(in oklab, var(--success) 12%, white 88%);
+      color: var(--success);
+    }
+    .badge.warning {
+      background: color-mix(in oklab, var(--warning) 12%, white 88%);
+      color: oklch(45% 0.12 72);
+    }
+    .status-stack,
+    .file-stack,
+    .segment-group {
+      display: grid;
+      gap: 12px;
+    }
+    .status-hero {
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in oklab, var(--accent) 16%, white 84%);
+      background: color-mix(in oklab, var(--accent) 7%, white 93%);
+      display: grid;
+      gap: 10px;
+    }
+    .status-hero.warning {
+      border-color: color-mix(in oklab, var(--warning) 24%, white 76%);
+      background: color-mix(in oklab, var(--warning) 10%, white 90%);
+    }
+    .status-hero.success {
+      border-color: color-mix(in oklab, var(--success) 20%, white 80%);
+      background: color-mix(in oklab, var(--success) 10%, white 90%);
+    }
+    .status-hero.error {
+      border-color: color-mix(in oklab, var(--error) 22%, white 78%);
+      background: color-mix(in oklab, var(--error) 10%, white 90%);
+    }
+    .status-kicker {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .detail-card {
+      background: var(--surface-alt);
+      box-shadow: none;
+    }
+    .detail-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+    }
+    .alert {
+      display: none;
+      padding: 16px 18px;
+      gap: 8px;
+    }
+    .alert strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+    .alert.error {
+      border-color: color-mix(in oklab, var(--error) 22%, white 78%);
+      background: color-mix(in oklab, var(--error) 10%, white 90%);
+      color: var(--error);
+    }
+    .file-card {
+      display: grid;
+      gap: 14px;
+    }
+    .file-name {
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--fg);
+    }
+    .helper {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .segment-wrap {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .segment {
+      min-height: 40px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    .segment.active {
+      border-color: color-mix(in oklab, var(--accent) 16%, white 84%);
+      background: color-mix(in oklab, var(--accent) 10%, white 90%);
+      color: var(--accent);
+    }
+    @media (max-width: 1024px) {
+      .meta-strip,
+      .layout,
+      .detail-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      .shell {
+        width: calc(100% - 24px);
+      }
+      .meta-strip,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+      .topbar,
+      .row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">TD</div>
+        <div>
+          <div>tuDeclaracion</div>
+          <div class="muted" style="font-size:13px; letter-spacing:0.02em;">Detalle de declaración</div>
+        </div>
+      </div>
+      <a class="back" href="dashboard.html">Volver a declaraciones</a>
+    </header>
+
+    <section class="panel">
+      <div class="eyebrow">Actividad reciente &gt; detalle</div>
+      <div class="row">
+        <div>
+          <h1>Estado y descarga de declaración.</h1>
+          <p class="lead">Vista de seguimiento para una declaración 2181 ya creada. El contador distingue si sigue procesándose, si ya puede descargar el TXT PADI o si hubo errores que bloquean la generación.</p>
+        </div>
+        <div class="segment-group">
+          <span class="muted" style="font-size:14px; font-weight:600; letter-spacing:0.02em;">Estados de demostración</span>
+          <div class="segment-wrap" aria-label="Cambiar estado de declaración">
+            <button class="segment active" type="button" data-state="processing">Procesando</button>
+            <button class="segment" type="button" data-state="success">Generada</button>
+            <button class="segment" type="button" data-state="failed">Con errores</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="meta-strip" aria-label="Metadatos de la declaración">
+      <article class="meta-card">
+        <span class="muted">Empresa</span>
+        <strong>Estudio Rivera</strong>
+      </article>
+      <article class="meta-card">
+        <span class="muted">RUT declarante</span>
+        <strong class="mono">213456780012</strong>
+      </article>
+      <article class="meta-card">
+        <span class="muted">Declaración</span>
+        <strong>2181</strong>
+      </article>
+      <article class="meta-card">
+        <span class="muted">Período</span>
+        <strong class="mono">202506</strong>
+      </article>
+    </section>
+
+    <section class="layout">
+      <article class="panel status-stack">
+        <div class="row">
+          <div>
+            <h2>Resultado del procesamiento</h2>
+            <p class="muted" style="margin:8px 0 0;">La acción principal solo aparece cuando el archivo TXT compatible con PADI ya está listo para descargar.</p>
+          </div>
+          <span class="badge warning" id="statusBadge">En procesamiento</span>
+        </div>
+
+        <div class="status-hero warning" id="statusHero">
+          <div class="status-kicker" id="statusKicker">Procesamiento en curso</div>
+          <strong id="statusTitle">Estamos generando el archivo para este período.</strong>
+          <div id="statusBody">La declaración 2181 sigue en revisión automática. Mientras el proceso esté activo, la descarga no estará disponible para evitar archivos incompletos.</div>
+        </div>
+
+        <div class="alert error" id="errorAlert">
+          <div>
+            <strong>La declaración no pudo generarse.</strong>
+            Se detectaron validaciones pendientes en el archivo importado. Revisa los errores, corrige la información origen y vuelve a generar la declaración para este período.
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card">
+            <strong>Última actualización</strong>
+            <div class="muted">Hoy, 10:42</div>
+          </div>
+          <div class="detail-card">
+            <strong>Origen</strong>
+            <div class="muted">TXT exportado desde Memory</div>
+          </div>
+          <div class="detail-card">
+            <strong>Acceso a descarga</strong>
+            <div class="muted" id="downloadPolicy">Bloqueado hasta terminar proceso.</div>
+          </div>
+          <div class="detail-card">
+            <strong>Entrada desde dashboard</strong>
+            <div class="muted">Fila de Actividad reciente</div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="file-stack">
+        <article class="file-card">
+          <div>
+            <h2>Archivo PADI</h2>
+            <p class="helper" style="margin:8px 0 0;">Convención usada: tipo de declaración + RUT + período AAAAMM + extensión TXT.</p>
+          </div>
+
+          <div class="file-name mono" id="fileName">2181_213456780012_202506.txt</div>
+
+          <button class="primary-btn" id="downloadBtn" type="button" disabled>Descargar archivo PADI</button>
+
+          <a class="ghost-btn" href="dashboard.html">Volver al dashboard</a>
+
+          <div class="helper" id="sideHelper">Cuando el procesamiento finalice correctamente, esta acción quedará habilitada y descargará el archivo listo para importar en DGI.</div>
+        </article>
+
+        <article class="detail-card">
+          <strong>Siguiente paso esperado</strong>
+          <div class="muted" id="nextStep">Esperar fin de procesamiento y volver a esta vista para descargar.</div>
+        </article>
+
+        <article class="detail-card">
+          <strong>Observación operativa</strong>
+          <div class="muted">La presentación ante DGI se realiza fuera de tuDeclaracion. Esta pantalla cubre solo estado y descarga.</div>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var segments = Array.prototype.slice.call(document.querySelectorAll('.segment'));
+      var statusBadge = document.getElementById('statusBadge');
+      var statusHero = document.getElementById('statusHero');
+      var statusKicker = document.getElementById('statusKicker');
+      var statusTitle = document.getElementById('statusTitle');
+      var statusBody = document.getElementById('statusBody');
+      var errorAlert = document.getElementById('errorAlert');
+      var downloadBtn = document.getElementById('downloadBtn');
+      var downloadPolicy = document.getElementById('downloadPolicy');
+      var nextStep = document.getElementById('nextStep');
+      var sideHelper = document.getElementById('sideHelper');
+      var fileName = document.getElementById('fileName');
+
+      var states = {
+        processing: {
+          badgeText: 'En procesamiento',
+          badgeClass: 'badge warning',
+          heroClass: 'status-hero warning',
+          kicker: 'Procesamiento en curso',
+          title: 'Estamos generando el archivo para este período.',
+          body: 'La declaración 2181 sigue en revisión automática. Mientras el proceso esté activo, la descarga no estará disponible para evitar archivos incompletos.',
+          showError: false,
+          downloadEnabled: false,
+          downloadPolicy: 'Bloqueado hasta terminar proceso.',
+          nextStep: 'Esperar fin de procesamiento y volver a esta vista para descargar.',
+          sideHelper: 'Cuando el procesamiento finalice correctamente, esta acción quedará habilitada y descargará el archivo listo para importar en DGI.'
+        },
+        success: {
+          badgeText: 'Generado',
+          badgeClass: 'badge success',
+          heroClass: 'status-hero success',
+          kicker: 'Generación completada',
+          title: 'El archivo PADI ya está listo para descargar.',
+          body: 'La declaración 2181 terminó sin errores. Puedes descargar el TXT generado y usarlo en el proceso manual de presentación ante DGI.',
+          showError: false,
+          downloadEnabled: true,
+          downloadPolicy: 'Disponible para descarga.',
+          nextStep: 'Descargar el archivo y continuar la presentación fuera del sistema.',
+          sideHelper: 'El nombre de archivo sigue la convención acordada para que el estudio lo identifique rápido por declaración, RUT y período.'
+        },
+        failed: {
+          badgeText: 'Con errores',
+          badgeClass: 'badge warning',
+          heroClass: 'status-hero error',
+          kicker: 'Proceso detenido',
+          title: 'No se pudo completar la generación del archivo.',
+          body: 'La validación encontró inconsistencias que impiden crear un TXT válido. La descarga queda ausente hasta corregir el origen y volver a procesar.',
+          showError: true,
+          downloadEnabled: false,
+          downloadPolicy: 'No disponible por errores de validación.',
+          nextStep: 'Revisar errores de validación, corregir datos y relanzar generación.',
+          sideHelper: 'Este estado diferencia un problema real de una espera normal: aquí el archivo no va a aparecer hasta corregir la declaración.'
+        }
+      };
+
+      function setState(name) {
+        var state = states[name];
+        segments.forEach(function (segment) {
+          segment.classList.toggle('active', segment.getAttribute('data-state') === name);
+        });
+        statusBadge.className = state.badgeClass;
+        statusBadge.textContent = state.badgeText;
+        statusHero.className = state.heroClass;
+        statusKicker.textContent = state.kicker;
+        statusTitle.textContent = state.title;
+        statusBody.textContent = state.body;
+        errorAlert.style.display = state.showError ? 'grid' : 'none';
+        downloadBtn.disabled = !state.downloadEnabled;
+        downloadPolicy.textContent = state.downloadPolicy;
+        nextStep.textContent = state.nextStep;
+        sideHelper.textContent = state.sideHelper;
+        fileName.textContent = '2181_213456780012_202506.txt';
+      }
+
+      segments.forEach(function (segment) {
+        segment.addEventListener('click', function () {
+          setState(segment.getAttribute('data-state'));
+        });
+      });
+
+      downloadBtn.addEventListener('click', function () {
+        if (downloadBtn.disabled) return;
+        window.alert('Descarga iniciada: 2181_213456780012_202506.txt');
+      });
+
+      setState('processing');
+    })();
+  </script>
+</body>
+</html>
