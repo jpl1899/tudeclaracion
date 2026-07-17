@@ -10,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const ACCEPTED_EXTENSION = '.txt';
@@ -23,7 +25,7 @@ interface ImportarAsientoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   empresaActiva: string
-  onImportar: (file: File) => Promise<ImportarAsientoError | null>
+  onImportar: (file: File, periodo: string) => Promise<ImportarAsientoError | null>
 }
 
 function isArchivoValido(file: File) {
@@ -41,9 +43,10 @@ export function ImportarAsientoDialog({
   const [arrastrando, setArrastrando] = useState(false);
   const [importando, setImportando] = useState(false);
   const [error, setError] = useState<ImportarAsientoError | null>(null);
+  const [periodo, setPeriodo] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const puedeImportar = archivo !== null && empresaActiva.length > 0 && !importando;
+  const puedeImportar = archivo !== null && periodo.length === 7 && empresaActiva.length > 0 && !importando;
 
   function seleccionarArchivo(file: File | undefined) {
     if (!file) { return; }
@@ -68,6 +71,7 @@ export function ImportarAsientoDialog({
     setArrastrando(false);
     setImportando(false);
     setError(null);
+    setPeriodo('');
   }
 
   function handleClose(nextOpen: boolean) {
@@ -78,10 +82,10 @@ export function ImportarAsientoDialog({
   }
 
   async function handleImportar() {
-    if (!archivo) { return; }
+    if (!archivo || periodo.length !== 7) { return; }
     setError(null);
     setImportando(true);
-    const resultado = await onImportar(archivo);
+    const resultado = await onImportar(archivo, periodo.replace('-', ''));
     setImportando(false);
 
     if (resultado) {
@@ -104,6 +108,16 @@ export function ImportarAsientoDialog({
             .
           </DialogDescription>
         </DialogHeader>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="periodo">Período de la declaración</Label>
+          <Input
+            id="periodo"
+            type="month"
+            value={periodo}
+            onChange={event => setPeriodo(event.target.value)}
+          />
+        </div>
 
         <div
           onDragOver={(event) => {

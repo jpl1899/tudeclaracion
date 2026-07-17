@@ -21,26 +21,32 @@ import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
  * Supabase si el archivo es 100% válido — inserción atómica vía el RPC
  * insertar_asientos (ver supabase/migrations/20260716141500_*.sql).
  */
-const ACTIVIDAD_RECIENTE = [
-  { periodo: '202506', estado: 'Validado' as const, actualizado: 'Hace 12 min' },
-  { periodo: '202505', estado: 'Generado' as const, actualizado: 'Hace 3 días' },
-  { periodo: '202504', estado: 'Generado' as const, actualizado: 'Hace 1 mes' },
-];
-
-const badgeVariant: Record<'Validado' | 'Generado', 'success' | 'warning'> = {
-  Validado: 'success',
-  Generado: 'success',
+const badgeVariant: Record<string, 'success' | 'warning'> = {
+  abierta: 'warning',
+  generada: 'success',
 };
+
+const estadoLabel: Record<string, string> = {
+  abierta: 'Pendiente de generar',
+  generada: 'Generada',
+};
+
+interface DeclaracionResumen {
+  periodo: string
+  estado: string
+  updated_at: string
+}
 
 interface DashboardClientProps {
   empresaId: string
   empresaNombre: string
+  declaraciones: DeclaracionResumen[]
 }
 
-export function DashboardClient({ empresaId, empresaNombre }: DashboardClientProps) {
+export function DashboardClient({ empresaId, empresaNombre, declaraciones }: DashboardClientProps) {
   const [importarAbierto, setImportarAbierto] = useState(false);
 
-  async function handleImportar(file: File): Promise<ImportarAsientoError | null> {
+  async function handleImportar(file: File, periodo: string): Promise<ImportarAsientoError | null> {
     const contenido = await file.text();
     const resultado = parseAsientosTxt(contenido);
 
@@ -51,6 +57,7 @@ export function DashboardClient({ empresaId, empresaNombre }: DashboardClientPro
     const supabase = createClient();
     const { error } = await supabase.rpc('insertar_asientos', {
       p_empresa_id: empresaId,
+      p_periodo: periodo,
       p_lineas: resultado.lines as unknown as Json,
     });
 
@@ -171,16 +178,29 @@ export function DashboardClient({ empresaId, empresaNombre }: DashboardClientPro
               </tr>
             </thead>
             <tbody>
-              {ACTIVIDAD_RECIENTE.map(fila => (
+              {declaraciones.map(fila => (
                 <tr key={fila.periodo}>
                   <td className="border-b border-border p-3">2181</td>
-                  <td className="border-b border-border p-3 font-mono">{fila.periodo}</td>
-                  <td className="border-b border-border p-3">
-                    <Badge variant={badgeVariant[fila.estado]}>{fila.estado}</Badge>
+                  <td className="border-b border-border p-3 font-mono">
+                    <Link href={`/dashboard/declaraciones/${fila.periodo}`} className="text-primary hover:underline">
+                      {fila.periodo}
+                    </Link>
                   </td>
-                  <td className="border-b border-border p-3 text-muted-foreground">{fila.actualizado}</td>
+                  <td className="border-b border-border p-3">
+                    <Badge variant={badgeVariant[fila.estado] ?? 'warning'}>{estadoLabel[fila.estado] ?? fila.estado}</Badge>
+                  </td>
+                  <td className="border-b border-border p-3 text-muted-foreground">
+                    {new Date(fila.updated_at).toLocaleDateString('es-UY')}
+                  </td>
                 </tr>
               ))}
+              {declaraciones.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="border-b border-border p-3 text-center text-muted-foreground">
+                    Todavía no hay declaraciones para esta empresa.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </Card>
