@@ -3,7 +3,7 @@
 **Jira Key:** [TD-12](https://lk-tudeclaracion.atlassian.net/browse/TD-12)
 **Epic:** [TD-10](https://lk-tudeclaracion.atlassian.net/browse/TD-10) (File Upload & Parsing)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** En curso
 **Priority:** Medium
 **Story Points:** -
 
@@ -44,7 +44,7 @@ As Rosana Ferreira, I want clear confirmation that my file uploaded successfully
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 15/7/2026
+- **Updated:** 17/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 
