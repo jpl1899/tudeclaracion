@@ -65,7 +65,7 @@ TD-2 ──> TD-3 ──> TD-10 ──> TD-14 ──> TD-21 ──> TD-19
 **Still zero live-verified `issuelinks`** (re-checked this run — see notice above). Edges below are prose-cited, now cross-checked against this session's actual TD-13/TD-15/TD-22/TD-23 work, not just the 2026-07-07/09 baseline.
 
 ```
-TD-7  ──> TD-15       (hard — Normalizer needs the chart-of-accounts mapping; both now dev-done/in-review)
+TD-7  ──> TD-15       (hard — Normalizer needs the chart-of-accounts mapping; both merged to staging)
 TD-15 ──> TD-23       (hard, NEW — TD-23 (rescoped) consolidates TD-15's per-line resolution output)
 TD-23 ──> TD-20       (hard — PADI Export needs TD-23's consolidated declaration lines)
 ```
@@ -74,7 +74,7 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 
 | Blocker | Unblocks | Type | Reason | Citation |
 |---|---|---|---|---|
-| TD-7 | TD-15 | hard | Normalizer needs the resolved chart-of-accounts→PADI-code mapping to consume. **Resolved this session**: TD-7 merged (PR #7, Jira status `Ready for QA-on QA`); TD-15 implemented + reviewed + PR open (#8) | `STORY-TD-15/story.md` §"Status: Unblocked (2026-07-16)"; `supabase/migrations/20260715120000_rediseno_plan_cuentas.sql` |
+| TD-7 | TD-15 | hard | Normalizer needs the resolved chart-of-accounts→PADI-code mapping to consume. **Resolved**: TD-7 merged (PR #7, Jira status `Ready for QA-on QA`); TD-15 merged 2026-07-17 (PR #8 → staging, Jira `Ready for QA-on QA`) | `STORY-TD-15/story.md` §"Status: Unblocked (2026-07-16)"; `supabase/migrations/20260715120000_rediseno_plan_cuentas.sql` |
 | TD-15 | TD-23 | hard | **New edge, found this session.** TD-23 was rescoped 2026-07-16 to cover only RUT+código-PADI consolidation — it now directly consumes each line TD-15 resolves (`codigoPadi`, `importe`, `rut`), rather than independently deciding which amount column to read | `STORY-TD-23/comments.md` §"Alcance revisado 2026-07-16" |
 | TD-23 | TD-20 | hard | PADI Export needs the consolidated declaration lines (one per RUT+código, summed) before it can generate a file | `EPIC-TD-19/epic.md` (unchanged citation); reason updated to reflect TD-23's narrower rescoped output |
 
@@ -95,8 +95,8 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 | Execution Sprint | Parallel-safe count | Story keys | Notes |
 |---|---|---|---|
 | 1 | 13 | TD-4, TD-5, TD-6, TD-7, TD-8, TD-9, TD-11, TD-12, TD-13, TD-16, TD-17, TD-18, TD-25 | No inbound §3 edges. **Dependency-graph readiness ≠ Jira readiness**: cross-check §6 before picking any of these up — TD-17 is still content-BLOCKED, TD-25 is blocked on a product decision. TD-7 and TD-13 are dev-done/in-review, kept here for graph completeness (nothing downstream of them in Sprint 1 needs re-picking). |
-| 2 | 1 | TD-15 (dep: TD-7) | Dev-done/in-review (PR #8) — effectively cleared. |
-| 3 | 1 | TD-23 (dep: TD-15) | Rescoped 2026-07-16 (§6) — ready to plan once TD-15's PR merges. |
+| 2 | 1 | TD-15 (dep: TD-7) | Merged (PR #8 → staging, 2026-07-17) — cleared. |
+| 3 | 1 | TD-23 (dep: TD-15) | Rescoped 2026-07-16 (§6) — TD-15 merged 2026-07-17, ready to plan now. |
 | 4 | 1 | TD-20 (dep: TD-23) | Unchanged from before — waits on the full TD-15→TD-23 chain now, not TD-22. |
 
 ## Cycle warnings
@@ -121,8 +121,8 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 | TD-7 — Chart of Accounts | `company-select` (via TD-8's onboarding form) | Data model + RPC shipped (PR #7, merged); UI section still lives inside TD-8's unmocked form | 🔒 gated (via TD-8) |
 | TD-11 — File Upload | `dashboard` (entry point only) | Placeholder `alert()`; real upload wizard unmocked | 🔒 gated |
 | TD-12 — Confirm Upload | — | No mockup for this state | 🔒 gated |
-| TD-13 — Automatic Interpretation | — | Transparent backend, no UI surface | not gated — dev-done/in-review (PR #8) |
-| TD-15 — Account Mapping | — | Transparent backend, no UI surface | not gated — dev-done/in-review (PR #8) |
+| TD-13 — Automatic Interpretation | — | Transparent backend, no UI surface | not gated — merged to staging (PR #8) |
+| TD-15 — Account Mapping | — | Transparent backend, no UI surface | not gated — merged to staging (PR #8) |
 | TD-16 — RUT Validation | — | Only a generic `alert.error` pattern exists; no full error-state screen | 🔒 gated |
 | TD-17 — Amount Validation | — | Same gap as TD-16 | 🔒 gated |
 | TD-18 — Error Guidance | — | Same gap as TD-16 | 🔒 gated |
@@ -162,11 +162,11 @@ acli jira workitem search --jql "project = TD AND statusCategory != Done ORDER B
 | Story | Blocked? | Reason |
 |---|---|---|
 | TD-7 | **Resolved** | Merged (PR #7). Still mockup-gated via TD-8 per §5. |
-| TD-13 | **Resolved, dev-done** | Implemented, Stage 3 reviewed (4 findings fixed), PR #8 open. |
-| TD-15 | **Resolved, dev-done** | Implemented, Stage 3 reviewed (1 MINOR + 1 NIT fixed), PR #8 open. Resolves directly to PADI code (see engram `architecture/normalizer-tax-resolution-scope`). |
+| TD-13 | **Merged 2026-07-17** | Implemented, Stage 3 reviewed (4 findings fixed), PR #8 merged to staging, deployed to Render (live). Jira `Ready for QA-on QA`, unassigned (no shift-left QA phase yet). |
+| TD-15 | **Merged 2026-07-17** | Implemented, Stage 3 reviewed (1 MINOR + 1 NIT fixed), PR #8 merged to staging, deployed to Render (live). Resolves directly to PADI code (see engram `architecture/normalizer-tax-resolution-scope`). Jira `Ready for QA-on QA`, unassigned. |
 | TD-17 | BLOCKED | Needs DGI's minimum/range validation rules for the 2181 form, pending in both `07-validator.md` and `Tax-rules/2181/validations.md`. Unchanged this run. |
 | TD-22 | **Closed 2026-07-16** | Superseded by TD-15 — see §3. No longer tracked as a blocker or a pick-up candidate. |
-| TD-23 | **Rescoped 2026-07-16, ready to plan** | Was BLOCKED on 0% domain content; that content is now moot (TD-15 absorbed it) and TD-23's new AC/Business Rules (RUT+código consolidation) were published the same day. Not yet planned via `/sprint-development` — depends on TD-15's PR merging first (§3). |
+| TD-23 | **Unblocked 2026-07-17, ready to plan** | Was BLOCKED on 0% domain content; that content is now moot (TD-15 absorbed it) and TD-23's new AC/Business Rules (RUT+código consolidation) were published 2026-07-16. TD-15's PR #8 merged 2026-07-17 — the last blocker is cleared. Next: plan via `/sprint-development`. |
 | TD-24 | **Closed 2026-07-16** | Confirmed superseded by TD-7's rework — its own 15/7 Jira comment already said so, never actioned until this pass. No residual gap found (unlike TD-22's 552/553 case) — see §3. No longer tracked as a pick-up candidate. |
 | TD-25 | **New — blocked on a product decision** | Whether the 2181's 552/553 PADI codes (Venta por cuenta ajena) are in MVP scope at all. `plan_cuentas`' check constraint only allows 5 of the 7 codes today. See `STORY-TD-25/comments.md`. |
 | TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-12, TD-16, TD-18, TD-20 | Not blocked (content-wise) | Unchanged this run. Several are still mockup-gated per §5 — separate axis. |
