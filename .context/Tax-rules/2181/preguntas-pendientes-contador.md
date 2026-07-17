@@ -1,38 +1,34 @@
 # Preguntas pendientes para el contador (2026-07-17)
 
-> Compiladas para destrabar TD-16, TD-17, TD-18 y TD-25 — las 4 únicas historias del MVP que no se pueden avanzar sin esta sesión. Formato sí/no donde es posible; cuando la respuesta es "sí", se deja el dato puntual a completar al lado.
+> Compiladas para destrabar TD-16, TD-17, TD-18 y TD-25. Respondidas el 2026-07-17 — propagadas a `SRS/07-validator.md`, `SRS/05-parser.md`, `Tax-rules/2181/validations.md`, `Tax-rules/2181/formulas.md`, `SRS/10-exporter.md`. 2 quedan con seguimiento abierto (marcadas abajo).
 
 ## TD-16 — Validación de RUT
 
-1. ¿Se valida el dígito verificador uruguayo del RUT, además del formato (12 dígitos numéricos)? **Sí / No**
+1. ¿Se valida el dígito verificador uruguayo del RUT? — **No.** Solo formato/longitud (12 dígitos numéricos).
 
-## TD-17 — Validación de importes (`SRS/07-validator.md`, `Tax-rules/2181/validations.md`)
+## TD-17 — Validación de importes
 
-2. ¿Existe un importe mínimo DGI por debajo del cual una línea no se declara en el 2181? **Sí / No** — si Sí: monto mínimo = ____
-3. ¿Un importe igual a cero es válido para declarar? **Sí / No**
-4. ¿Un importe negativo es válido para alguna casilla? **Sí / No**
-5. ¿El período de cada asiento debe coincidir exactamente con el período de la declaración que se está presentando? **Sí / No**
-6. ¿Hay casillas que solo aplican bajo ciertas condiciones del contribuyente o del tercero (ej. tipo de contribuyente, régimen de IVA)? **Sí / No** — si Sí: ¿cuáles y qué condición? ____
-7. ¿Debe validarse que la suma de las líneas coincida con algún total declarado en otro lado (ej. libro de compras/IVA)? **Sí / No**
+2. ¿Existe un importe mínimo DGI? — **No.** No hay piso mínimo para el 2181.
+3. ¿Un importe igual a cero es válido? — **No.**
+4. ¿Un importe negativo es válido? — **No, jamás.**
+5. ¿El período de cada asiento debe coincidir con el período de la declaración? — **En general sí, en rurales no.** ⚠️ **Seguimiento abierto**: qué significa "rurales" en este contexto (¿régimen tributario del contribuyente? ¿tipo de actividad?) y por qué el período no coincide en ese caso — no se fabrica la excepción, queda pendiente de una próxima sesión.
+6. ¿Hay casillas condicionadas al tipo de contribuyente/tercero? — **No.**
+7. ¿Se valida consistencia cruzada contra otro total declarado? — **No.**
 
 ## TD-18 — Guía de error / mecánica de bloqueo
 
-8. Ante un asiento cuyo código IVA o cuenta contable no está configurado en el plan de cuentas (sin regla de mapeo conocida), ¿el sistema debe bloquear TODO el archivo — igual que ya hace el Parser (TD-13) ante un dato inválido? **Sí / No** — si No: ¿excluye solo esa línea con un reporte de error?
+8. ¿Un asiento sin regla de mapeo bloquea todo el archivo? — **No, pero el contador tiene dudas** — la respuesta tentativa es "excluye solo esa línea", pero no está confirmada con la misma certeza que el resto. No tratar como definitiva sin retomarla.
 
-## Exportador — redondeo de importes (afecta TD-20, ya construido asumiendo lo de abajo)
+## Exportador — redondeo de importes
 
-9. ¿El campo de importe del archivo PADI lleva decimales implícitos (ej. `"2322"` = $23,22)? **Sí / No** — si No: confirma que siempre es un monto entero en pesos (supuesto actual del código).
-10. Si hay que redondear el importe antes de exportarlo, ¿el redondeo es siempre hacia el entero más cercano (nunca trunca)? **Sí / No**
+9. ¿El importe lleva decimales implícitos? — **No.** Monto entero en pesos — confirma el supuesto ya codificado en `generarArchivoPadi`.
+10. ¿Cómo se redondea? — **Siempre hacia arriba** (no al más cercano). El código actual usaba `Math.round` (redondeo al más cercano) — **corregido a `Math.ceil`** tras esta respuesta.
 
 ## TD-25 — Catálogo completo PADI (552/553)
 
-11. ¿Los códigos PADI 552 y 553 (venta por cuenta ajena) aplican a los clientes iniciales del estudio? **Sí / No**
+11. ¿Los códigos 552/553 aplican a los clientes iniciales? — Respuesta recibida: **"ni"**. ⚠️ **Seguimiento abierto**: no es una respuesta interpretable con confianza (¿"ni idea"? ¿typo?) — se le pidió aclaración directa al usuario, todavía sin resolver. TD-25 sigue bloqueada.
 
-## Parser (TD-13) — no bloquea, mejora robustez
+## Parser (TD-13)
 
-12. ¿El TXT que exporta Memory siempre viene en UTF-8? **Sí / No**
-13. ¿El volumen mensual esperado de líneas por archivo está, en general, por debajo de 1000? **Sí / No** (solo relevante para performance del parser)
-
----
-
-_Fuente de cada pregunta: `SRS/07-validator.md` §"Validaciones pendientes de confirmar", `SRS/05-parser.md` §"Qué falta confirmar", `Tax-rules/2181/validations.md`, `Tax-rules/2181/formulas.md`, `SRS/10-exporter.md`, `STORY-TD-25/comments.md`. Actualizar los SRS/Tax-rules correspondientes apenas se registren las respuestas — no dejarlas solo acá._
+12. ¿El TXT viene en UTF-8? — **Sí** (corregido en un mensaje de seguimiento). Verificado además de forma independiente: los dos archivos reales de muestra en `Downloads/` (`ASIENTOS JUNIO 2026.TXT`, `Anexo2181 - 212583570018.txt`) son ASCII puro — subconjunto válido de UTF-8, sin conflicto.
+13. ¿El volumen esperado está debajo de 1000 líneas? — **No** — el volumen puede superar 1000 líneas mensuales. Guardado como nota de performance para el parser, no bloquea nada hoy.

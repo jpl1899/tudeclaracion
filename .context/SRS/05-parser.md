@@ -43,9 +43,9 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 
 Si una línea trae un dato inválido en cualquier campo, la interpretación del archivo completo se aborta — no se generan datos parciales. Rosana ve un mensaje que identifica el número de línea y el campo de origen del dato inválido, mostrado con el patrón genérico `alert.error` de `design-system.html` (mismo patrón que usarán TD-16/17/18) — no requiere mockup dedicado.
 
-## Qué falta confirmar
+## Confirmado 2026-07-17
 
-- Encoding del TXT de entrada.
-- Volumen esperado (líneas por archivo mensual) — relevante para performance del parser.
+- **Encoding**: UTF-8. Verificado además de forma independiente contra los dos archivos reales de muestra (`ASIENTOS JUNIO 2026.TXT`, `Anexo2181 - 212583570018.txt`) — ambos son ASCII puro, subconjunto válido de UTF-8, sin conflicto.
+- **Volumen esperado**: puede superar las 1000 líneas por archivo mensual — el parser debe soportar ese volumen sin degradación notable de performance (no hay un techo exacto confirmado todavía, solo que 1000 no es un límite seguro para asumir).
 
 No fabricar el resto de esta spec — se completa a medida que el usuario la provea.
