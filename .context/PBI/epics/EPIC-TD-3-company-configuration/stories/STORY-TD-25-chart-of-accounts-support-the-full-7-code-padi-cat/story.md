@@ -3,7 +3,7 @@
 **Jira Key:** [TD-25](https://lk-tudeclaracion.atlassian.net/browse/TD-25)
 **Epic:** [TD-3](https://lk-tudeclaracion.atlassian.net/browse/TD-3) (Company Configuration)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** Finalizada
 **Priority:** Medium
 **Story Points:** -
 
@@ -34,7 +34,7 @@ _No description provided_
 ## Metadata
 
 - **Created:** 16/7/2026
-- **Updated:** 16/7/2026
+- **Updated:** 17/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 
