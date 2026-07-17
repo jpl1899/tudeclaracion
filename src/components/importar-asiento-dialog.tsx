@@ -14,11 +14,16 @@ import { cn } from '@/lib/utils';
 
 const ACCEPTED_EXTENSION = '.txt';
 
+/** `null` = éxito. `parse` = dato inválido con línea/campo identificados (05-parser.md); `guardado` = falló la persistencia tras un parseo válido. */
+export type ImportarAsientoError
+  = | { kind: 'parse', line: number, field: string, message: string }
+    | { kind: 'guardado', message: string };
+
 interface ImportarAsientoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   empresaActiva: string
-  onImportar: (file: File) => void
+  onImportar: (file: File) => Promise<ImportarAsientoError | null>
 }
 
 function isArchivoValido(file: File) {
@@ -34,9 +39,11 @@ export function ImportarAsientoDialog({
   const [archivo, setArchivo] = useState<File | null>(null);
   const [archivoInvalido, setArchivoInvalido] = useState(false);
   const [arrastrando, setArrastrando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const [error, setError] = useState<ImportarAsientoError | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const puedeImportar = archivo !== null && empresaActiva.length > 0;
+  const puedeImportar = archivo !== null && empresaActiva.length > 0 && !importando;
 
   function seleccionarArchivo(file: File | undefined) {
     if (!file) { return; }
@@ -59,6 +66,8 @@ export function ImportarAsientoDialog({
     setArchivo(null);
     setArchivoInvalido(false);
     setArrastrando(false);
+    setImportando(false);
+    setError(null);
   }
 
   function handleClose(nextOpen: boolean) {
@@ -68,10 +77,19 @@ export function ImportarAsientoDialog({
     onOpenChange(nextOpen);
   }
 
-  function handleImportar() {
+  async function handleImportar() {
     if (!archivo) { return; }
-    onImportar(archivo);
+    setError(null);
+    setImportando(true);
+    const resultado = await onImportar(archivo);
+    setImportando(false);
+
+    if (resultado) {
+      setError(resultado);
+      return;
+    }
     resetEstado();
+    onOpenChange(false);
   }
 
   return (
@@ -124,12 +142,23 @@ export function ImportarAsientoDialog({
           )}
         </div>
 
+        {error && (
+          <div
+            data-testid="importar_asiento_error"
+            className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
+          >
+            {error.kind === 'parse'
+              ? `Línea ${error.line}, campo "${error.field}": ${error.message}`
+              : error.message}
+          </div>
+        )}
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleClose(false)}>
             Cancelar
           </Button>
-          <Button type="button" disabled={!puedeImportar} onClick={handleImportar}>
-            Importar
+          <Button type="button" disabled={!puedeImportar} onClick={() => void handleImportar()}>
+            {importando ? 'Importando…' : 'Importar'}
           </Button>
         </DialogFooter>
       </DialogContent>
