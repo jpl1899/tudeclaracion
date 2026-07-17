@@ -3,7 +3,7 @@
 **Jira Key:** [TD-23](https://lk-tudeclaracion.atlassian.net/browse/TD-23)
 **Epic:** [TD-21](https://lk-tudeclaracion.atlassian.net/browse/TD-21) (Tax Rules Engine & DJ 2181 Generation)
 **Type:** Historia
-**Status:** Planificación
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -52,9 +52,9 @@ This DoD requirement absorbs the same `mvp-scope.md` US 5.3 configurability requ
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 16/7/2026
+- **Updated:** 17/7/2026
 - **Reporter:** Juan Leites
-- **Assignee:** Juan Leites
+- **Assignee:** Unassigned
 
 ---
 

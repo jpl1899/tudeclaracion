@@ -46,6 +46,7 @@ export type Database = {
           cotizacion: number
           created_at: string
           debe: string
+          declaracion_id: string
           dia: number
           empresa_id: string
           haber: string
@@ -63,6 +64,7 @@ export type Database = {
           cotizacion: number
           created_at?: string
           debe: string
+          declaracion_id: string
           dia: number
           empresa_id: string
           haber: string
@@ -80,6 +82,7 @@ export type Database = {
           cotizacion?: number
           created_at?: string
           debe?: string
+          declaracion_id?: string
           dia?: number
           empresa_id?: string
           haber?: string
@@ -92,6 +95,13 @@ export type Database = {
           total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "asiento_declaracion_id_fkey"
+            columns: ["declaracion_id"]
+            isOneToOne: false
+            referencedRelation: "declaracion"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "asiento_empresa_id_fkey"
             columns: ["empresa_id"]
@@ -157,6 +167,41 @@ export type Database = {
           label?: string
         }
         Relationships: []
+      }
+      declaracion: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          estado: string
+          id: string
+          periodo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          estado?: string
+          id?: string
+          periodo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          estado?: string
+          id?: string
+          periodo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "declaracion_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       declaration_required_fields: {
         Row: {
@@ -313,7 +358,7 @@ export type Database = {
         Returns: string
       }
       insertar_asientos: {
-        Args: { p_empresa_id: string; p_lineas: Json }
+        Args: { p_empresa_id: string; p_lineas: Json; p_periodo: string }
         Returns: undefined
       }
     }

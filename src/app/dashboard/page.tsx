@@ -34,5 +34,21 @@ export default async function DashboardPage() {
     redirect('/empresas');
   }
 
-  return <DashboardClient empresaId={empresaActiva.id} empresaNombre={empresaActiva.nombre} />;
+  const { data: declaraciones, error: declaracionesError } = await supabase
+    .from('declaracion')
+    .select('periodo, estado, updated_at')
+    .eq('empresa_id', empresaActiva.id)
+    .order('periodo', { ascending: false });
+
+  if (declaracionesError) {
+    throw new Error(`No se pudieron cargar las declaraciones: ${declaracionesError.message}`);
+  }
+
+  return (
+    <DashboardClient
+      empresaId={empresaActiva.id}
+      empresaNombre={empresaActiva.nombre}
+      declaraciones={declaraciones ?? []}
+    />
+  );
 }

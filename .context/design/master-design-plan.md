@@ -17,6 +17,7 @@ Toda historia de usuario con interfaz debe citar su pantalla en el mapa §8 **an
 | Dashboard / Panel principal | mockup listo, requiere ajuste | el wizard real de "Iniciar nueva declaración" (US 3.x) NO está mockeado — el botón del prototipo solo dispara un `alert()`; falta agregar el indicador/link de empresa activa en el sidebar (ver §5, D2) |
 | Crear cuenta (signup) | mockup listo, sin código | generado just-in-time para TD-4 vía brief (`references/screen-design-brief.md`), Open Design — ver §4.5 |
 | Recuperar acceso (forgot/reset password) | mockup recibido, build diverge del mockup (ver D3) | generado just-in-time para TD-9; el mockup trae tokens y composición nuevos no coherentes con el resto del batch — build real usa el shell/tokens ya vivos, mockup solo aporta estados/copy — ver §4.6, §5 D3 |
+| Detalle de declaración (TD-20) | mockup recibido, build diverge del mockup (ver D6) | generado just-in-time para TD-20; mismo patrón de divergencia que D3/D4 (tokens y chrome propios) — build real usa el sidebar de `/dashboard` ya vivo, mockup solo aporta los 3 estados + contenido del panel — ver §4.8 |
 
 ## §2 — Frozen design contract
 
@@ -137,6 +138,24 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
   - [ ] Las 5 filas del mapa de cuentas son fijas (tipo/tasa/rubro PADI no editables) — solo el número de cuenta es input.
   - [ ] Los 3 escenarios de TD-8 cubiertos: alta exitosa, RUT duplicado, campos requeridos.
 
+### 4.8 — Detalle de declaración y descarga (TD-20)
+
+- **Slug**: `declaracion-detalle`
+- **Ruta esperada**: `/dashboard/declaraciones/[periodo]` (autenticado, alcanzada desde una fila de la tabla "Actividad reciente" en `dashboard`)
+- **Propósito**: seguimiento del estado de una declaración 2181 (procesando / generada / con errores) y descarga del archivo PADI cuando está listo.
+- **Provenance**: `.context/designs/tudeclaracion/declaracion-detalle/declaracion-detalle-2.html`, generado en Open Design a partir de `.context/designs/tudeclaracion/declaracion-detalle/BRIEF.md` (brief just-in-time, disparado por el gate de `/sprint-development` en TD-20). Ver §5 D6 — el build real diverge del mockup en tokens/chrome, no en flujo/estados/contenido.
+- **Historias de usuario**: TD-20 / US 6.1 (descargar archivo PADI) — primaria.
+- **Contenido tomado del mockup (estados/copy/estructura, no tokens ni chrome)**:
+  - Franja de metadatos: empresa, RUT declarante, tipo de declaración (2181), período.
+  - Panel de resultado del procesamiento con 3 estados: **procesando** (badge/hero de advertencia, acción de descarga ausente/deshabilitada), **generada** (badge/hero de éxito, acción de descarga habilitada), **con errores** (hero + alert de error, acción de descarga ausente/deshabilitada, mensaje orientando a corregir el origen y reprocesar).
+  - Tarjeta de archivo: nombre siguiendo la convención confirmada (`2181_<RUT>_<período>.txt`), botón "Descargar archivo PADI" (deshabilitado salvo en estado generada), nota aclarando que la presentación ante DGI es un paso manual fuera del sistema.
+  - El selector de estados (Procesando/Generada/Con errores) del mockup es solo un artefacto de demo para revisar los 3 estados en un archivo — el build real deriva el estado del backend, no de un toggle.
+- **Checklist de fidelidad**:
+  - [ ] Construido dentro del shell ya vivo de `/dashboard` (sidebar + indicador de empresa activa) — NO con el topbar independiente del mockup, que no existe en ningún otro punto del flujo autenticado (ver D6).
+  - [ ] Tokens reales (`DESIGN.md`, `#08569A` + `success`/`warning`/`error` y sus `*Bg`/`*Text`), no la paleta `oklch` propia del mockup.
+  - [ ] Los 3 estados del AC cubiertos: descarga exitosa tras procesar, descarga ausente/deshabilitada mientras procesa o si falló, nombre de archivo con la convención confirmada.
+  - [ ] El estado "con errores" no reutiliza el mismo tono visual que "procesando" salvo que sea una decisión consciente — el mockup los diferencia con el hero (`warning` vs `error`) y un alert adicional, no con el badge superior (ambos quedaron `warning`); replicar esa distinción con los tokens reales.
+
 | # | Pantalla | Divergencia | Ratificada por | Razón |
 |---|---|---|---|---|
 | D1 | Login | Nota original "¿Primera vez? Contactá al administrador del estudio" sugería que el alta de cuenta (US 1.1) podría NO ser self-service | **Ratificado 2026-07-05** | Usuario confirmó que el alta de cuenta ES self-service, tal como asume `mvp-scope.md`. El mockup estaba desactualizado — corregido a "¿Primera vez? Creá tu cuenta". No requiere cambios en PRD/SRS. |
@@ -144,6 +163,7 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 | D3 | Recuperar acceso (forgot/reset password) | El mockup recibido para TD-9 trae tokens propios (`--primary: #1E40AF` vs. el `#08569A` congelado en `DESIGN.md`) y una composición nueva (panel de "trust" con badge eyebrow + 3 tarjetas con ícono) ausente en el resto del batch. Además, las reglas de fortaleza de contraseña del demo JS del mockup (mínimo 8 caracteres, sin Ü) no coinciden con `src/lib/validation/password-rules.ts` (mínimo 10, con Ü), ya construido y testeado para `signup`. | **Ratificado 2026-07-12** | Usuario confirmó construir con Live-UI-First: reutilizar el shell de 2 columnas y los componentes ya vivos (`login`/`signup`), tomando del mockup solo los estados/flujo/copy (panel "revisá tu correo" con próximos pasos, panel de link vencido con CTA de reenvío, campo de confirmar contraseña) — nunca los tokens ni la regla de contraseña del mockup, que sigue siempre `password-rules.ts`. |
 | D4 | Agregar nueva empresa (TD-8 + TD-7) | El mockup recibido trae, otra vez, tokens propios (`--primary: #1E40AF`) distintos del `#08569A` congelado, y además un chrome completo de sidebar tipo dashboard (nav Inicio/Empresas/Declaraciones/Ayuda, header con usuario) que no existe todavía en `/empresas` (hoy es una card centrada sin sidebar) ni coincide 1:1 con el sidebar ya construido en `src/app/dashboard/page.tsx` (paleta e iconografía distintas). | **Ratificado 2026-07-12 (mismo patrón que D3)** | Build real usa el shell simple ya vivo de `/empresas` (sin sidebar) — introducir el chrome del mockup sería construir un patrón de navegación nuevo, no establecido, en un punto del flujo (pre-selección de empresa) donde todavía no aplica un "sidebar de dashboard". Se toma del mockup solo el contenido del formulario (Parte A + Parte B) y los estados (éxito, RUT duplicado, campos requeridos). |
 | D5 | Dashboard — modal "Importar asiento" (TD-11) | El wizard de carga del TXT (US 3.x) nunca tuvo mockup — hoy el botón "Iniciar nueva declaración" dispara un placeholder de texto (`dashboard/page.tsx`). No hay diseño de referencia para el modal de import. | **Ratificado 2026-07-14** | Usuario confirmó build spec-only sin mockup: modal con dos vías equivalentes para aportar el archivo — explorador de archivos (input nativo) o arrastrar y soltar sobre el área del modal. Reutiliza los tokens/componentes ya vivos (Button, Card, bordes) vía el primitivo `dialog` de shadcn (primer uso en el repo). No cubre la carga real al backend (TD-12/TD-13, fuera de alcance de esta historia). |
+| D6 | Detalle de declaración (TD-20) | El mockup recibido trae, otra vez, una paleta propia (variables `oklch` custom — `--accent: oklch(45% 0.13 252)`, `--success`/`--warning`/`--error` propios) en vez del `#08569A` congelado y los tokens semánticos de `DESIGN.md`, y un topbar independiente (marca + link "Volver") en vez del sidebar ya vivo de `/dashboard` (con indicador de empresa activa) — no existe ningún otro punto del flujo autenticado con ese chrome de topbar suelto. | **Ratificado 2026-07-17 (mismo patrón que D3/D4)** | Build real usa el shell de `/dashboard` ya vivo (sidebar + empresa activa) como chrome envolvente — el mockup solo aporta el contenido del panel de estado/descarga (3 estados, tarjeta de archivo, copy) y los tokens reales de `DESIGN.md`. El selector de estados del mockup (Procesando/Generada/Con errores) es un artefacto de demo, no un control de producción — el estado real viene del backend. |
 
 ## §8 — US → Screen map
 
@@ -162,7 +182,7 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 | US 4.2 — validación de RUTs/importes | — | Sin mockup del estado de error en contexto real (existe el patrón `alert.error` en `design-system.html`, no una pantalla completa) |
 | US 4.3 — guía clara ante error | — | Mismo caso que US 4.2 |
 | US 5.1 / US 5.2 / US 5.3 — motor tributario | — | Proceso transparente, sin superficie propia |
-| US 6.1 — descargar archivo PADI | — | Sin mockup del estado "declaración lista para descargar" |
+| US 6.1 — descargar archivo PADI | `declaracion-detalle` | Mockup recibido, build diverge en tokens/chrome (ratificado) — ver §4.8, §5 D6 |
 | US 6.2 — flujo completo <5 min | — | Cross-cutting, no una pantalla |
 | US 7.1 — listado de declaraciones | `dashboard` | Tabla "Actividad reciente" |
 | US 7.2 — estado de cada declaración | `dashboard` | Badges de estado en la misma tabla |
