@@ -1,6 +1,6 @@
 # ADR-0003 — Introduce a `declaracion` entity to model período and processing status
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-17
 - **Deciders:** Juan Leites
 - **Tags:** data-model, cross-cutting-invariant, tax-engine
