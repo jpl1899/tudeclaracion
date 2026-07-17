@@ -3,7 +3,7 @@
 **Jira Key:** [TD-20](https://lk-tudeclaracion.atlassian.net/browse/TD-20)
 **Epic:** [TD-19](https://lk-tudeclaracion.atlassian.net/browse/TD-19) (PADI File Export)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** En curso
 **Priority:** Medium
 **Story Points:** -
 
@@ -49,7 +49,7 @@ As Rosana Ferreira (contadora), quiero descargar el archivo PADI generado una ve
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 17/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 

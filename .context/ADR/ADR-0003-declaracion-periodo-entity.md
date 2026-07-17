@@ -39,7 +39,7 @@ create table public.declaracion (
 
 - **Positive:** Every downstream story that needs "this period's data" (TD-16/17/18 validations, TD-20 export, the future TD-07 declaration history epic) now has a real anchor instead of inferring period from upload timestamps. The dashboard's "Actividad reciente" table can finally read real rows instead of mock data.
 - **Negative / trade-offs:** Expands TD-20's scope beyond "just export a file" — it now also touches the TD-11/TD-13 upload flow (adds a required período field) and the `asiento` schema (new required FK). This is a direct, necessary consequence of the confirmed model, not scope creep from unrelated cleanup.
-- **Neutral / follow-ups:** No real production data exists yet for this project (course/personal project, pre-launch), so no backfill migration is needed for existing `asiento` rows — a straight `alter table ... add column declaracion_id ... not null` is viable. If that assumption changes before this ships, revisit as a nullable-then-backfill-then-not-null two-step migration instead.
+- **Neutral / follow-ups:** **Correction (verified 2026-07-17, before writing the migration):** the original text of this ADR assumed no real data existed yet — wrong. `asiento` already has 25 rows for 1 empresa (TD-13's manual end-to-end verification against staging). The migration adds `declaracion_id` as nullable, backfills one `declaracion` row per distinct `empresa_id` (período inferred as `202506`, matching the known test file "ASIENTOS JUNIO 2026.TXT"), points every existing row at it, then flips the column to `not null`. No data is deleted.
 
 ## Alternatives considered
 
