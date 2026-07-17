@@ -9,9 +9,12 @@ export interface DatosDeclarante {
 
 /**
  * Formato confirmado en SRS/10-exporter.md: 7 campos delimitados por `;`,
- * sin encabezado, cada línea termina en `;`. El campo 7 (importe) asume
- * monto entero -- SRS/10-exporter.md deja pendiente si lleva decimales
- * implícitos, no se inventa esa regla acá.
+ * sin encabezado, cada línea termina en `;`. El campo 7 (importe) es un
+ * monto entero sin decimales, redondeado siempre hacia arriba (confirmado
+ * 2026-07-17). Un importe negativo nunca es válido de por sí (confirmado
+ * el mismo día) -- TD-17 (todavía no construido) es quien debe rechazarlo
+ * antes de llegar acá; `Math.abs` queda como red de seguridad para nunca
+ * emitir un archivo con un signo corrompiendo el campo de ancho fijo.
  */
 export function generarArchivoPadi(declarante: DatosDeclarante, lineas: LineaDeclaracion[]): string {
   return lineas
@@ -23,7 +26,7 @@ export function generarArchivoPadi(declarante: DatosDeclarante, lineas: LineaDec
         linea.rut,
         declarante.periodo,
         linea.codigoPadi,
-        Math.abs(Math.round(linea.importe)).toString().padStart(12, '0'),
+        Math.ceil(Math.abs(linea.importe)).toString().padStart(12, '0'),
       ];
       return `${campos.join(';')};`;
     })
