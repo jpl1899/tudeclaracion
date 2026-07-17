@@ -26,7 +26,7 @@
 
 ## TD-25 — Catálogo completo PADI (552/553)
 
-11. ¿Los códigos 552/553 aplican a los clientes iniciales? — Respuesta recibida: **"ni"**. ⚠️ **Seguimiento abierto**: no es una respuesta interpretable con confianza (¿"ni idea"? ¿typo?) — se le pidió aclaración directa al usuario, todavía sin resolver. TD-25 sigue bloqueada.
+11. ¿Los códigos 552/553 aplican a los clientes iniciales? — Respuesta inicial ("ni") no interpretable; **reconfirmado 2026-07-17: No aplican.** Los clientes iniciales no hacen venta por cuenta y orden de terceros. **TD-25 cerrada como no aplicable al MVP.**
 
 ## Parser (TD-13)
 
