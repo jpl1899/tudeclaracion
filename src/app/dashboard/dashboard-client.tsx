@@ -19,7 +19,7 @@ import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
  * Component (page.tsx). TD-13 conecta "Importar asiento" (TD-11) al parser
  * real: parsea client-side (puramente técnico, sin red) y solo llama a
  * Supabase si el archivo es 100% válido — inserción atómica vía el RPC
- * insertar_asientos (ver supabase/migrations/20260716141500_*.sql).
+ * insertar_asientos (ver supabase/migrations/20260717171500_*.sql).
  */
 const badgeVariant: Record<string, 'success' | 'warning'> = {
   abierta: 'warning',

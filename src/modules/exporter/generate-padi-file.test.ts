@@ -40,4 +40,14 @@ describe('generarArchivoPadi', () => {
   it('returns an empty string when there are no lines to export', () => {
     expect(generarArchivoPadi({ rut: '212583570018', periodo: '201612' }, [])).toBe('');
   });
+
+  it('keeps the importe field unsigned digits even for a negative amount', () => {
+    const lineas: LineaDeclaracion[] = [
+      { rut: '101593570014', codigoPadi: '502', importe: -500 },
+    ];
+
+    const resultado = generarArchivoPadi({ rut: '212583570018', periodo: '201612' }, lineas);
+
+    expect(resultado).toContain(';000000000500;');
+  });
 });

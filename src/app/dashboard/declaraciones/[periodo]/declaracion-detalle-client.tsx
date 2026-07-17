@@ -49,6 +49,7 @@ export function DeclaracionDetalleClient({
 }: DeclaracionDetalleClientProps) {
   const [estadoActual, setEstadoActual] = useState(estado);
   const [descargando, setDescargando] = useState(false);
+  const [errorEstado, setErrorEstado] = useState(false);
 
   const conErrores = tieneAsientosSinResolver;
   const generada = !conErrores && estadoActual === 'generada';
@@ -57,6 +58,7 @@ export function DeclaracionDetalleClient({
   async function handleDescargar() {
     if (!puedeDescargar) { return; }
     setDescargando(true);
+    setErrorEstado(false);
 
     const contenido = generarArchivoPadi({ rut: empresaRut, periodo }, lineas);
     const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
@@ -73,7 +75,10 @@ export function DeclaracionDetalleClient({
         .from('declaracion')
         .update({ estado: 'generada' })
         .eq('id', declaracionId);
-      if (!error) {
+      if (error) {
+        setErrorEstado(true);
+      }
+      else {
         setEstadoActual('generada');
       }
     }
@@ -171,6 +176,15 @@ export function DeclaracionDetalleClient({
             >
               {descargando ? 'Generando…' : 'Descargar archivo PADI'}
             </Button>
+            {errorEstado && (
+              <p
+                data-testid="declaracion_estado_error"
+                className="rounded-md border border-error/25 bg-error-bg px-3 py-2 text-sm text-error-text"
+              >
+                El archivo se descargó, pero no pudimos guardar el estado "Generada" para este período.
+                Volvé a intentar la descarga en unos minutos.
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               La presentación ante DGI se hace fuera de tuDeclaracion, con este archivo.
             </p>

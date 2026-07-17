@@ -23,7 +23,7 @@ export function generarArchivoPadi(declarante: DatosDeclarante, lineas: LineaDec
         linea.rut,
         declarante.periodo,
         linea.codigoPadi,
-        Math.round(linea.importe).toString().padStart(12, '0'),
+        Math.abs(Math.round(linea.importe)).toString().padStart(12, '0'),
       ];
       return `${campos.join(';')};`;
     })
