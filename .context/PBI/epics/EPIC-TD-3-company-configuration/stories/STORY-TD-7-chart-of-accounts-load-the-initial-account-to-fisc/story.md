@@ -3,7 +3,7 @@
 **Jira Key:** [TD-7](https://lk-tudeclaracion.atlassian.net/browse/TD-7)
 **Epic:** [TD-3](https://lk-tudeclaracion.atlassian.net/browse/TD-3) (Company Configuration)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -54,7 +54,7 @@ This story cannot be estimated or built until that decision is made. It exists i
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 12/7/2026
+- **Updated:** 15/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** mathias Kantor
 

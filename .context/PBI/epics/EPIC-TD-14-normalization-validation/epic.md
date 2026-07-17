@@ -21,7 +21,7 @@ Two of the four stories in this epic are currently blocked pending product/spec 
 
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
-| [TD-15](https://lk-tudeclaracion.atlassian.net/browse/TD-15) | Account Mapping | Map accounting entries to fiscal concepts automatically | - | Medium | Tareas por hacer |
+| [TD-15](https://lk-tudeclaracion.atlassian.net/browse/TD-15) | Account Mapping | Map accounting entries to fiscal concepts automatically | - | Medium | En curso |
 | [TD-16](https://lk-tudeclaracion.atlassian.net/browse/TD-16) | RUT Validation | Validate declarant and third-party RUT format | - | Medium | Tareas por hacer |
 | [TD-17](https://lk-tudeclaracion.atlassian.net/browse/TD-17) | Amount Validation | Validate declared amounts against DGI structural rules | - | Medium | Tareas por hacer |
 | [TD-18](https://lk-tudeclaracion.atlassian.net/browse/TD-18) | Error Guidance | Receive a clear, actionable message when validation fails | - | Medium | Tareas por hacer |

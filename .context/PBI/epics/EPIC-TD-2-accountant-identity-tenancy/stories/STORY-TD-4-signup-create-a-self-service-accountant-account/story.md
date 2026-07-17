@@ -3,7 +3,7 @@
 **Jira Key:** [TD-4](https://lk-tudeclaracion.atlassian.net/browse/TD-4)
 **Epic:** [TD-2](https://lk-tudeclaracion.atlassian.net/browse/TD-2) (Accountant Identity & Tenancy)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -46,7 +46,7 @@ As Rosana Ferreira, I want to create my own account without contacting an admini
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 9/7/2026
+- **Updated:** 12/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** mathias Kantor
 - **Labels:** implementation-plan-ready

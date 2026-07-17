@@ -44,7 +44,7 @@ As Rosana Ferreira, I want clear confirmation that my file uploaded successfully
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 15/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 

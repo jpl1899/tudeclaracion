@@ -3,7 +3,7 @@
 **Jira Key:** [TD-8](https://lk-tudeclaracion.atlassian.net/browse/TD-8)
 **Epic:** [TD-2](https://lk-tudeclaracion.atlassian.net/browse/TD-2) (Accountant Identity & Tenancy)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 

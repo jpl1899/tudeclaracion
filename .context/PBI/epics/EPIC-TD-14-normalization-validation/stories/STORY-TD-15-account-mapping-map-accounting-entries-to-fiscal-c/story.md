@@ -3,7 +3,7 @@
 **Jira Key:** [TD-15](https://lk-tudeclaracion.atlassian.net/browse/TD-15)
 **Epic:** [TD-14](https://lk-tudeclaracion.atlassian.net/browse/TD-14) (Normalization & Validation)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -47,9 +47,9 @@ Scope note carried forward: this resolution may make `TD-22` (Tax Line Mapping) 
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 16/7/2026
+- **Updated:** 17/7/2026
 - **Reporter:** Juan Leites
-- **Assignee:** Juan Leites
+- **Assignee:** Unassigned
 
 ---
 

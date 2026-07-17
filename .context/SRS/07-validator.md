@@ -17,7 +17,7 @@
 - Mínimos DGI (montos por debajo de los cuales una línea no se declara, si existen para el 2181).
 - Rango/formato válido de importes (¿acepta cero? ¿negativos?).
 - Validación de período (¿debe coincidir con el período de presentación vigente?).
-- Validación de código PADI contra el catálogo real (ver `09-forms.md`, catálogo incompleto).
+- Validación de código PADI contra el catálogo real (ver `09-forms.md`, catálogo completo para el 2181 desde 2026-07-14).
 - Qué hace el sistema ante un registro inválido: ¿bloquea todo el archivo, o excluye solo esa línea con reporte de error? (el mensaje en sí ya está definido arriba — falta esta mecánica).
 - Contenido exacto de la "guía clara de cómo seguir" por tipo de error — a definir junto con `user-journeys.md` del PRD.
 

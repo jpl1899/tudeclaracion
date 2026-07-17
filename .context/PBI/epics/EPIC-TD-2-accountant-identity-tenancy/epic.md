@@ -21,10 +21,10 @@ This epic delivers the account and company-management flows an accountant needs 
 
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
-| [TD-4](https://lk-tudeclaracion.atlassian.net/browse/TD-4) | Signup | Create a self-service accountant account | - | Medium | En curso |
+| [TD-4](https://lk-tudeclaracion.atlassian.net/browse/TD-4) | Signup | Create a self-service accountant account | - | Medium | Ready for QA-on QA |
 | [TD-6](https://lk-tudeclaracion.atlassian.net/browse/TD-6) | Login | Sign in with account credentials | - | Medium | Finalizada |
-| [TD-8](https://lk-tudeclaracion.atlassian.net/browse/TD-8) | Company Onboarding | Add a new client company under my account | - | Medium | Tareas por hacer |
-| [TD-9](https://lk-tudeclaracion.atlassian.net/browse/TD-9) | Password Recovery | Reset a forgotten password | - | Medium | Tareas por hacer |
+| [TD-8](https://lk-tudeclaracion.atlassian.net/browse/TD-8) | Company Onboarding | Add a new client company under my account | - | Medium | Ready for QA-on QA |
+| [TD-9](https://lk-tudeclaracion.atlassian.net/browse/TD-9) | Password Recovery | Reset a forgotten password | - | Medium | Ready for QA-on QA |
 
 ---
 
