@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -46,8 +46,18 @@ export function ImportarAsientoDialog({
   const [periodo, setPeriodo] = useState('');
   const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listoButtonRef = useRef<HTMLButtonElement>(null);
 
   const puedeImportar = archivo !== null && periodo.length === 7 && empresaActiva.length > 0 && !importando;
+
+  // Radix solo maneja foco en apertura/cierre del diálogo, no en swaps de
+  // contenido interno -- sin esto, el foco cae al <body> al pasar al estado
+  // de confirmación, justo cuando más importa que el usuario lo note.
+  useEffect(() => {
+    if (confirmacion) {
+      listoButtonRef.current?.focus();
+    }
+  }, [confirmacion]);
 
   function seleccionarArchivo(file: File | undefined) {
     if (!file) { return; }
@@ -77,6 +87,11 @@ export function ImportarAsientoDialog({
   }
 
   function handleClose(nextOpen: boolean) {
+    // Ignora intentos de cerrar (Cancelar, Esc, click afuera) mientras la
+    // importación está en vuelo -- si no, la promesa de onImportar puede
+    // resolver después del cierre y setear una confirmación fantasma la
+    // próxima vez que se abra el diálogo para otra carga.
+    if (!nextOpen && importando) { return; }
     if (!nextOpen) {
       resetEstado();
     }
@@ -195,13 +210,13 @@ export function ImportarAsientoDialog({
         <DialogFooter>
           {confirmacion
             ? (
-                <Button type="button" onClick={() => handleClose(false)}>
+                <Button ref={listoButtonRef} type="button" onClick={() => handleClose(false)}>
                   Listo
                 </Button>
               )
             : (
                 <>
-                  <Button type="button" variant="outline" onClick={() => handleClose(false)}>
+                  <Button type="button" variant="outline" disabled={importando} onClick={() => handleClose(false)}>
                     Cancelar
                   </Button>
                   <Button type="button" disabled={!puedeImportar} onClick={() => void handleImportar()}>
