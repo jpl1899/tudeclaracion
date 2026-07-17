@@ -170,7 +170,8 @@ acli jira workitem search --jql "project = TD AND statusCategory != Done ORDER B
 | TD-24 | **Closed 2026-07-16** | Confirmed superseded by TD-7's rework — its own 15/7 Jira comment already said so, never actioned until this pass. No residual gap found (unlike TD-22's 552/553 case) — see §3. No longer tracked as a pick-up candidate. |
 | TD-25 | **New — blocked on a product decision** | Whether the 2181's 552/553 PADI codes (Venta por cuenta ajena) are in MVP scope at all. `plan_cuentas`' check constraint only allows 5 of the 7 codes today. See `STORY-TD-25/comments.md`. |
 | TD-20 | **Merged 2026-07-17** | Introduced ADR-0003 (`declaracion` entity + período). PR #10 merged to staging, deployed to Render (live). Stage 3 reviewed (1 MAJOR + 2 MINOR fixed, 2 MINOR deferred — see `review.md`). Jira `Ready for QA-on QA`, unassigned. **This closes out the 2181 core pipeline** (TD-13 → TD-15 → TD-23 → TD-20), all merged to staging. |
-| TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-12, TD-16, TD-18 | Not blocked (content-wise) | Unchanged this run. Several are still mockup-gated per §5 — separate axis. |
+| TD-12 | **Merged 2026-07-17** | Confirmation state (filename + timestamp) added to the same "Importar asiento" modal as TD-11, spec-only (D7). Stage 3 reviewed (2 MAJOR fixed — close-during-import race, lost focus on success — 1 MINOR deferred, 1 NIT not actionable, see `review.md`). PR #11 merged to staging, deployed to Render (live). Jira `Ready for QA-on QA`, unassigned. |
+| TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-16, TD-18 | Not blocked (content-wise) | Unchanged this run. Several are still mockup-gated per §5 — separate axis. |
 
 **Edge-mapping TODO**:
 - Re-run the live `issuelinks` pull periodically — still zero formal links across 18 stories; §3/§4 stay prose-built until someone provisions a `dependencies` link type or starts using `blocks`/`relates` in the tracker.
