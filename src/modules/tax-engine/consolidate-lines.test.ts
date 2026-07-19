@@ -49,8 +49,8 @@ describe('consolidarLineasDeclaracion', () => {
   it('excludes unresolved asientos from every line and sum', () => {
     const resueltos: NormalizedAsiento[] = [
       resuelto({ importe: 500 }),
-      { resolved: false, reason: 'sin-mapeo' },
-      { resolved: false, reason: 'tipo-fuera-de-alcance' },
+      { resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 3, valor: 'cuenta 9999' },
+      { resolved: false, reason: 'tipo-fuera-de-alcance', rut: '233669988774', dia: 4, valor: 'CIE' },
     ];
 
     const result = consolidarLineasDeclaracion(resueltos);
