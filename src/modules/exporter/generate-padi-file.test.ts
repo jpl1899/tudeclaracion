@@ -52,12 +52,13 @@ describe('generarArchivoPadi', () => {
   });
 
   it.each([
-    ['180.33 (first decimal 3)', 180.33, 180],
-    ['180.549 (first decimal 5, rest discarded)', 180.549, 180],
-    ['180.5 exactly (first decimal 5)', 180.5, 180],
-    ['180.6 (first decimal 6)', 180.6, 181],
-    ['180.99 (first decimal 9)', 180.99, 181],
-  ])('rounds %s to %i, deciding only on the first decimal digit', (_caso, importe, esperado) => {
+    ['180.33', 180.33, 180],
+    ['180.45', 180.45, 180],
+    ['180.5 exactly', 180.5, 180],
+    ['180.51, just above the boundary', 180.51, 181],
+    ['180.6', 180.6, 181],
+    ['180.99', 180.99, 181],
+  ])('rounds %s to %i, comparing the full 2-decimal fraction against 0.50', (_caso, importe, esperado) => {
     const lineas: LineaDeclaracion[] = [
       { rut: '101593570014', codigoPadi: '502', importe },
     ];

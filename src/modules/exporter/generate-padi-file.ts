@@ -9,14 +9,14 @@ export interface DatosDeclarante {
 
 /**
  * Redondeo confirmado por el contador (2026-07-19, corrige la respuesta
- * "siempre hacia arriba" del 2026-07-17): decide mirando únicamente el
- * primer decimal, el resto se descarta -- 1-5 redondea para abajo, 6-9
- * para arriba. Ej: 180.549 -> 180 (no 181, aunque .549 > .50).
+ * "siempre hacia arriba" del 2026-07-17): los importes vienen con 2
+ * decimales -- se comparan esos 2 decimales completos contra 0,50: ≤0,50
+ * redondea para abajo, ≥0,51 para arriba. Ej: 180,50 -> 180; 180,51 -> 181.
  */
 function redondearImporte(valor: number): number {
   const parteEntera = Math.floor(valor);
-  const primerDecimal = Math.floor((valor - parteEntera) * 10 + 1e-9);
-  return primerDecimal <= 5 ? parteEntera : parteEntera + 1;
+  const decimales = Math.round((valor - parteEntera) * 100) / 100;
+  return decimales <= 0.5 ? parteEntera : parteEntera + 1;
 }
 
 /**
