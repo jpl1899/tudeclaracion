@@ -51,13 +51,19 @@ describe('generarArchivoPadi', () => {
     expect(resultado).toContain(';000000000500;');
   });
 
-  it('always rounds a fractional importe up, never to the nearest integer', () => {
+  it.each([
+    ['180.33 (first decimal 3)', 180.33, 180],
+    ['180.549 (first decimal 5, rest discarded)', 180.549, 180],
+    ['180.5 exactly (first decimal 5)', 180.5, 180],
+    ['180.6 (first decimal 6)', 180.6, 181],
+    ['180.99 (first decimal 9)', 180.99, 181],
+  ])('rounds %s to %i, deciding only on the first decimal digit', (_caso, importe, esperado) => {
     const lineas: LineaDeclaracion[] = [
-      { rut: '101593570014', codigoPadi: '502', importe: 180.33 },
+      { rut: '101593570014', codigoPadi: '502', importe },
     ];
 
     const resultado = generarArchivoPadi({ rut: '212583570018', periodo: '201612' }, lineas);
 
-    expect(resultado).toContain(';000000000181;');
+    expect(resultado).toContain(`;${esperado.toString().padStart(12, '0')};`);
   });
 });
