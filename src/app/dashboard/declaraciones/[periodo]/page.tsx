@@ -58,7 +58,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
   const [{ data: asientos, error: asientosError }, { data: planCuentas, error: planCuentasError }] = await Promise.all([
     supabase
       .from('asiento')
-      .select('rut, total, codigo_iva, iva, libro, tipo, debe, haber')
+      .select('dia, rut, total, codigo_iva, iva, libro, tipo, debe, haber')
       .eq('declaracion_id', declaracion.id),
     supabase
       .from('plan_cuentas')
@@ -81,7 +81,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
 
   const resueltos = (asientos ?? []).map(asiento => resolveAsientoFiscal(
     {
-      dia: 1,
+      dia: asiento.dia,
       debe: asiento.debe,
       haber: asiento.haber,
       concepto: '',
@@ -97,7 +97,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
     planCuentasRows,
   ));
 
-  const tieneAsientosSinResolver = resueltos.some(r => !r.resolved);
+  const asientosSinResolver = resueltos.filter(r => !r.resolved);
   const lineas = consolidarLineasDeclaracion(resueltos);
 
   return (
@@ -107,7 +107,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
       declaracionId={declaracion.id}
       periodo={declaracion.periodo}
       estado={declaracion.estado}
-      tieneAsientosSinResolver={tieneAsientosSinResolver}
+      asientosSinResolver={asientosSinResolver}
       totalAsientos={resueltos.length}
       lineas={lineas}
     />

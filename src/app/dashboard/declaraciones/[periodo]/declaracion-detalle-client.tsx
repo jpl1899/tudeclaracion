@@ -1,5 +1,6 @@
 'use client';
 
+import type { NormalizedAsiento } from '@/modules/normalizer/normalize-asiento';
 import type { LineaDeclaracion } from '@/modules/tax-engine/consolidate-lines';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -8,6 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createClient } from '@/infrastructure/supabase/client';
 import { generarArchivoPadi } from '@/modules/exporter/generate-padi-file';
+
+type AsientoSinResolver = Extract<NormalizedAsiento, { resolved: false }>;
+
+/** TD-18: mensaje de por qué no resolvió, en el mismo lenguaje que ve Rosana en el resto de la app. */
+const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
+  'sin-mapeo': 'no está mapeado en el plan de cuentas',
+  'tipo-fuera-de-alcance': 'tiene un tipo fuera del alcance de esta declaración',
+  'libro-fuera-de-alcance': 'tiene un libro que no corresponde a compra ni venta',
+};
 
 /**
  * Client Component: TD-20 (ADR-0003). Pantalla de detalle/descarga de una
@@ -28,7 +38,7 @@ interface DeclaracionDetalleClientProps {
   declaracionId: string
   periodo: string
   estado: string
-  tieneAsientosSinResolver: boolean
+  asientosSinResolver: AsientoSinResolver[]
   totalAsientos: number
   lineas: LineaDeclaracion[]
 }
@@ -43,7 +53,7 @@ export function DeclaracionDetalleClient({
   declaracionId,
   periodo,
   estado,
-  tieneAsientosSinResolver,
+  asientosSinResolver,
   totalAsientos,
   lineas,
 }: DeclaracionDetalleClientProps) {
@@ -51,7 +61,7 @@ export function DeclaracionDetalleClient({
   const [descargando, setDescargando] = useState(false);
   const [errorEstado, setErrorEstado] = useState(false);
 
-  const conErrores = tieneAsientosSinResolver;
+  const conErrores = asientosSinResolver.length > 0;
   const generada = !conErrores && estadoActual === 'generada';
   const puedeDescargar = !conErrores && totalAsientos > 0 && !descargando;
 
@@ -143,11 +153,21 @@ export function DeclaracionDetalleClient({
             {conErrores && (
               <div
                 data-testid="declaracion_con_errores"
-                className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
+                className="grid gap-2 rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
               >
-                Hay asientos de este período que no se pudieron resolver a un código PADI.
-                Revisá el plan de cuentas de la empresa y volvé a esta pantalla — la descarga
-                queda deshabilitada hasta que todos los asientos resuelvan.
+                <p>
+                  {asientosSinResolver.length === 1 ? 'Hay 1 asiento' : `Hay ${asientosSinResolver.length} asientos`}
+                  {' '}
+                  de este período que no se pudo resolver a un código PADI. Revisá el plan de cuentas de la empresa
+                  y volvé a esta pantalla — la descarga queda deshabilitada hasta que todos los asientos resuelvan.
+                </p>
+                <ul className="grid gap-1 pl-4 text-sm">
+                  {asientosSinResolver.map((asiento, indice) => (
+                    <li key={`${asiento.rut}-${asiento.dia}-${indice}`} className="list-disc">
+                      {`Día ${asiento.dia}, RUT ${asiento.rut}: ${asiento.valor} ${MENSAJE_POR_RAZON[asiento.reason]}.`}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

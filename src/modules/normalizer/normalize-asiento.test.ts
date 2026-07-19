@@ -39,7 +39,7 @@ describe('resolveAsientoFiscal', () => {
 
     const result = resolveAsientoFiscal(asiento({ codigoIva: 7, iva: 50 }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo' });
+    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'Código IVA 7' });
   });
 
   it('resolves via Camino 2 for a compra (Libro C/E), reading the Debe account', () => {
@@ -73,7 +73,7 @@ describe('resolveAsientoFiscal', () => {
 
     const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '9999' }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo' });
+    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'cuenta 9999' });
   });
 
   it('tipo 504 takes priority and skips the plan de cuentas lookup entirely', () => {
@@ -91,6 +91,9 @@ describe('resolveAsientoFiscal', () => {
       expect(resolveAsientoFiscal(asiento({ tipo }), planCuentas)).toEqual({
         resolved: false,
         reason: 'tipo-fuera-de-alcance',
+        rut: '233669988774',
+        dia: 5,
+        valor: tipo,
       });
     }
   });
@@ -102,6 +105,6 @@ describe('resolveAsientoFiscal', () => {
 
     const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'P' }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'libro-fuera-de-alcance' });
+    expect(result).toEqual({ resolved: false, reason: 'libro-fuera-de-alcance', rut: '233669988774', dia: 5, valor: 'P' });
   });
 });
