@@ -35,6 +35,10 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 
 > **Confirmado 2026-07-14 — significado del campo Libro**: `C` y `E` = egresos (compras) — IVA compras tasa básica, tasa mínima, o compras exentas. `V` e `I` = ventas — IVA ventas tasa básica o tasa mínima. `P` = libre uso para data entry — no permite inferir dirección (compra/venta); para estas líneas se resuelve exclusivamente por la cadena ya confirmada en `08-tax-engine.md`. **Ampliado 2026-07-15**: el campo Libro sí participa, indirectamente, en la resolución por cuenta contable (el camino "asiento abierto" de `08-tax-engine.md`) — determina si se busca la cuenta en el campo Debe (compra, `C`/`E`) o en el campo Haber (venta, `V`/`I`). No requiere validación de consistencia propia — el contador confirmó que viene pre-validado por Memory antes de exportar el TXT.
 
+## Confirmado 2026-07-22 — fila de encabezado opcional
+
+El TXT puede venir con o sin una primera fila de encabezado (`DIA,DEBE,HABER,CONCEPTO,RUT,...`) describiendo los campos — depende de cómo lo exporte el proveedor contable en cada caso. El parser la detecta (campo Día no numérico, valor `DIA`) y la descarta antes de interpretar datos; no se trata como una línea inválida y no corre el conteo de línea de los asientos reales.
+
 ## Pendiente de producto (no bloquea el motor)
 
 - Agregar botón **"Importar asiento"** (archivo `.txt`) en `/dashboard`, luego de presionar "Iniciar nueva declaración" (contador, 2026-07-14).

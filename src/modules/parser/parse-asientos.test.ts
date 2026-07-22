@@ -100,6 +100,44 @@ describe('parseAsientosTxt', () => {
     });
   });
 
+  it('skips a leading header row and parses the data line that follows it', () => {
+    const header = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
+    const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+    const content = `${header}\n${validLine}`;
+
+    const result = parseAsientosTxt(content);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines).toHaveLength(1);
+    expect(result.lines[0].rut).toBe('233669988774');
+  });
+
+  it('parses correctly when the file has no header row', () => {
+    const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(validLine);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines).toHaveLength(1);
+  });
+
+  it('reports the original file line number for an error after a skipped header', () => {
+    const header = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
+    const invalidLine = '6,"5215","11111","Otro concepto","233669988774",0,1000,0,0,0,"Z",';
+    const content = `${header}\n${invalidLine}`;
+
+    const result = parseAsientosTxt(content);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 2,
+      field: 'Libro',
+      message: expect.stringContaining('Z'),
+    });
+  });
+
   it('ignores trailing blank lines', () => {
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
     const content = `${validLine}\n\n`;
