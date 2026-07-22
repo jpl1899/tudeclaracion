@@ -117,4 +117,43 @@ describe('resolveAsientoFiscal', () => {
 
     expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 1000, rut: '233669988774' });
   });
+
+  it('converts the importe to pesos using cotizacion when the asiento is in dólares (Camino 1)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 3, iva: 100, moneda: 1, cotizacion: 40 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 4000, rut: '233669988774' });
+  });
+
+  it('converts the importe to pesos using cotizacion when the asiento is in dólares (Camino 2)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, debe: '5215', total: 100, moneda: 1, cotizacion: 40 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 4000, rut: '233669988774' });
+  });
+
+  it('does not convert the importe when the asiento is already in pesos', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, debe: '5215', total: 100, moneda: 0, cotizacion: 40 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 100, rut: '233669988774' });
+  });
 });
