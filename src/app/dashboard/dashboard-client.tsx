@@ -46,7 +46,7 @@ interface DashboardClientProps {
 export function DashboardClient({ empresaId, empresaNombre, declaraciones }: DashboardClientProps) {
   const [importarAbierto, setImportarAbierto] = useState(false);
 
-  async function handleImportar(file: File, periodo: string): Promise<ImportarAsientoError | null> {
+  async function handleImportar(file: File, periodo: string, tipoCambio: number | null): Promise<ImportarAsientoError | null> {
     const contenido = await file.text();
     const resultado = parseAsientosTxt(contenido);
 
@@ -54,11 +54,20 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones }: Das
       return { kind: 'parse', line: resultado.line, field: resultado.field, message: resultado.message };
     }
 
+    const tieneLineasEnDolares = resultado.lines.some(linea => linea.moneda === 1);
+    if (tieneLineasEnDolares && (tipoCambio === null || tipoCambio <= 0)) {
+      return { kind: 'tipo-cambio-requerido', message: 'El archivo tiene asientos en dólares — ingresá el tipo de cambio antes de importar.' };
+    }
+
+    const lineas = tipoCambio === null
+      ? resultado.lines
+      : resultado.lines.map(linea => linea.moneda === 1 ? { ...linea, cotizacion: tipoCambio } : linea);
+
     const supabase = createClient();
     const { error } = await supabase.rpc('insertar_asientos', {
       p_empresa_id: empresaId,
       p_periodo: periodo,
-      p_lineas: resultado.lines as unknown as Json,
+      p_lineas: lineas as unknown as Json,
     });
 
     if (error) {
@@ -130,7 +139,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones }: Das
             <Badge variant="success">Acción principal</Badge>
             <h2 className="text-2xl font-semibold tracking-tight">Crear declaración 2181</h2>
             <p className="text-muted-foreground">
-              Cargá el TXT exportado desde Memory, revisá validaciones y generá el archivo PADI en
+              Cargá el TXT del proveedor contable, revisá validaciones y generá el archivo PADI en
               un mismo flujo.
             </p>
             <div className="mt-2 flex flex-wrap gap-3">

@@ -151,7 +151,7 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
 }
 
 /**
- * Interpreta el TXT mensual exportado por Memory (formato confirmado en
+ * Interpreta el TXT mensual del proveedor contable (formato confirmado en
  * SRS/05-parser.md, 2026-07-15). Puramente técnico: no aplica reglas
  * tributarias — solo transforma el texto en un modelo de datos interno.
  *

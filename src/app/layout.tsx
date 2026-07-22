@@ -22,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'tuDeclaracion — Declaraciones juradas DGI sin fricción',
   description:
-    'Carga el TXT exportado desde Memory, valida RUTs e importes, y genera el archivo PADI de la declaración jurada 2181 en un mismo flujo.',
+    'Carga el TXT del proveedor contable, valida RUTs e importes, y genera el archivo PADI de la declaración jurada 2181 en un mismo flujo.',
 };
 
 export default function RootLayout({

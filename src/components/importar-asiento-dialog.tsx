@@ -16,16 +16,17 @@ import { cn } from '@/lib/utils';
 
 const ACCEPTED_EXTENSION = '.txt';
 
-/** `null` = éxito. `parse` = dato inválido con línea/campo identificados (05-parser.md); `guardado` = falló la persistencia tras un parseo válido. */
+/** `null` = éxito. `parse` = dato inválido con línea/campo identificados (05-parser.md); `tipo-cambio-requerido` = el archivo trae líneas en dólares sin tipo de cambio cargado; `guardado` = falló la persistencia tras un parseo válido. */
 export type ImportarAsientoError
   = | { kind: 'parse', line: number, field: string, message: string }
+    | { kind: 'tipo-cambio-requerido', message: string }
     | { kind: 'guardado', message: string };
 
 interface ImportarAsientoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   empresaActiva: string
-  onImportar: (file: File, periodo: string) => Promise<ImportarAsientoError | null>
+  onImportar: (file: File, periodo: string, tipoCambio: number | null) => Promise<ImportarAsientoError | null>
 }
 
 function isArchivoValido(file: File) {
@@ -44,6 +45,7 @@ export function ImportarAsientoDialog({
   const [importando, setImportando] = useState(false);
   const [error, setError] = useState<ImportarAsientoError | null>(null);
   const [periodo, setPeriodo] = useState('');
+  const [tipoCambio, setTipoCambio] = useState('');
   const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listoButtonRef = useRef<HTMLButtonElement>(null);
@@ -83,6 +85,7 @@ export function ImportarAsientoDialog({
     setImportando(false);
     setError(null);
     setPeriodo('');
+    setTipoCambio('');
     setConfirmacion(null);
   }
 
@@ -103,7 +106,8 @@ export function ImportarAsientoDialog({
     setError(null);
     setImportando(true);
     const nombreArchivo = archivo.name;
-    const resultado = await onImportar(archivo, periodo.replace('-', ''));
+    const tipoCambioValor = tipoCambio.trim().length > 0 ? Number(tipoCambio) : null;
+    const resultado = await onImportar(archivo, periodo.replace('-', ''), tipoCambioValor);
     setImportando(false);
 
     if (resultado) {
@@ -119,7 +123,7 @@ export function ImportarAsientoDialog({
         <DialogHeader>
           <DialogTitle>Importar asiento</DialogTitle>
           <DialogDescription>
-            Subí el TXT mensual exportado desde Memory para
+            Subí el TXT mensual del proveedor contable para
             {' '}
             {empresaActiva}
             .
@@ -154,6 +158,19 @@ export function ImportarAsientoDialog({
                     type="month"
                     value={periodo}
                     onChange={event => setPeriodo(event.target.value)}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <Label htmlFor="tipo-cambio">Tipo de cambio (dólares → pesos)</Label>
+                  <Input
+                    id="tipo-cambio"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Solo si el archivo tiene asientos en dólares"
+                    value={tipoCambio}
+                    onChange={event => setTipoCambio(event.target.value)}
                   />
                 </div>
 

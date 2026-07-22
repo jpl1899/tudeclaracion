@@ -241,7 +241,7 @@ export function NuevaEmpresaClient() {
               Códigos de formato rápido de IVA
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Para cada código de IVA que uses en Memory (0 a 9), indicá a qué cuenta contable corresponde y a qué
+              Para cada código de IVA que uses (0 a 9), indicá a qué cuenta contable corresponde y a qué
               línea de PADI se declara.
             </p>
           </div>
