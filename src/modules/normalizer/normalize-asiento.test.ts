@@ -42,38 +42,51 @@ describe('resolveAsientoFiscal', () => {
     expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'Código IVA 7' });
   });
 
-  it('resolves via Camino 2 for a compra (Libro C/E), reading the Debe account', () => {
+  it('resolves via Camino 2 by matching the Debe account, regardless of Libro', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
     ];
 
     const result = resolveAsientoFiscal(
-      asiento({ codigoIva: 0, libro: 'C', debe: '5215', total: 1000 }),
+      asiento({ codigoIva: 0, libro: 'V', debe: '5215', total: 1000 }),
       planCuentas,
     );
 
     expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 1000, rut: '233669988774' });
   });
 
-  it('resolves via Camino 2 for a venta (Libro V/I), reading the Haber account', () => {
+  it('resolves via Camino 2 by matching the Haber account when Debe has no mapping', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '4110', codigoPadi: '506', codigoIva: null },
     ];
 
     const result = resolveAsientoFiscal(
-      asiento({ codigoIva: 0, libro: 'V', haber: '4110', total: 1500 }),
+      asiento({ codigoIva: 0, libro: 'C', debe: '9999', haber: '4110', total: 1500 }),
       planCuentas,
     );
 
     expect(result).toEqual({ resolved: true, codigoPadi: '506', importe: 1500, rut: '233669988774' });
   });
 
-  it('does not resolve via Camino 2 when the cuenta contable is not configured', () => {
+  it('resolves an asiento abierto (multi-line) with an empty Debe by matching Haber', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '21332', codigoPadi: '502', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'V', debe: '', haber: '21332', total: 220 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 220, rut: '233669988774' });
+  });
+
+  it('does not resolve via Camino 2 when neither Debe nor Haber is configured', () => {
     const planCuentas: PlanCuentaRow[] = [];
 
-    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '9999' }), planCuentas);
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '9999', haber: '8888' }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'cuenta 9999' });
+    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'cuenta 9999 / 8888' });
   });
 
   it('tipo 504 takes priority and skips the plan de cuentas lookup entirely', () => {
@@ -98,14 +111,53 @@ describe('resolveAsientoFiscal', () => {
     }
   });
 
-  it('libro "P" with Código IVA 0 is out of scope', () => {
+  it('libro "P" no longer blocks Camino 2 — resolves like any other libro (revertido 2026-07-21)', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
     ];
 
-    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'P' }), planCuentas);
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'P', debe: '5215' }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'libro-fuera-de-alcance', rut: '233669988774', dia: 5, valor: 'P' });
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 1000, rut: '233669988774' });
+  });
+
+  it('converts the importe to pesos using cotizacion when the asiento is in dólares (Camino 1)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 3, iva: 100, moneda: 1, cotizacion: 40 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 4000, rut: '233669988774' });
+  });
+
+  it('converts the importe to pesos using cotizacion when the asiento is in dólares (Camino 2)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, debe: '5215', total: 100, moneda: 1, cotizacion: 40 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 4000, rut: '233669988774' });
+  });
+
+  it('does not convert the importe when the asiento is already in pesos', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, debe: '5215', total: 100, moneda: 0, cotizacion: 40 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 100, rut: '233669988774' });
   });
 
   it('excludes a line with importe 0, does not declare it', () => {

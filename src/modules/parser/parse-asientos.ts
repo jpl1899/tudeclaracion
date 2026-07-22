@@ -60,6 +60,15 @@ function fail({ line, field, message }: { line: number, field: string, message: 
   return { ok: false, line, field, message };
 }
 
+/** El TXT puede venir con o sin fila de encabezado (confirmado 2026-07-22) — se detecta por el campo Día, que en una fila real siempre es numérico. */
+function isHeaderLine(rawLine: string | undefined): boolean {
+  if (rawLine === undefined) {
+    return false;
+  }
+  const [primerCampo] = splitFields(rawLine);
+  return primerCampo.trim().toUpperCase() === 'DIA';
+}
+
 function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFailure {
   const fields = splitFields(rawLine);
   if (fields.length !== 12) {
@@ -71,11 +80,15 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     return fail({ line: lineNumber, field: 'Día', message: `"${diaRaw}" no es un día válido (1-31)` });
   }
 
-  if (debe.length === 0 || !NUMERIC_FIELD_RE.test(debe)) {
+  if (debe.length === 0 && haber.length === 0) {
+    return fail({ line: lineNumber, field: 'Debe/Haber', message: 'Debe y Haber no pueden estar vacíos a la vez' });
+  }
+
+  if (debe.length > 0 && !NUMERIC_FIELD_RE.test(debe)) {
     return fail({ line: lineNumber, field: 'Debe', message: `"${debe}" no es un código de cuenta contable válido` });
   }
 
-  if (haber.length === 0 || !NUMERIC_FIELD_RE.test(haber)) {
+  if (haber.length > 0 && !NUMERIC_FIELD_RE.test(haber)) {
     return fail({ line: lineNumber, field: 'Haber', message: `"${haber}" no es un código de cuenta contable válido` });
   }
 
@@ -111,7 +124,8 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     return fail({ line: lineNumber, field: 'Cotización', message: `"${cotizacionRaw}" no es un valor numérico válido` });
   }
 
-  if (!LIBRO_VALUES.includes(libroRaw as Libro)) {
+  const libro = libroRaw.toUpperCase();
+  if (!LIBRO_VALUES.includes(libro as Libro)) {
     return fail({ line: lineNumber, field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
   }
 
@@ -131,15 +145,18 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     codigoIva,
     iva,
     cotizacion,
-    libro: libroRaw as Libro,
+    libro: libro as Libro,
     tipo: tipo as Tipo | null,
   };
 }
 
 /**
- * Interpreta el TXT mensual exportado por Memory (formato confirmado en
+ * Interpreta el TXT mensual del proveedor contable (formato confirmado en
  * SRS/05-parser.md, 2026-07-15). Puramente técnico: no aplica reglas
  * tributarias — solo transforma el texto en un modelo de datos interno.
+ *
+ * El archivo puede traer o no una fila de encabezado como primera línea
+ * (confirmado 2026-07-22) — si está, se descarta antes de interpretar datos.
  *
  * Si cualquier campo de cualquier línea es inválido, aborta el archivo
  * completo (no devuelve resultados parciales) — regla confirmada 2026-07-16.
@@ -147,8 +164,9 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
 export function parseAsientosTxt(content: string): ParseResult {
   const rawLines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
   const lines: AsientoLine[] = [];
+  const startIndex = isHeaderLine(rawLines[0]) ? 1 : 0;
 
-  for (let i = 0; i < rawLines.length; i++) {
+  for (let i = startIndex; i < rawLines.length; i++) {
     const result = parseLine(rawLines[i], i + 1);
     if ('ok' in result) {
       return result;

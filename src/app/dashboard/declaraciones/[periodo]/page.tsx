@@ -58,7 +58,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
   const [{ data: asientos, error: asientosError }, { data: planCuentas, error: planCuentasError }] = await Promise.all([
     supabase
       .from('asiento')
-      .select('dia, rut, total, codigo_iva, iva, libro, tipo, debe, haber')
+      .select('dia, rut, total, codigo_iva, iva, libro, tipo, debe, haber, moneda, cotizacion')
       .eq('declaracion_id', declaracion.id),
     supabase
       .from('plan_cuentas')
@@ -86,11 +86,11 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
       haber: asiento.haber,
       concepto: '',
       rut: asiento.rut,
-      moneda: 0,
+      moneda: asiento.moneda as AsientoLine['moneda'],
       total: asiento.total,
       codigoIva: asiento.codigo_iva,
       iva: asiento.iva,
-      cotizacion: 0,
+      cotizacion: asiento.cotizacion,
       libro: asiento.libro as AsientoLine['libro'],
       tipo: asiento.tipo as AsientoLine['tipo'],
     },
