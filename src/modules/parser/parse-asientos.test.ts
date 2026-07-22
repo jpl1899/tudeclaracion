@@ -138,6 +138,49 @@ describe('parseAsientosTxt', () => {
     });
   });
 
+  it('accepts a lowercase Libro value and normalizes it to uppercase', () => {
+    const content = '8,"1121001","","NC E factura A 1122","215487788992",0,-610,0,0,0,"v",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].libro).toBe('V');
+  });
+
+  it('accepts an asiento abierto line with an empty Haber', () => {
+    const content = '6,"1121001","","Efactura A 5478","215487788992",0,1220,0,0,0,"V",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ debe: '1121001', haber: '' });
+  });
+
+  it('accepts an asiento abierto line with an empty Debe', () => {
+    const content = '6,"","21332","Efactura A 5478","215487788992",0,220,0,0,0,"V",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ debe: '', haber: '21332' });
+  });
+
+  it('rejects a line where both Debe and Haber are empty', () => {
+    const content = '6,"","","Efactura A 5478","215487788992",0,220,0,0,0,"V",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      field: 'Debe/Haber',
+      message: expect.any(String),
+    });
+  });
+
   it('ignores trailing blank lines', () => {
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
     const content = `${validLine}\n\n`;

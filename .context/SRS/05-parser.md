@@ -13,8 +13,8 @@ Delimitador: `,` (coma) — **corregido 2026-07-15**, no `;` como se documentaba
 | # | Campo | Formato | Regla |
 | --- | --- | --- | --- |
 | 1 | Día | Numérico | Sin cero a la izquierda en la práctica (ej. `1`, no `01`), aunque representa 01–31 |
-| 2 | Debe | Numérico, largo variable | **Corregido 2026-07-15**: NO es un importe — es el **código de cuenta contable que se debita** en el asiento (ej. `5215`, `114115`). Ver `06-normalizer.md` / `08-tax-engine.md` para cómo se usa en la resolución del código PADI. |
-| 3 | Haber | Numérico, largo variable | **Corregido 2026-07-15**: tampoco es un importe — es el **código de cuenta contable que se acredita**. Misma naturaleza que Debe, cuenta distinta. |
+| 2 | Debe | Numérico, largo variable, **puede venir vacío** | **Corregido 2026-07-15**: NO es un importe — es el **código de cuenta contable que se debita** en el asiento (ej. `5215`, `114115`). Ver `06-normalizer.md` / `08-tax-engine.md` para cómo se usa en la resolución del código PADI. **Confirmado 2026-07-21**: un asiento "abierto" (multilínea, una cuenta por línea) legítimamente trae Debe vacío en las líneas donde solo hay Haber — Debe y Haber nunca están vacíos **a la vez** en la misma línea. |
+| 3 | Haber | Numérico, largo variable, **puede venir vacío** | **Corregido 2026-07-15**: tampoco es un importe — es el **código de cuenta contable que se acredita**. Misma naturaleza que Debe, cuenta distinta. Mismo permiso de vacío que Debe (ver arriba) — nunca ambos a la vez. |
 | 4 | Concepto | Alfanumérico, 20–50 caracteres | Nunca vacío. Ej: `Efactura A 1234`, `Ancap Ticket A 12452548` |
 | 5 | RUT | Numérico, 12 dígitos | — |
 | 6 | Moneda | Numérico, 1 dígito (0–9) | 0 = pesos, 1 = dólares |
@@ -22,7 +22,7 @@ Delimitador: `,` (coma) — **corregido 2026-07-15**, no `;` como se documentaba
 | 8 | Código IVA | Numérico, 1 dígito (0–9) | `0` = sin código asignado (ver regla de dos caminos en `08-tax-engine.md`) |
 | 9 | IVA | Numérico, con decimales | Siempre en pesos (ej. `180.33`) |
 | 10 | Cotización | Numérico | — |
-| 11 | Libro | Categórico | Solo uno de: `C`, `V`, `E`, `I`, `P` |
+| 11 | Libro | Categórico, **case-insensitive** | Solo uno de: `C`, `V`, `E`, `I`, `P` (confirmado 2026-07-22: el TXT puede traerlo en minúscula — ej. notas de crédito con `"v"` — se normaliza a mayúscula al parsear) |
 | 12 | Tipo | Categórico, **opcional** | Confirmado 2026-07-14. En la práctica el campo 12 aparece siempre como posición (coma final), vacío cuando no aplica. Valores posibles en el TXT: `504`, `CIE` (cierre del ejercicio), `RES` (resultado del ejercicio), `DIF` (diferencia de cambio), `APE` (apertura de ejercicio) — pero **confirmado 2026-07-15**: el motor solo procesa el valor numérico `504`; los valores alfabéticos (`CIE`/`RES`/`DIF`/`APE`) se ignoran, fuera de alcance definitivo. Regla de negocio de `504` → ver `08-tax-engine.md`. Nunca contiene `502`, `503`, `505`, `506`, `552` o `553` — esos códigos PADI solo se derivan por la cadena Código IVA / cuenta contable → configuración de empresa. |
 
 **Ejemplo real** (`ASIENTOS JUNIO 2026.TXT`, línea 5 — compra exenta):
@@ -33,7 +33,7 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 
 > **Corrección 2026-07-13**: el usuario confirmó que el nombre real del campo 11 es **Libro** (no "Libre" como se había documentado antes) — se aplica sin excepción a todas las líneas.
 
-> **Confirmado 2026-07-14 — significado del campo Libro**: `C` y `E` = egresos (compras) — IVA compras tasa básica, tasa mínima, o compras exentas. `V` e `I` = ventas — IVA ventas tasa básica o tasa mínima. `P` = libre uso para data entry — no permite inferir dirección (compra/venta); para estas líneas se resuelve exclusivamente por la cadena ya confirmada en `08-tax-engine.md`. **Ampliado 2026-07-15**: el campo Libro sí participa, indirectamente, en la resolución por cuenta contable (el camino "asiento abierto" de `08-tax-engine.md`) — determina si se busca la cuenta en el campo Debe (compra, `C`/`E`) o en el campo Haber (venta, `V`/`I`). No requiere validación de consistencia propia — el contador confirmó que viene pre-validado por Memory antes de exportar el TXT.
+> **Confirmado 2026-07-14 — significado del campo Libro**: `C` y `E` = egresos (compras) — IVA compras tasa básica, tasa mínima, o compras exentas. `V` e `I` = ventas — IVA ventas tasa básica o tasa mínima. `P` = libre uso para data entry — no permite inferir dirección (compra/venta). No requiere validación de consistencia propia — el contador confirmó que viene pre-validado por Memory antes de exportar el TXT. **Revertido 2026-07-21**: la ampliación del 2026-07-15 (Libro decide si el Camino 2 mira Debe o Haber) quedó descartada — el usuario confirmó que Libro "es un dato innecesario para el motor" (una nota de crédito real traía `Libro='E'` con su cuenta de IVA en Haber, no en Debe). El Camino 2 ahora prueba Debe y después Haber contra el plan de cuentas, sin mirar Libro — ver `08-tax-engine.md`.
 
 ## Confirmado 2026-07-22 — fila de encabezado opcional
 

@@ -80,11 +80,15 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     return fail({ line: lineNumber, field: 'Día', message: `"${diaRaw}" no es un día válido (1-31)` });
   }
 
-  if (debe.length === 0 || !NUMERIC_FIELD_RE.test(debe)) {
+  if (debe.length === 0 && haber.length === 0) {
+    return fail({ line: lineNumber, field: 'Debe/Haber', message: 'Debe y Haber no pueden estar vacíos a la vez' });
+  }
+
+  if (debe.length > 0 && !NUMERIC_FIELD_RE.test(debe)) {
     return fail({ line: lineNumber, field: 'Debe', message: `"${debe}" no es un código de cuenta contable válido` });
   }
 
-  if (haber.length === 0 || !NUMERIC_FIELD_RE.test(haber)) {
+  if (haber.length > 0 && !NUMERIC_FIELD_RE.test(haber)) {
     return fail({ line: lineNumber, field: 'Haber', message: `"${haber}" no es un código de cuenta contable válido` });
   }
 
@@ -120,7 +124,8 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     return fail({ line: lineNumber, field: 'Cotización', message: `"${cotizacionRaw}" no es un valor numérico válido` });
   }
 
-  if (!LIBRO_VALUES.includes(libroRaw as Libro)) {
+  const libro = libroRaw.toUpperCase();
+  if (!LIBRO_VALUES.includes(libro as Libro)) {
     return fail({ line: lineNumber, field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
   }
 
@@ -140,7 +145,7 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
     codigoIva,
     iva,
     cotizacion,
-    libro: libroRaw as Libro,
+    libro: libro as Libro,
     tipo: tipo as Tipo | null,
   };
 }

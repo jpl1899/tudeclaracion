@@ -2,8 +2,6 @@ import type { AsientoLine } from '@/modules/parser/parse-asientos';
 
 const TIPO_504 = '504';
 const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
-const LIBRO_COMPRA = ['C', 'E'] as const;
-const LIBRO_VENTA = ['V', 'I'] as const;
 
 export interface PlanCuentaRow {
   cuentaContable: string
@@ -13,7 +11,7 @@ export interface PlanCuentaRow {
 
 export type NormalizedAsiento
   = | { resolved: true, codigoPadi: string, importe: number, rut: string }
-    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'libro-fuera-de-alcance' | 'sin-mapeo' };
+    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' };
 
 export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuentaRow[]): NormalizedAsiento {
   if (asiento.tipo === TIPO_504) {
@@ -32,20 +30,15 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     return { resolved: true, codigoPadi: match.codigoPadi, importe: asiento.iva, rut: asiento.rut };
   }
 
-  let cuentaContable: string;
-  if ((LIBRO_COMPRA as readonly string[]).includes(asiento.libro)) {
-    cuentaContable = asiento.debe;
-  }
-  else if ((LIBRO_VENTA as readonly string[]).includes(asiento.libro)) {
-    cuentaContable = asiento.haber;
-  }
-  else {
-    return { resolved: false, reason: 'libro-fuera-de-alcance' };
-  }
+  // Camino 2 (asiento abierto): se prueba la cuenta contable de Debe primero,
+  // Haber después — no depende de Libro (revertido 2026-07-21, ver 08-tax-engine.md).
+  const cuentaMatch = [asiento.debe, asiento.haber]
+    .filter(cuenta => cuenta.length > 0)
+    .map(cuenta => planCuentas.find(row => row.cuentaContable === cuenta))
+    .find(match => match !== undefined);
 
-  const match = planCuentas.find(row => row.cuentaContable === cuentaContable);
-  if (!match) {
+  if (!cuentaMatch) {
     return { resolved: false, reason: 'sin-mapeo' };
   }
-  return { resolved: true, codigoPadi: match.codigoPadi, importe: asiento.total, rut: asiento.rut };
+  return { resolved: true, codigoPadi: cuentaMatch.codigoPadi, importe: asiento.total, rut: asiento.rut };
 }
