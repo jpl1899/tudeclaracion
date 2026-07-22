@@ -39,7 +39,7 @@ describe('resolveAsientoFiscal', () => {
 
     const result = resolveAsientoFiscal(asiento({ codigoIva: 7, iva: 50 }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo' });
+    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'Código IVA 7' });
   });
 
   it('resolves via Camino 2 by matching the Debe account, regardless of Libro', () => {
@@ -86,7 +86,7 @@ describe('resolveAsientoFiscal', () => {
 
     const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '9999', haber: '8888' }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo' });
+    expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'cuenta 9999 / 8888' });
   });
 
   it('tipo 504 takes priority and skips the plan de cuentas lookup entirely', () => {
@@ -104,6 +104,9 @@ describe('resolveAsientoFiscal', () => {
       expect(resolveAsientoFiscal(asiento({ tipo }), planCuentas)).toEqual({
         resolved: false,
         reason: 'tipo-fuera-de-alcance',
+        rut: '233669988774',
+        dia: 5,
+        valor: tipo,
       });
     }
   });
@@ -155,5 +158,43 @@ describe('resolveAsientoFiscal', () => {
     );
 
     expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 100, rut: '233669988774' });
+  });
+
+  it('excludes a line with importe 0, does not declare it', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '5215', total: 0 }), planCuentas);
+
+    expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '0' });
+  });
+
+  it('excludes a line with a negative importe, never valid', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '5215', total: -500 }), planCuentas);
+
+    expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '-500' });
+  });
+
+  it('applies the same importe validation to the Código IVA path', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 3, iva: 0 }), planCuentas);
+
+    expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '0' });
+  });
+
+  it('tipo 504 is also subject to importe validation', () => {
+    const planCuentas: PlanCuentaRow[] = [];
+
+    const result = resolveAsientoFiscal(asiento({ tipo: '504', total: -1 }), planCuentas);
+
+    expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '-1' });
   });
 });

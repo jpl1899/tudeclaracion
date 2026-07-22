@@ -22,11 +22,17 @@ export type ImportarAsientoError
     | { kind: 'tipo-cambio-requerido', message: string }
     | { kind: 'guardado', message: string };
 
+export interface ImportarAsientoOpciones {
+  tipoCambio: number | null
+  reemplazar: boolean
+}
+
 interface ImportarAsientoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   empresaActiva: string
-  onImportar: (file: File, periodo: string, tipoCambio: number | null) => Promise<ImportarAsientoError | null>
+  onCheckPeriodo: (periodo: string) => Promise<boolean>
+  onImportar: (file: File, periodo: string, opciones: ImportarAsientoOpciones) => Promise<ImportarAsientoError | null>
 }
 
 function isArchivoValido(file: File) {
@@ -37,6 +43,7 @@ export function ImportarAsientoDialog({
   open,
   onOpenChange,
   empresaActiva,
+  onCheckPeriodo,
   onImportar,
 }: ImportarAsientoDialogProps) {
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -46,9 +53,11 @@ export function ImportarAsientoDialog({
   const [error, setError] = useState<ImportarAsientoError | null>(null);
   const [periodo, setPeriodo] = useState('');
   const [tipoCambio, setTipoCambio] = useState('');
+  const [confirmarReemplazo, setConfirmarReemplazo] = useState(false);
   const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listoButtonRef = useRef<HTMLButtonElement>(null);
+  const reemplazarButtonRef = useRef<HTMLButtonElement>(null);
 
   const puedeImportar = archivo !== null && periodo.length === 7 && empresaActiva.length > 0 && !importando;
 
@@ -60,6 +69,12 @@ export function ImportarAsientoDialog({
       listoButtonRef.current?.focus();
     }
   }, [confirmacion]);
+
+  useEffect(() => {
+    if (confirmarReemplazo) {
+      reemplazarButtonRef.current?.focus();
+    }
+  }, [confirmarReemplazo]);
 
   function seleccionarArchivo(file: File | undefined) {
     if (!file) { return; }
@@ -86,6 +101,7 @@ export function ImportarAsientoDialog({
     setError(null);
     setPeriodo('');
     setTipoCambio('');
+    setConfirmarReemplazo(false);
     setConfirmacion(null);
   }
 
@@ -101,20 +117,34 @@ export function ImportarAsientoDialog({
     onOpenChange(nextOpen);
   }
 
-  async function handleImportar() {
-    if (!archivo || periodo.length !== 7) { return; }
-    setError(null);
+  async function ejecutarImportacion(reemplazar: boolean) {
+    if (!archivo) { return; }
     setImportando(true);
     const nombreArchivo = archivo.name;
     const tipoCambioValor = tipoCambio.trim().length > 0 ? Number(tipoCambio) : null;
-    const resultado = await onImportar(archivo, periodo.replace('-', ''), tipoCambioValor);
+    const resultado = await onImportar(archivo, periodo.replace('-', ''), { tipoCambio: tipoCambioValor, reemplazar });
     setImportando(false);
+    setConfirmarReemplazo(false);
 
     if (resultado) {
       setError(resultado);
       return;
     }
     setConfirmacion({ archivo: nombreArchivo, timestamp: new Date() });
+  }
+
+  async function handleImportarClick() {
+    if (!archivo || periodo.length !== 7) { return; }
+    setError(null);
+    setImportando(true);
+    const yaProcesado = await onCheckPeriodo(periodo.replace('-', ''));
+    setImportando(false);
+
+    if (yaProcesado) {
+      setConfirmarReemplazo(true);
+      return;
+    }
+    await ejecutarImportacion(false);
   }
 
   return (
@@ -149,80 +179,96 @@ export function ImportarAsientoDialog({
                 </p>
               </div>
             )
-          : (
-              <>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="periodo">Período de la declaración</Label>
-                  <Input
-                    id="periodo"
-                    type="month"
-                    value={periodo}
-                    onChange={event => setPeriodo(event.target.value)}
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <Label htmlFor="tipo-cambio">Tipo de cambio (dólares → pesos)</Label>
-                  <Input
-                    id="tipo-cambio"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Solo si el archivo tiene asientos en dólares"
-                    value={tipoCambio}
-                    onChange={event => setTipoCambio(event.target.value)}
-                  />
-                </div>
-
+          : confirmarReemplazo
+            ? (
                 <div
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setArrastrando(true);
-                  }}
-                  onDragLeave={() => setArrastrando(false)}
-                  onDrop={handleDrop}
-                  className={cn(
-                    'grid place-items-center gap-3 rounded-md border-2 border-dashed p-8 text-center transition-colors',
-                    arrastrando ? 'border-primary bg-accent' : 'border-border',
-                  )}
+                  data-testid="importar_asiento_confirmar_reemplazo"
+                  className="grid gap-1.5 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-warning-text"
                 >
-                  <p className="text-muted-foreground">
-                    Arrastrá y soltá el archivo acá, o
+                  <p className="font-medium">
+                    Este asiento del
+                    {' '}
+                    {periodo.replace('-', '/')}
+                    {' '}
+                    ya fue procesado.
                   </p>
-                  <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-                    Buscar archivo
-                  </Button>
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    accept={ACCEPTED_EXTENSION}
-                    className="hidden"
-                    onChange={event => seleccionarArchivo(event.target.files?.[0])}
-                  />
-                  {archivo && (
-                    <p className="font-medium text-foreground">{archivo.name}</p>
-                  )}
-                  {archivoInvalido && (
-                    <p className="text-sm text-destructive">
-                      El archivo debe ser un TXT (
-                      {ACCEPTED_EXTENSION}
-                      ).
-                    </p>
-                  )}
+                  <p>¿Deseás reemplazarlo? Se van a borrar los datos cargados anteriormente para este período.</p>
                 </div>
-
-                {error && (
-                  <div
-                    data-testid="importar_asiento_error"
-                    className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
-                  >
-                    {error.kind === 'parse'
-                      ? `Línea ${error.line}, campo "${error.field}": ${error.message}`
-                      : error.message}
+              )
+            : (
+                <>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="periodo">Período de la declaración</Label>
+                    <Input
+                      id="periodo"
+                      type="month"
+                      value={periodo}
+                      onChange={event => setPeriodo(event.target.value)}
+                    />
                   </div>
-                )}
-              </>
-            )}
+
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="tipo-cambio">Tipo de cambio (dólares → pesos)</Label>
+                    <Input
+                      id="tipo-cambio"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Solo si el archivo tiene asientos en dólares"
+                      value={tipoCambio}
+                      onChange={event => setTipoCambio(event.target.value)}
+                    />
+                  </div>
+
+                  <div
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setArrastrando(true);
+                    }}
+                    onDragLeave={() => setArrastrando(false)}
+                    onDrop={handleDrop}
+                    className={cn(
+                      'grid place-items-center gap-3 rounded-md border-2 border-dashed p-8 text-center transition-colors',
+                      arrastrando ? 'border-primary bg-accent' : 'border-border',
+                    )}
+                  >
+                    <p className="text-muted-foreground">
+                      Arrastrá y soltá el archivo acá, o
+                    </p>
+                    <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+                      Buscar archivo
+                    </Button>
+                    <input
+                      ref={inputRef}
+                      type="file"
+                      accept={ACCEPTED_EXTENSION}
+                      className="hidden"
+                      onChange={event => seleccionarArchivo(event.target.files?.[0])}
+                    />
+                    {archivo && (
+                      <p className="font-medium text-foreground">{archivo.name}</p>
+                    )}
+                    {archivoInvalido && (
+                      <p className="text-sm text-destructive">
+                        El archivo debe ser un TXT (
+                        {ACCEPTED_EXTENSION}
+                        ).
+                      </p>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div
+                      data-testid="importar_asiento_error"
+                      className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
+                    >
+                      {error.kind === 'parse'
+                        ? `Línea ${error.line}, campo "${error.field}": ${error.message}`
+                        : error.message}
+                    </div>
+                  )}
+                </>
+              )}
 
         <DialogFooter>
           {confirmacion
@@ -231,16 +277,30 @@ export function ImportarAsientoDialog({
                   Listo
                 </Button>
               )
-            : (
-                <>
-                  <Button type="button" variant="outline" disabled={importando} onClick={() => handleClose(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="button" disabled={!puedeImportar} onClick={() => void handleImportar()}>
-                    {importando ? 'Importando…' : 'Importar'}
-                  </Button>
-                </>
-              )}
+            : confirmarReemplazo
+              ? (
+                  <>
+                    <Button type="button" variant="outline" disabled={importando} onClick={() => handleClose(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="button" variant="outline" disabled={importando} onClick={() => setConfirmarReemplazo(false)}>
+                      No
+                    </Button>
+                    <Button ref={reemplazarButtonRef} type="button" disabled={importando} onClick={() => void ejecutarImportacion(true)}>
+                      {importando ? 'Reemplazando…' : 'Sí, reemplazar'}
+                    </Button>
+                  </>
+                )
+              : (
+                  <>
+                    <Button type="button" variant="outline" disabled={importando} onClick={() => handleClose(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="button" disabled={!puedeImportar} onClick={() => void handleImportarClick()}>
+                      {importando ? 'Importando…' : 'Importar'}
+                    </Button>
+                  </>
+                )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

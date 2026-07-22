@@ -22,7 +22,7 @@
 ## Exportador — redondeo de importes
 
 9. ¿El importe lleva decimales implícitos? — **No.** Monto entero en pesos — confirma el supuesto ya codificado en `generarArchivoPadi`.
-10. ¿Cómo se redondea? — **Siempre hacia arriba** (no al más cercano). El código actual usaba `Math.round` (redondeo al más cercano) — **corregido a `Math.ceil`** tras esta respuesta.
+10. ¿Cómo se redondea? — **Corregido 2026-07-19** (la respuesta original del 2026-07-17, "siempre hacia arriba" / `Math.ceil`, era incorrecta — encontrado en vivo durante testing de TD-26). Regla real: los importes vienen con 2 decimales; se comparan esos 2 decimales completos contra 0,50 — ≤0,50 redondea para abajo, ≥0,51 para arriba. Confirmado con los límites exactos: 180,50 → 180, 180,51 → 181. Código en `redondearImporte` (`generate-padi-file.ts`).
 
 ## TD-25 — Catálogo completo PADI (552/553)
 

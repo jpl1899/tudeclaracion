@@ -1,8 +1,9 @@
 'use client';
 
-import type { ImportarAsientoError } from '@/components/importar-asiento-dialog';
+import type { ImportarAsientoError, ImportarAsientoOpciones } from '@/components/importar-asiento-dialog';
 import type { Json } from '@/types/supabase';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -44,9 +45,29 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ empresaId, empresaNombre, declaraciones }: DashboardClientProps) {
+  const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
 
-  async function handleImportar(file: File, periodo: string, tipoCambio: number | null): Promise<ImportarAsientoError | null> {
+  async function handleCheckPeriodo(periodo: string): Promise<boolean> {
+    const supabase = createClient();
+    const { data: declaracion } = await supabase
+      .from('declaracion')
+      .select('id')
+      .eq('empresa_id', empresaId)
+      .eq('periodo', periodo)
+      .maybeSingle();
+
+    if (!declaracion) { return false; }
+
+    const { count } = await supabase
+      .from('asiento')
+      .select('*', { count: 'exact', head: true })
+      .eq('declaracion_id', declaracion.id);
+
+    return (count ?? 0) > 0;
+  }
+
+  async function handleImportar(file: File, periodo: string, opciones: ImportarAsientoOpciones): Promise<ImportarAsientoError | null> {
     const contenido = await file.text();
     const resultado = parseAsientosTxt(contenido);
 
@@ -55,10 +76,11 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones }: Das
     }
 
     const tieneLineasEnDolares = resultado.lines.some(linea => linea.moneda === 1);
-    if (tieneLineasEnDolares && (tipoCambio === null || tipoCambio <= 0)) {
+    if (tieneLineasEnDolares && (opciones.tipoCambio === null || opciones.tipoCambio <= 0)) {
       return { kind: 'tipo-cambio-requerido', message: 'El archivo tiene asientos en dólares — ingresá el tipo de cambio antes de importar.' };
     }
 
+    const tipoCambio = opciones.tipoCambio;
     const lineas = tipoCambio === null
       ? resultado.lines
       : resultado.lines.map(linea => linea.moneda === 1 ? { ...linea, cotizacion: tipoCambio } : linea);
@@ -68,12 +90,14 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones }: Das
       p_empresa_id: empresaId,
       p_periodo: periodo,
       p_lineas: lineas as unknown as Json,
+      p_reemplazar: opciones.reemplazar,
     });
 
     if (error) {
       return { kind: 'guardado', message: 'No se pudo guardar el archivo. Intentá nuevamente en unos minutos.' };
     }
 
+    router.refresh();
     return null;
   }
 
@@ -219,6 +243,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones }: Das
         open={importarAbierto}
         onOpenChange={setImportarAbierto}
         empresaActiva={empresaNombre}
+        onCheckPeriodo={handleCheckPeriodo}
         onImportar={handleImportar}
       />
     </div>

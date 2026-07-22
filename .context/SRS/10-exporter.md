@@ -23,7 +23,7 @@ Genera el archivo TXT de salida de la Declaración Jurada 2181, compatible con e
 | 4 | RUT cliente/proveedor | 12 dígitos | `101593570014` | El tercero de esta línea |
 | 5 | Añomes | `AAAAMM` | `201612` | **Siempre igual al campo 3** (confirmado por el usuario — no es un período distinto) |
 | 6 | Código PADI | numérico | `502` | Línea del formulario — ver catálogo en `09-forms.md` (incompleto) |
-| 7 | Importe | 12 dígitos, cero a la izquierda | `000000002322` | IVA o total de compra exenta, según el código. **Confirmado 2026-07-17: monto entero, sin decimales implícitos.** Redondeo siempre hacia arriba (`Math.ceil`, no al más cercano) — ver `Tax-rules/2181/formulas.md`. |
+| 7 | Importe | 12 dígitos, cero a la izquierda | `000000002322` | IVA o total de compra exenta, según el código. **Confirmado 2026-07-17: monto entero, sin decimales implícitos.** Redondeo (**corregido 2026-07-19**): 2 decimales completos contra 0,50 — ≤0,50 abajo, ≥0,51 arriba (`redondearImporte`) — ver `Tax-rules/2181/formulas.md`. |
 
 ## Ejemplo real
 

@@ -100,6 +100,7 @@ export function NuevaEmpresaClient() {
   }
 
   const missingRut = submitted && rut.trim() === '';
+  const invalidRutLength = submitted && rut.trim() !== '' && rut.trim().length !== 12;
   const missingNombre = submitted && nombre.trim() === '';
   const ivaRowsIncomplete = ivaRows.some(r => r.codigoIva.trim() === '' || r.cuentaContable.trim() === '');
   const exentaRowsIncomplete = exentaRows.some(r => r.cuentaContable.trim() === '');
@@ -111,7 +112,7 @@ export function NuevaEmpresaClient() {
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
 
-    if (trimmedRut === '' || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
+    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
       return;
     }
 
@@ -208,6 +209,11 @@ export function NuevaEmpresaClient() {
             {missingRut && (
               <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
                 El RUT es obligatorio.
+              </div>
+            )}
+            {invalidRutLength && (
+              <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
+                {`"${rut.trim()}" no tiene el formato de 12 dígitos.`}
               </div>
             )}
             {duplicateRutError && (
