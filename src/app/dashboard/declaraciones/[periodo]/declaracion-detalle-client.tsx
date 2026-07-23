@@ -63,7 +63,7 @@ export function DeclaracionDetalleClient({
 
   const conErrores = asientosSinResolver.length > 0;
   const generada = !conErrores && estadoActual === 'generada';
-  const puedeDescargar = !conErrores && totalAsientos > 0 && !descargando;
+  const puedeDescargar = totalAsientos > 0 && !descargando;
 
   async function handleDescargar() {
     if (!puedeDescargar) { return; }
@@ -158,8 +158,8 @@ export function DeclaracionDetalleClient({
                 <p>
                   {asientosSinResolver.length === 1 ? 'Hay 1 asiento' : `Hay ${asientosSinResolver.length} asientos`}
                   {' '}
-                  de este período que no se pudo resolver a un código PADI. Revisá el plan de cuentas de la empresa
-                  y volvé a esta pantalla — la descarga queda deshabilitada hasta que todos los asientos resuelvan.
+                  de este período que no se pudo resolver a un código PADI. Estas líneas no se incluyen en el archivo
+                  PADI generado — si corresponden a una cuenta fiscal real, revisá el plan de cuentas de la empresa.
                 </p>
                 <ul className="grid gap-1 pl-4 text-sm">
                   {asientosSinResolver.map((asiento, indice) => (
