@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       asiento: {
@@ -110,6 +85,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cotizacion_bcu_cache: {
+        Row: {
+          fecha: string
+          moneda_codigo: number
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          fecha: string
+          moneda_codigo: number
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          fecha?: string
+          moneda_codigo?: number
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
       }
       cuenta: {
         Row: {
@@ -358,7 +354,12 @@ export type Database = {
         Returns: string
       }
       insertar_asientos: {
-        Args: { p_empresa_id: string; p_lineas: Json; p_periodo: string }
+        Args: {
+          p_empresa_id: string
+          p_lineas: Json
+          p_periodo: string
+          p_reemplazar?: boolean
+        }
         Returns: undefined
       }
     }
@@ -489,9 +490,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
