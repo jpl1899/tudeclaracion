@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 import { resolveAsientoFiscal } from '@/modules/normalizer/normalize-asiento';
 import { consolidarLineasDeclaracion } from '@/modules/tax-engine/consolidate-lines';
+import { filtrarAsientosSinResolver } from '@/modules/tax-engine/filter-asientos-sin-resolver';
 import { DeclaracionDetalleClient } from './declaracion-detalle-client';
 
 interface DeclaracionDetallePageProps {
@@ -58,7 +59,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
   const [{ data: asientos, error: asientosError }, { data: planCuentas, error: planCuentasError }] = await Promise.all([
     supabase
       .from('asiento')
-      .select('dia, rut, total, codigo_iva, iva, libro, tipo, debe, haber, moneda, cotizacion')
+      .select('dia, rut, total, codigo_iva, iva, libro, tipo, debe, haber, moneda, cotizacion, concepto')
       .eq('declaracion_id', declaracion.id),
     supabase
       .from('plan_cuentas')
@@ -79,25 +80,23 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
     codigoIva: row.codigo_iva,
   }));
 
-  const resueltos = (asientos ?? []).map(asiento => resolveAsientoFiscal(
-    {
-      dia: asiento.dia,
-      debe: asiento.debe,
-      haber: asiento.haber,
-      concepto: '',
-      rut: asiento.rut,
-      moneda: asiento.moneda as AsientoLine['moneda'],
-      total: asiento.total,
-      codigoIva: asiento.codigo_iva,
-      iva: asiento.iva,
-      cotizacion: asiento.cotizacion,
-      libro: asiento.libro as AsientoLine['libro'],
-      tipo: asiento.tipo as AsientoLine['tipo'],
-    },
-    planCuentasRows,
-  ));
+  const asientoLines: AsientoLine[] = (asientos ?? []).map(asiento => ({
+    dia: asiento.dia,
+    debe: asiento.debe,
+    haber: asiento.haber,
+    concepto: asiento.concepto,
+    rut: asiento.rut,
+    moneda: asiento.moneda as AsientoLine['moneda'],
+    total: asiento.total,
+    codigoIva: asiento.codigo_iva,
+    iva: asiento.iva,
+    cotizacion: asiento.cotizacion,
+    libro: asiento.libro as AsientoLine['libro'],
+    tipo: asiento.tipo as AsientoLine['tipo'],
+  }));
 
-  const asientosSinResolver = resueltos.filter(r => !r.resolved);
+  const resueltos = asientoLines.map(linea => resolveAsientoFiscal(linea, planCuentasRows));
+  const asientosSinResolver = filtrarAsientosSinResolver(asientoLines, resueltos);
   const lineas = consolidarLineasDeclaracion(resueltos);
 
   return (
