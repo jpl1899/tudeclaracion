@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
+import { resolverCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
 import { DashboardClient } from './dashboard-client';
 
 /**
@@ -44,11 +45,14 @@ export default async function DashboardPage() {
     throw new Error(`No se pudieron cargar las declaraciones: ${declaracionesError.message}`);
   }
 
+  const cotizacionBcuInicial = await resolverCotizacionBcu(supabase);
+
   return (
     <DashboardClient
       empresaId={empresaActiva.id}
       empresaNombre={empresaActiva.nombre}
       declaraciones={declaraciones ?? []}
+      cotizacionBcuInicial={cotizacionBcuInicial}
     />
   );
 }

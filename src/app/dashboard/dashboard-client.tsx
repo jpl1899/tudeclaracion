@@ -1,15 +1,17 @@
 'use client';
 
 import type { ImportarAsientoError, ImportarAsientoOpciones } from '@/components/importar-asiento-dialog';
+import type { EstadoCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
 import type { Json } from '@/types/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createClient } from '@/infrastructure/supabase/client';
+import { reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
 import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
 
 /**
@@ -21,6 +23,14 @@ import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
  * real: parsea client-side (puramente técnico, sin red) y solo llama a
  * Supabase si el archivo es 100% válido — inserción atómica vía el RPC
  * insertar_asientos (ver supabase/migrations/20260717171500_*.sql).
+ *
+ * Card "Cotización interbancario fondo" (sidebar) — mockup en
+ * .context/designs/tudeclaracion/Dashboard/dashboard.html. Dato puramente
+ * informativo (ver decisión 2026-07-24): nunca alimenta `insertar_asientos`
+ * ni el archivo PADI, eso sigue dependiendo solo del tipo de cambio que el
+ * usuario tipea a mano en el modal de importar. `page.tsx` resuelve el
+ * estado inicial server-side (evita CORS contra el webservice del BCU);
+ * "Reintentar" llama al Server Action `reintentarCotizacionBcu`.
  */
 const badgeVariant: Record<string, 'success' | 'warning'> = {
   abierta: 'warning',
@@ -42,11 +52,28 @@ interface DashboardClientProps {
   empresaId: string
   empresaNombre: string
   declaraciones: DeclaracionResumen[]
+  cotizacionBcuInicial: EstadoCotizacionBcu
 }
 
-export function DashboardClient({ empresaId, empresaNombre, declaraciones }: DashboardClientProps) {
+function formatearValorCotizacion(valor: number): string {
+  return `$ ${valor.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatearFechaCotizacion(fecha: string): string {
+  return new Date(`${fecha}T00:00:00`).toLocaleDateString('es-UY');
+}
+
+export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
   const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
+  const [cotizacionBcu, setCotizacionBcu] = useState(cotizacionBcuInicial);
+  const [reintentando, startReintentar] = useTransition();
+
+  function handleReintentarCotizacion(): void {
+    startReintentar(async () => {
+      setCotizacionBcu(await reintentarCotizacionBcu());
+    });
+  }
 
   async function handleCheckPeriodo(periodo: string): Promise<boolean> {
     const supabase = createClient();
@@ -143,6 +170,48 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones }: Das
             <span className="font-normal text-primary">(cambiar)</span>
           </span>
         </Link>
+
+        <article
+          className={
+            cotizacionBcu.estado === 'error'
+              ? 'grid gap-0.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm'
+              : cotizacionBcu.estado === 'fallback'
+                ? 'grid gap-0.5 rounded-md border border-warning/30 bg-warning-bg p-3.5 text-sm'
+                : 'grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm'
+          }
+        >
+          <span className="text-muted-foreground">Cotización interbancario fondo</span>
+
+          {reintentando && (
+            <span className="font-semibold text-foreground">Consultando BCU...</span>
+          )}
+
+          {!reintentando && cotizacionBcu.estado === 'error' && (
+            <span className="font-semibold text-destructive">No se pudo obtener la cotización</span>
+          )}
+
+          {!reintentando && cotizacionBcu.estado !== 'error' && (
+            <span className="font-semibold text-foreground">{formatearValorCotizacion(cotizacionBcu.valor)}</span>
+          )}
+
+          {!reintentando && cotizacionBcu.estado === 'normal' && (
+            <span className="text-muted-foreground">{`Valor BCU del ${formatearFechaCotizacion(cotizacionBcu.fecha)} (día hábil anterior)`}</span>
+          )}
+
+          {!reintentando && cotizacionBcu.estado === 'fallback' && (
+            <span className="text-warning-text">{`Último valor disponible — ${formatearFechaCotizacion(cotizacionBcu.fecha)} (no se pudo actualizar hoy)`}</span>
+          )}
+
+          {!reintentando && cotizacionBcu.estado === 'error' && (
+            <button
+              type="button"
+              onClick={handleReintentarCotizacion}
+              className="mt-1 w-fit rounded-md border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground"
+            >
+              Reintentar
+            </button>
+          )}
+        </article>
       </aside>
 
       <main className="grid content-start gap-5 p-6">
