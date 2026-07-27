@@ -22,11 +22,12 @@ function redondearImporte(valor: number): number {
 /**
  * Formato confirmado en SRS/10-exporter.md: 7 campos delimitados por `;`,
  * sin encabezado, cada línea termina en `;`. El campo 7 (importe) es un
- * monto entero sin decimales (ver `redondearImporte`). Un importe negativo
- * nunca es válido de por sí (confirmado 2026-07-17) -- TD-17 (todavía no
- * construido) es quien debe rechazarlo antes de llegar acá; `Math.abs`
- * queda como red de seguridad para nunca emitir un archivo con un signo
- * corrompiendo el campo de ancho fijo.
+ * monto entero sin decimales (ver `redondearImporte`), sin campo de signo.
+ * Corregido 2026-07-27: un importe negativo puede resolver más arriba en el
+ * pipeline (nota de crédito), pero `consolidarLineasDeclaracion` ya excluye
+ * toda línea cuyo neto sea ≤ 0 antes de que llegue acá -- a esta altura
+ * `linea.importe` siempre es positivo. `Math.abs` queda como red de
+ * seguridad, no como mecanismo esperado.
  */
 export function generarArchivoPadi(declarante: DatosDeclarante, lineas: LineaDeclaracion[]): string {
   return lineas

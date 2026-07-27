@@ -16,7 +16,7 @@ type AsientoSinResolver = Extract<NormalizedAsiento, { resolved: false }>;
 const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
   'sin-mapeo': 'no está mapeado en el plan de cuentas',
   'tipo-fuera-de-alcance': 'tiene un tipo fuera del alcance de esta declaración',
-  'importe-invalido': 'tiene un importe inválido (debe ser mayor a cero)',
+  'importe-invalido': 'tiene un importe inválido (no puede ser cero)',
 };
 
 /**

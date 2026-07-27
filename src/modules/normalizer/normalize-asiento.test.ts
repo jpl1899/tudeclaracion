@@ -170,16 +170,6 @@ describe('resolveAsientoFiscal', () => {
     expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '0' });
   });
 
-  it('excludes a line with a negative importe, never valid', () => {
-    const planCuentas: PlanCuentaRow[] = [
-      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
-    ];
-
-    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'C', debe: '5215', total: -500 }), planCuentas);
-
-    expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '-500' });
-  });
-
   it('applies the same importe validation to the Código IVA path', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },
@@ -190,11 +180,31 @@ describe('resolveAsientoFiscal', () => {
     expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '0' });
   });
 
-  it('tipo 504 is also subject to importe validation', () => {
+  it('resolves a negative importe via Camino 2 -- represents a nota de crédito to be neteada downstream (corregido 2026-07-27)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '21332', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 0, libro: 'V', debe: '', haber: '21332', total: -110 }), planCuentas);
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: -110, rut: '233669988774' });
+  });
+
+  it('resolves a negative importe via Código IVA directo -- same nota de crédito treatment as Camino 2', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 3, iva: -50 }), planCuentas);
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: -50, rut: '233669988774' });
+  });
+
+  it('tipo 504 also resolves a negative importe (same shared guard as the other two caminos)', () => {
     const planCuentas: PlanCuentaRow[] = [];
 
     const result = resolveAsientoFiscal(asiento({ tipo: '504', total: -1 }), planCuentas);
 
-    expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '-1' });
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: -1, rut: '233669988774' });
   });
 });

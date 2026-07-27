@@ -66,10 +66,16 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
 
   /**
    * TD-17: confirmado 2026-07-17 (SRS/07-validator.md) -- un importe 0 no se
-   * declara, un importe negativo nunca es válido. Se excluye solo esta
-   * línea, no se aborta la declaración entera (misma mecánica que sin-mapeo).
+   * declara. Se excluye solo esta línea, no se aborta la declaración entera
+   * (misma mecánica que sin-mapeo).
+   *
+   * **Corregido 2026-07-27**: un importe negativo ya NO se rechaza acá --
+   * representa una nota de crédito/devolución. Resuelve normal (`resolved:
+   * true` con importe negativo) para que `consolidarLineasDeclaracion` lo
+   * neteé contra el asiento positivo del mismo RUT+código PADI. El
+   * descarte de un neto final ≤ 0 pasa a vivir en esa función, no acá.
    */
-  if (resolucion.importe <= 0) {
+  if (resolucion.importe === 0) {
     return noResuelto(asiento, 'importe-invalido', resolucion.importe.toString());
   }
 

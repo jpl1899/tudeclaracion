@@ -10,7 +10,7 @@
 
 2. ¿Existe un importe mínimo DGI? — **No.** No hay piso mínimo para el 2181.
 3. ¿Un importe igual a cero es válido? — **No.**
-4. ¿Un importe negativo es válido? — **No, jamás.**
+4. ¿Un importe negativo es válido? — **Corregido 2026-07-27**: representa una nota de crédito/devolución. Resuelve normal y se netea (suma simple) contra el asiento positivo del mismo RUT+código PADI. Si el neto final da 0 o negativo, la línea no se declara (ver `SRS/08-tax-engine.md`).
 5. ¿El período de cada asiento debe coincidir con el período de la declaración? — **En general sí, en rurales no.** ⚠️ **Seguimiento abierto**: qué significa "rurales" en este contexto (¿régimen tributario del contribuyente? ¿tipo de actividad?) y por qué el período no coincide en ese caso — no se fabrica la excepción, queda pendiente de una próxima sesión.
 6. ¿Hay casillas condicionadas al tipo de contribuyente/tercero? — **No.**
 7. ¿Se valida consistencia cruzada contra otro total declarado? — **No.**

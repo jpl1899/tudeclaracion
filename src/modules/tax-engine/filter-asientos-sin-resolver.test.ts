@@ -45,6 +45,21 @@ describe('filtrarAsientosSinResolver', () => {
     expect(filtrarAsientosSinResolver(asientos, resueltos)).toEqual([]);
   });
 
+  it('discards contrapartida lines from an asiento abierto whose matched line resolved with a negative importe (nota de crédito, corregido 2026-07-27)', () => {
+    const asientos = [
+      asiento({ debe: '1121001', total: -610 }),
+      asiento({ haber: '21332', total: -110 }),
+      asiento({ haber: '4102', total: -500 }),
+    ];
+    const resueltos: NormalizedAsiento[] = [
+      sinMapeo({ valor: 'cuenta 1121001' }),
+      resuelto({ importe: -110 }),
+      sinMapeo({ valor: 'cuenta 4102' }),
+    ];
+
+    expect(filtrarAsientosSinResolver(asientos, resueltos)).toEqual([]);
+  });
+
   it('keeps a sin-mapeo asiento when no line in its group resolved', () => {
     const asientos = [asiento({ debe: '9999', concepto: 'Sin grupo' })];
     const resueltos: NormalizedAsiento[] = [sinMapeo({ valor: 'cuenta 9999' })];

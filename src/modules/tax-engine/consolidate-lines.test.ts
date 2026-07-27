@@ -61,4 +61,33 @@ describe('consolidarLineasDeclaracion', () => {
   it('returns an empty array when there is nothing to consolidate', () => {
     expect(consolidarLineasDeclaracion([])).toEqual([]);
   });
+
+  it('nets a nota de crédito (negative importe) against the positive asiento of the same RUT+código PADI (corregido 2026-07-27)', () => {
+    const resueltos = [
+      resuelto({ importe: 220 }),
+      resuelto({ importe: -110 }),
+    ];
+
+    const result = consolidarLineasDeclaracion(resueltos);
+
+    expect(result).toEqual([{ rut: '233669988774', codigoPadi: '502', importe: 110 }]);
+  });
+
+  it('excludes a line whose net lands at exactly 0 -- venta cancelada por su propia nota de crédito', () => {
+    const resueltos = [
+      resuelto({ importe: 500 }),
+      resuelto({ importe: -500 }),
+    ];
+
+    expect(consolidarLineasDeclaracion(resueltos)).toEqual([]);
+  });
+
+  it('excludes a line whose net lands negative -- nota de crédito mayor a la venta del período', () => {
+    const resueltos = [
+      resuelto({ importe: 500 }),
+      resuelto({ importe: -600 }),
+    ];
+
+    expect(consolidarLineasDeclaracion(resueltos)).toEqual([]);
+  });
 });
