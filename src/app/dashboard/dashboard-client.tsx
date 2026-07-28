@@ -169,6 +169,12 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
           >
             Declaraciones generadas
           </button>
+          <Link
+            href="/dashboard/cotizaciones"
+            className="min-h-12 content-center rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
+          >
+            Cotizaciones
+          </Link>
           <button
             type="button"
             className="min-h-12 rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
