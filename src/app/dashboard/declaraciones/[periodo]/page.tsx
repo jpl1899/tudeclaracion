@@ -1,7 +1,9 @@
 import type { PlanCuentaRow } from '@/modules/normalizer/normalize-asiento';
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
+import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
 import { resolveAsientoFiscal } from '@/modules/normalizer/normalize-asiento';
 import { consolidarLineasDeclaracion } from '@/modules/tax-engine/consolidate-lines';
 import { filtrarAsientosSinResolver } from '@/modules/tax-engine/filter-asientos-sin-resolver';
@@ -26,17 +28,8 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
     redirect('/login');
   }
 
-  const { data: empresas, error: empresaError } = await supabase
-    .from('empresa')
-    .select('id, nombre, rut')
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (empresaError) {
-    throw new Error(`No se pudo cargar la empresa activa: ${empresaError.message}`);
-  }
-
-  const empresaActiva = empresas?.[0];
+  const cookieStore = await cookies();
+  const empresaActiva = await resolverEmpresaActiva(supabase, cookieStore.get(EMPRESA_ACTIVA_COOKIE)?.value);
   if (!empresaActiva) {
     redirect('/empresas');
   }

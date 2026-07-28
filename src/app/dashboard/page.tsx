@@ -1,6 +1,8 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 import { resolverCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
+import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
 import { DashboardClient } from './dashboard-client';
 
 /**
@@ -8,9 +10,10 @@ import { DashboardClient } from './dashboard-client';
  * (RLS scopes rows to cuenta_id = auth.uid(), ver .context/SRS/12-security.md)
  * para poder pasar un `empresaId` real al flujo de import de TD-13.
  *
- * Selección explícita de empresa activa (más de una empresa por cuenta) es
- * responsabilidad de /empresas (TD-5) — acá solo se toma la primera como
- * placeholder mínimo hasta que ese flujo esté conectado al dashboard.
+ * TD-5 (2026-07-28): la empresa activa la fija /empresas en la cookie
+ * `empresa_activa_id` -- ver `resolverEmpresaActiva`. Antes de esto siempre
+ * se tomaba la empresa creada más recientemente, sin importar qué eligiera
+ * el usuario en /empresas.
  */
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -20,17 +23,8 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const { data, error } = await supabase
-    .from('empresa')
-    .select('id, nombre')
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (error) {
-    throw new Error(`No se pudo cargar la empresa activa: ${error.message}`);
-  }
-
-  const empresaActiva = data?.[0];
+  const cookieStore = await cookies();
+  const empresaActiva = await resolverEmpresaActiva(supabase, cookieStore.get(EMPRESA_ACTIVA_COOKIE)?.value);
   if (!empresaActiva) {
     redirect('/empresas');
   }

@@ -1,6 +1,8 @@
 import type { Empresa } from './empresas-client';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
+import { EMPRESA_ACTIVA_COOKIE } from '@/modules/empresa/empresa-activa';
 import { EmpresasClient } from './empresas-client';
 
 /**
@@ -18,7 +20,7 @@ export default async function EmpresasPage() {
 
   const { data, error } = await supabase
     .from('empresa')
-    .select('nombre, rut, estado, responsable, ultimo_movimiento')
+    .select('id, nombre, rut, estado, responsable, ultimo_movimiento')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -28,6 +30,7 @@ export default async function EmpresasPage() {
   }
 
   const empresas: Empresa[] = (data ?? []).map(row => ({
+    id: row.id,
     nombre: row.nombre,
     rut: row.rut,
     estado: row.estado === 'Operativa' ? 'Operativa' : 'Pendiente',
@@ -35,5 +38,8 @@ export default async function EmpresasPage() {
     ultimoMovimiento: row.ultimo_movimiento ?? 'Sin actividad reciente',
   }));
 
-  return <EmpresasClient empresas={empresas} />;
+  const cookieStore = await cookies();
+  const empresaActivaId = cookieStore.get(EMPRESA_ACTIVA_COOKIE)?.value ?? null;
+
+  return <EmpresasClient empresas={empresas} empresaActivaIdInicial={empresaActivaId} />;
 }

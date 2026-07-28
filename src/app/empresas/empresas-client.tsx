@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { seleccionarEmpresaActiva } from './actions';
 
 /**
  * Selección de empresa — .context/design/master-design-plan.md §4.4, mockup en
@@ -14,8 +15,14 @@ import { Input } from '@/components/ui/input';
  * activa (1 Cuenta de contador → N Empresas, ver .context/SRS/04-domain-model.md).
  * Recibe `empresas` ya resueltas por el Server Component (page.tsx), scoped
  * por RLS a la cuenta del usuario autenticado.
+ *
+ * TD-5 (2026-07-28): la selección ahora persiste -- "Ingresar al dashboard"
+ * fija la empresa elegida en una cookie (`seleccionarEmpresaActiva`) que el
+ * resto del dashboard lee vía `resolverEmpresaActiva`. Antes este paso era
+ * solo visual y el dashboard siempre operaba sobre la empresa más reciente.
  */
 export interface Empresa {
+  id: string
   nombre: string
   rut: string
   estado: 'Operativa' | 'Pendiente'
@@ -23,10 +30,20 @@ export interface Empresa {
   responsable: string
 }
 
-export function EmpresasClient({ empresas }: { empresas: Empresa[] }) {
+export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas: Empresa[], empresaActivaIdInicial: string | null }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Empresa | null>(empresas[0] ?? null);
+  const [selected, setSelected] = useState<Empresa | null>(
+    empresas.find(e => e.id === empresaActivaIdInicial) ?? empresas[0] ?? null,
+  );
+  const [ingresando, startIngresar] = useTransition();
+
+  function handleIngresar(empresaId: string) {
+    startIngresar(async () => {
+      await seleccionarEmpresaActiva(empresaId);
+      router.push('/dashboard');
+    });
+  }
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -85,11 +102,11 @@ export function EmpresasClient({ empresas }: { empresas: Empresa[] }) {
           <div className="grid gap-3">
             {filtered.map(empresa => (
               <button
-                key={empresa.rut}
+                key={empresa.id}
                 type="button"
                 onClick={() => setSelected(empresa)}
                 className={`grid gap-3.5 rounded-2xl border p-4.5 text-left transition-colors ${
-                  selected?.rut === empresa.rut
+                  selected?.id === empresa.id
                     ? 'border-primary/40 bg-primary/5 shadow-md'
                     : 'border-border bg-card hover:border-primary/25 hover:shadow-sm'
                 }`}
@@ -198,8 +215,8 @@ export function EmpresasClient({ empresas }: { empresas: Empresa[] }) {
                     </div>
                   </div>
 
-                  <Button size="lg" className="h-[52px]" onClick={() => router.push('/dashboard')}>
-                    Ingresar al dashboard
+                  <Button size="lg" className="h-[52px]" disabled={ingresando} onClick={() => handleIngresar(selected.id)}>
+                    {ingresando ? 'Ingresando…' : 'Ingresar al dashboard'}
                   </Button>
                   <p className="text-sm text-muted-foreground">
                     Siguiente paso único: abrir panel principal con empresa activa ya definida.
