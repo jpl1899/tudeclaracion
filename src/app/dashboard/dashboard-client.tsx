@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createClient } from '@/infrastructure/supabase/client';
-import { reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
+import { poblarCotizacionesBcuParaPeriodo, reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
+import { resolverCotizacionParaDia } from '@/modules/cotizacion/resolve-cotizacion-por-dia';
 import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
 
 /**
@@ -25,12 +26,12 @@ import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
  * insertar_asientos (ver supabase/migrations/20260717171500_*.sql).
  *
  * Card "Cotización interbancario fondo" (sidebar) — mockup en
- * .context/designs/tudeclaracion/Dashboard/dashboard.html. Dato puramente
- * informativo (ver decisión 2026-07-24): nunca alimenta `insertar_asientos`
- * ni el archivo PADI, eso sigue dependiendo solo del tipo de cambio que el
- * usuario tipea a mano en el modal de importar. `page.tsx` resuelve el
- * estado inicial server-side (evita CORS contra el webservice del BCU);
- * "Reintentar" llama al Server Action `reintentarCotizacionBcu`.
+ * .context/designs/tudeclaracion/Dashboard/dashboard.html. Sigue siendo
+ * informativa (día hábil anterior a HOY, ver decisión 2026-07-24) — distinta
+ * del valor que efectivamente se usa por asiento (día hábil anterior AL
+ * ASIENTO, TD-27 2026-07-28, ver `resolverCotizacionParaDia`). `page.tsx`
+ * resuelve el estado inicial server-side (evita CORS contra el webservice
+ * del BCU); "Reintentar" llama al Server Action `reintentarCotizacionBcu`.
  */
 const badgeVariant: Record<string, 'success' | 'warning'> = {
   abierta: 'warning',
@@ -102,17 +103,34 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
       return { kind: 'parse', line: resultado.line, field: resultado.field, message: resultado.message };
     }
 
-    const tieneLineasEnDolares = resultado.lines.some(linea => linea.moneda === 1);
-    if (tieneLineasEnDolares && (opciones.tipoCambio === null || opciones.tipoCambio <= 0)) {
-      return { kind: 'tipo-cambio-requerido', message: 'El archivo tiene asientos en dólares — ingresá el tipo de cambio antes de importar.' };
+    const supabase = createClient();
+
+    /**
+     * TD-27 (2026-07-28): la columna Cotización del TXT manda si viene ≠0
+     * (asiento resuelto por el proveedor contable); si viene en 0, se resuelve
+     * contra el día hábil anterior al día del asiento en la tabla del BCU.
+     */
+    const lineasEnDolaresSinCotizacion = resultado.lines.filter(linea => linea.moneda === 1 && linea.cotizacion === 0);
+    if (lineasEnDolaresSinCotizacion.length > 0) {
+      const { ok } = await poblarCotizacionesBcuParaPeriodo(periodo);
+      if (!ok) {
+        return { kind: 'cotizacion-no-disponible', message: 'No se pudo obtener la cotización del BCU para este período. Intentá nuevamente en unos minutos.' };
+      }
     }
 
-    const tipoCambio = opciones.tipoCambio;
-    const lineas = tipoCambio === null
-      ? resultado.lines
-      : resultado.lines.map(linea => linea.moneda === 1 ? { ...linea, cotizacion: tipoCambio } : linea);
+    const lineas = [];
+    for (const linea of resultado.lines) {
+      if (linea.moneda !== 1 || linea.cotizacion !== 0) {
+        lineas.push(linea);
+        continue;
+      }
+      const valor = await resolverCotizacionParaDia(supabase, periodo, linea.dia);
+      if (valor === null) {
+        return { kind: 'cotizacion-no-disponible', message: `No se encontró cotización del BCU para el día hábil anterior al ${linea.dia} del período.` };
+      }
+      lineas.push({ ...linea, cotizacion: valor });
+    }
 
-    const supabase = createClient();
     const { error } = await supabase.rpc('insertar_asientos', {
       p_empresa_id: empresaId,
       p_periodo: periodo,
@@ -211,6 +229,10 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
               Reintentar
             </button>
           )}
+
+          <Link href="/dashboard/cotizaciones" className="mt-1 w-fit text-primary hover:underline">
+            Ver tabla completa
+          </Link>
         </article>
       </aside>
 

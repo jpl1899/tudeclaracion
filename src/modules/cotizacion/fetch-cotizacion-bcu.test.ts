@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularRangoConsulta, parsearRespuestaBcu } from './fetch-cotizacion-bcu';
+import { calcularRangoConsulta, calcularRangoConsultaPeriodo, parsearCotizacionesBcu, parsearRespuestaBcu } from './fetch-cotizacion-bcu';
 
 const RESPUESTA_OK = `<?xml version="1.0" encoding="utf-8"?>
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
@@ -91,5 +91,36 @@ describe('calcularRangoConsulta', () => {
     const hoy = new Date('2026-07-24T12:00:00Z');
 
     expect(calcularRangoConsulta(hoy)).toEqual({ fechaDesde: '2026-07-13', fechaHasta: '2026-07-23' });
+  });
+});
+
+describe('parsearCotizacionesBcu', () => {
+  it('returns every business day in the range, in the order the BCU sends them', () => {
+    expect(parsearCotizacionesBcu(RESPUESTA_OK)).toEqual([
+      { fecha: '2024-01-02', valor: 39.092 },
+      { fecha: '2024-01-05', valor: 39.325 },
+    ]);
+  });
+
+  it('returns an empty array when the BCU reports an error status', () => {
+    expect(parsearCotizacionesBcu(RESPUESTA_ERROR)).toEqual([]);
+  });
+
+  it('returns an empty array when the range has no cotizaciones', () => {
+    expect(parsearCotizacionesBcu(RESPUESTA_SIN_DATOS)).toEqual([]);
+  });
+});
+
+describe('calcularRangoConsultaPeriodo', () => {
+  it('covers the whole período plus a buffer before day 1, for a closed período', () => {
+    const hoy = new Date('2026-08-05T12:00:00Z');
+
+    expect(calcularRangoConsultaPeriodo('202607', hoy)).toEqual({ fechaDesde: '2026-06-21', fechaHasta: '2026-07-31' });
+  });
+
+  it('caps fechaHasta at yesterday when the período is still ongoing', () => {
+    const hoy = new Date('2026-07-28T12:00:00Z');
+
+    expect(calcularRangoConsultaPeriodo('202607', hoy)).toEqual({ fechaDesde: '2026-06-21', fechaHasta: '2026-07-27' });
   });
 });

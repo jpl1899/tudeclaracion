@@ -8,11 +8,12 @@ export type EstadoCotizacionBcu
     | { estado: 'error' };
 
 /**
- * Dato puramente informativo para el sidebar del dashboard (ver decisión
- * 2026-07-24) -- nunca se usa para calcular asientos ni el archivo PADI, eso
- * sigue dependiendo del tipo de cambio que el usuario tipea a mano.
- * `cotizacion_bcu_cache` guarda el último valor obtenido con éxito para
- * poder mostrarlo como fallback cuando el fetch del día falla.
+ * Resuelve el valor MÁS RECIENTE para el card informativo del sidebar del
+ * dashboard (ver decisión 2026-07-24). Distinto de `resolverCotizacionParaDia`
+ * (resolve-cotizacion-por-dia.ts), que desde TD-27 (2026-07-28) sí alimenta
+ * el motor -- resuelve el día hábil anterior a un asiento puntual, no el más
+ * reciente. `cotizacion_bcu_cache` guarda el histórico completo por fecha
+ * (no solo el último valor) para poder servir ambos casos de uso.
  */
 export async function resolverCotizacionBcu(supabase: SupabaseClient<Database>): Promise<EstadoCotizacionBcu> {
   try {
