@@ -135,6 +135,38 @@ describe('parseAsientosTxt', () => {
     });
   });
 
+  it('reports a Libro inconsistent with the cuenta resolved via Código IVA directo (Camino 1)', () => {
+    const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: 3 }];
+    // Reproduce el caso reportado por el contador: venta resuelta por Código IVA directo, con Libro 'E' (compra) por error.
+    const content = '16,"1234","5678","Factura venta A 9999","233669988774",0,1000,3,180.33,0,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Libro', message: expect.stringContaining('2131') }],
+    });
+  });
+
+  it('does not flag Libro for Código IVA directo when it is consistent with the resolved cuenta prefix', () => {
+    const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: 3 }];
+    const content = '16,"1234","5678","Factura venta A 9999","233669988774",0,1000,3,180.33,0,"V",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('does not flag Libro for Código IVA directo when the código is not configured in the plan de cuentas', () => {
+    const planCuentas: never[] = [];
+    const content = '16,"1234","5678","Factura venta A 9999","233669988774",0,1000,3,180.33,0,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('reports a Libro inconsistent with the resolved cuenta de IVA prefix, alongside other invalid fields in the same line', () => {
     const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: null }];
     // Día 14, venta -- RUT, Moneda y Cotización inválidos, y Libro 'E' (compra) con una cuenta de venta (prefijo 2).

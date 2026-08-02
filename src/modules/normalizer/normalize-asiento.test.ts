@@ -32,6 +32,32 @@ describe('resolveAsientoFiscal', () => {
     expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 180.33, rut: '233669988774' });
   });
 
+  it('excludes the line when Camino 1 resolves a venta account (prefix 2) but Libro is a compra libro -- reproduces the accountant-reported TXT bug', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '2131', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 3, iva: 180.33, libro: 'E' }), planCuentas);
+
+    expect(result).toEqual({
+      resolved: false,
+      reason: 'libro-inconsistente',
+      rut: '233669988774',
+      dia: 5,
+      valor: expect.stringContaining('2131'),
+    });
+  });
+
+  it('resolves via Camino 1 when the venta account prefix (2) is consistent with Libro', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '2131', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 3, iva: 180.33, libro: 'V' }), planCuentas);
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 180.33, rut: '233669988774' });
+  });
+
   it('does not resolve via Camino 1 when the Código IVA is not configured', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },

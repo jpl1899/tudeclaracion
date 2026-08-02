@@ -18,9 +18,12 @@ export interface ResolucionCuentaCamino2 {
  * contador, revierte la decisión del 2026-07-21). Cuentas que no arrancan con
  * 1 o 2 (ej. Gastos, usadas para compras exentas) no tienen dirección propia
  * y no se cruzan contra Libro. `Libro = 'P'` tampoco tiene dirección inferible
- * (uso libre de data entry, ver `05-parser.md`).
+ * (uso libre de data entry, ver `05-parser.md`). Se usa tanto para Camino 1
+ * (cuenta asociada al Código IVA) como Camino 2 (cuenta de Debe/Haber, ver
+ * `resolverCuentaCamino2` más abajo) -- corregido 2026-08-02, antes solo
+ * cubría Camino 2.
  */
-function esConsistenteConLibro(cuenta: PlanCuentaRow, libro: string): boolean {
+export function esConsistenteConLibro(cuenta: PlanCuentaRow, libro: string): boolean {
   if (libro === 'P') { return true; }
   if (cuenta.cuentaContable.startsWith('2')) { return LIBROS_VENTA.includes(libro); }
   if (cuenta.cuentaContable.startsWith('1')) { return LIBROS_COMPRA.includes(libro); }

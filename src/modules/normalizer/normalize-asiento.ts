@@ -1,6 +1,6 @@
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
-import { resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+import { esConsistenteConLibro, resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 
 export type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 
@@ -43,6 +43,13 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     const match = planCuentas.find(row => row.codigoIva === asiento.codigoIva);
     if (!match) {
       return noResuelto(asiento, 'sin-mapeo', `Código IVA ${asiento.codigoIva}`);
+    }
+    // Mismo cruce de Libro contra el prefijo de la cuenta que Camino 2
+    // (2026-08-02, corregido -- se aplicaba antes solo a Camino 2, pero el
+    // caso reportado por el contador era justamente uno resuelto por Código
+    // IVA directo).
+    if (!esConsistenteConLibro(match, asiento.libro)) {
+      return noResuelto(asiento, 'libro-inconsistente', `cuenta ${match.cuentaContable} con Libro ${asiento.libro}`);
     }
     resolucion = { codigoPadi: match.codigoPadi, importe: convertirImporte(asiento.iva, asiento) };
   }
