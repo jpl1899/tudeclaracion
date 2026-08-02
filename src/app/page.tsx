@@ -28,9 +28,9 @@ export default function RootPage() {
             Prepara tus declaraciones DGI, con un flujo claro y seguro.
           </h1>
           <p className="max-w-[60ch] text-muted-foreground">
-            tuDeclaracion acompaña al estudio contable desde la carga del TXT exportado desde Memory
-            hasta la generación del archivo PADI. Sin pantallas recargadas, sin navegación confusa y
-            con foco total en productividad diaria.
+            tuDeclaracion acompaña al estudio contable desde la carga del TXT contable hasta la
+            generación del archivo PADI. Sin pantallas recargadas, sin navegación confusa y con foco
+            total en productividad diaria.
           </p>
           <div className="grid w-fit gap-3">
             <Button asChild size="lg" className="h-[52px] w-fit px-8">
