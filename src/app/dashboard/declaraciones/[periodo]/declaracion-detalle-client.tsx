@@ -17,6 +17,7 @@ const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
   'sin-mapeo': 'no está mapeado en el plan de cuentas',
   'tipo-fuera-de-alcance': 'tiene un tipo fuera del alcance de esta declaración',
   'importe-invalido': 'tiene un importe inválido (no puede ser cero)',
+  'libro-inconsistente': 'tiene un Libro que no coincide con el tipo de cuenta resuelta (revisar el TXT de origen)',
 };
 
 /**
