@@ -21,7 +21,7 @@ Delimitador: `,` (coma) — **corregido 2026-07-15**, no `;` como se documentaba
 | 7 | Total | Numérico | Sin separador de miles en la práctica (ej. `1000`). Campo crítico |
 | 8 | Código IVA | Numérico, 1 dígito (0–9) | `0` = sin código asignado (ver regla de dos caminos en `08-tax-engine.md`) |
 | 9 | IVA | Numérico, con decimales | Siempre en pesos (ej. `180.33`) |
-| 10 | Cotización | Numérico | — |
+| 10 | Cotización | Numérico | **Confirmado 2026-08-02**: `0` (pesos) o un valor con dos dígitos enteros y dos decimales (ej. `38.45`) — el peso uruguayo nunca cotiza por debajo de 10, así que un solo dígito entero también es inválido |
 | 11 | Libro | Categórico, **case-insensitive** | Solo uno de: `C`, `V`, `E`, `I`, `P` (confirmado 2026-07-22: el TXT puede traerlo en minúscula — ej. notas de crédito con `"v"` — se normaliza a mayúscula al parsear) |
 | 12 | Tipo | Categórico, **opcional** | Confirmado 2026-07-14. En la práctica el campo 12 aparece siempre como posición (coma final), vacío cuando no aplica. Valores posibles en el TXT: `504`, `CIE` (cierre del ejercicio), `RES` (resultado del ejercicio), `DIF` (diferencia de cambio), `APE` (apertura de ejercicio) — pero **confirmado 2026-07-15**: el motor solo procesa el valor numérico `504`; los valores alfabéticos (`CIE`/`RES`/`DIF`/`APE`) se ignoran, fuera de alcance definitivo. Regla de negocio de `504` → ver `08-tax-engine.md`. Nunca contiene `502`, `503`, `505`, `506`, `552` o `553` — esos códigos PADI solo se derivan por la cadena Código IVA / cuenta contable → configuración de empresa. |
 
@@ -33,7 +33,12 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 
 > **Corrección 2026-07-13**: el usuario confirmó que el nombre real del campo 11 es **Libro** (no "Libre" como se había documentado antes) — se aplica sin excepción a todas las líneas.
 
-> **Confirmado 2026-07-14 — significado del campo Libro**: `C` y `E` = egresos (compras) — IVA compras tasa básica, tasa mínima, o compras exentas. `V` e `I` = ventas — IVA ventas tasa básica o tasa mínima. `P` = libre uso para data entry — no permite inferir dirección (compra/venta). No requiere validación de consistencia propia — el contador confirmó que viene pre-validado por Memory antes de exportar el TXT. **Revertido 2026-07-21**: la ampliación del 2026-07-15 (Libro decide si el Camino 2 mira Debe o Haber) quedó descartada — el usuario confirmó que Libro "es un dato innecesario para el motor" (una nota de crédito real traía `Libro='E'` con su cuenta de IVA en Haber, no en Debe). El Camino 2 ahora prueba Debe y después Haber contra el plan de cuentas, sin mirar Libro — ver `08-tax-engine.md`.
+> **Confirmado 2026-07-14 — significado del campo Libro**: `C` y `E` = egresos (compras) — IVA compras tasa básica, tasa mínima, o compras exentas. `V` e `I` = ventas — IVA ventas tasa básica o tasa mínima. `P` = libre uso para data entry — no permite inferir dirección (compra/venta).
+>
+> **Historial de la validación de consistencia de Libro** — revertida dos veces, estado final más abajo:
+> - 2026-07-14: se asumía que no requería validación propia (el contador confirmó que venía pre-validado por Memory).
+> - **Revertido 2026-07-21**: la ampliación del 2026-07-15 (Libro decide si el Camino 2 mira Debe o Haber) quedó descartada — el usuario confirmó que Libro "es un dato innecesario para el motor" (una nota de crédito real traía `Libro='E'` con su cuenta de IVA en Haber, no en Debe, y esa regla posicional no la resolvía). El Camino 2 pasó a probar Debe y después Haber contra el plan de cuentas, sin mirar Libro.
+> - **Revertido de nuevo 2026-08-02** (sesión en vivo con el contador, TXT con un asiento de venta que traía `Libro='E'` por error): Libro vuelve a ser decisorio, pero ya no por posición (Debe/Haber) sino por **prefijo de la cuenta contable resuelta** — el contador confirmó que una cuenta de IVA que empieza con `2` es siempre venta (Libro debe ser `V`/`I`) y una que empieza con `1` es siempre compra (Libro debe ser `C`/`E`). Si el TXT trae un Libro inconsistente con el prefijo de la cuenta resuelta, la línea se excluye del PADI (mismo tratamiento que "sin mapeo") — esto es justamente lo que permite detectar un TXT mal generado, el caso que la regla del 2026-07-21 no cubría. Cuentas que no empiezan con `1` ni `2` (ej. Gastos, usadas para compras exentas) no tienen dirección propia y no se cruzan contra Libro; `Libro='P'` tampoco. Detalle de la implementación en `08-tax-engine.md`.
 
 ## Confirmado 2026-07-22 — fila de encabezado opcional
 
@@ -43,9 +48,11 @@ El TXT puede venir con o sin una primera fila de encabezado (`DIA,DEBE,HABER,CON
 
 - Agregar botón **"Importar asiento"** (archivo `.txt`) en `/dashboard`, luego de presionar "Iniciar nueva declaración" (contador, 2026-07-14).
 
-## Manejo de líneas inválidas/malformadas — confirmado 2026-07-16
+## Manejo de líneas inválidas/malformadas — confirmado 2026-07-16, ampliado 2026-08-02
 
-Si una línea trae un dato inválido en cualquier campo, la interpretación del archivo completo se aborta — no se generan datos parciales. Rosana ve un mensaje que identifica el número de línea y el campo de origen del dato inválido, mostrado con el patrón genérico `alert.error` de `design-system.html` (mismo patrón que usarán TD-16/17/18) — no requiere mockup dedicado.
+Si una línea trae un dato inválido en cualquier campo, la interpretación del archivo completo se aborta — no se generan datos parciales. Rosana ve un mensaje que identifica el número de línea, mostrado con el patrón genérico `alert.error` de `design-system.html` (mismo patrón que usarán TD-16/17/18) — no requiere mockup dedicado.
+
+**Ampliado 2026-08-02**: si esa línea trae **más de un** campo inválido a la vez, el parser ya no reporta solo el primero que encuentra — valida todos los campos de la línea y devuelve la lista completa de campos inválidos en una sola pasada (ej. RUT y Moneda inválidos en la misma línea se reportan juntos).
 
 ## Confirmado 2026-07-17
 

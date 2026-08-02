@@ -5,6 +5,8 @@
 ## Validaciones confirmadas
 
 - **RUT** (declarante y tercero): 12 dígitos. **Confirmado 2026-07-17**: no se valida el dígito verificador uruguayo, solo formato/longitud numérica.
+- **Cotización**: **confirmado 2026-08-02** — `0` (pesos) o un valor con dos dígitos enteros y dos decimales (ej. `38.45`); el peso uruguayo nunca cotiza por debajo de 10.
+- **Múltiples campos inválidos en la misma línea**: **confirmado 2026-08-02** — se reportan todos juntos en una sola pasada, no solo el primero que se encuentra (ver `05-parser.md`).
 - **Mínimos DGI**: **confirmado 2026-07-17 — no existe** un importe mínimo por debajo del cual una línea no se declara en el 2181.
 - **Importe cero**: **confirmado 2026-07-17 — no es válido.** Una línea con importe 0 no se declara (mecánica de bloqueo-vs-exclusión, ver abajo).
 - **Importe negativo**: **corregido 2026-07-27** (la respuesta original del 2026-07-17, "jamás es válido", quedó superada). Un importe negativo representa una nota de crédito/devolución: resuelve normal contra el plan de cuentas y se **netea** (suma simple) contra el asiento positivo del mismo RUT+código PADI en `08-tax-engine.md` (agrupación). Si el neto final da 0 o negativo, esa línea **no se declara** — mismo tratamiento que importe cero, confirmado con el contador para ambos casos (2026-07-27).

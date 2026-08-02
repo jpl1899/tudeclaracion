@@ -1,5 +1,6 @@
 'use client';
 
+import type { CampoInvalido } from '@/modules/parser/parse-asientos';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,9 +17,9 @@ import { cn } from '@/lib/utils';
 
 const ACCEPTED_EXTENSION = '.txt';
 
-/** `null` = éxito. `parse` = dato inválido con línea/campo identificados (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
+/** `null` = éxito. `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
 export type ImportarAsientoError
-  = | { kind: 'parse', line: number, field: string, message: string }
+  = | { kind: 'parse', line: number, errors: CampoInvalido[] }
     | { kind: 'cotizacion-no-disponible', message: string }
     | { kind: 'guardado', message: string };
 
@@ -246,7 +247,23 @@ export function ImportarAsientoDialog({
                       className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
                     >
                       {error.kind === 'parse'
-                        ? `Línea ${error.line}, campo "${error.field}": ${error.message}`
+                        ? (
+                            <>
+                              <p className="font-medium">
+                                Línea
+                                {' '}
+                                {error.line}
+                                :
+                              </p>
+                              <ul className="list-disc pl-4">
+                                {error.errors.map(campoError => (
+                                  <li key={campoError.field}>
+                                    {`Campo "${campoError.field}": ${campoError.message}`}
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
+                          )
                         : error.message}
                     </div>
                   )}

@@ -67,8 +67,7 @@ describe('parseAsientosTxt', () => {
     expect(result).toEqual({
       ok: false,
       line: 1,
-      field: 'Total',
-      message: expect.stringContaining('ABC'),
+      errors: [{ field: 'Total', message: expect.stringContaining('ABC') }],
     });
   });
 
@@ -82,8 +81,7 @@ describe('parseAsientosTxt', () => {
     expect(result).toEqual({
       ok: false,
       line: 2,
-      field: 'Libro',
-      message: expect.stringContaining('Z'),
+      errors: [{ field: 'Libro', message: expect.stringContaining('Z') }],
     });
   });
 
@@ -95,8 +93,45 @@ describe('parseAsientosTxt', () => {
     expect(result).toEqual({
       ok: false,
       line: 1,
-      field: 'RUT',
-      message: expect.any(String),
+      errors: [{ field: 'RUT', message: expect.any(String) }],
+    });
+  });
+
+  it('reports every invalid field of the same line at once, not just the first one found', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",9,1000,0,0,-5,"E",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [
+        { field: 'RUT', message: expect.any(String) },
+        { field: 'Moneda', message: expect.any(String) },
+        { field: 'Cotización', message: expect.any(String) },
+      ],
+    });
+  });
+
+  it('accepts a cotización with two integer digits and two decimals', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,38.45,"E",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].cotizacion).toBe(38.45);
+  });
+
+  it('rejects a cotización that is not 0 nor a two-integer-two-decimal value', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,8.4,"E",';
+
+    const result = parseAsientosTxt(content);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Cotización', message: expect.stringContaining('8.4') }],
     });
   });
 
@@ -133,8 +168,7 @@ describe('parseAsientosTxt', () => {
     expect(result).toEqual({
       ok: false,
       line: 2,
-      field: 'Libro',
-      message: expect.stringContaining('Z'),
+      errors: [{ field: 'Libro', message: expect.stringContaining('Z') }],
     });
   });
 
@@ -176,8 +210,7 @@ describe('parseAsientosTxt', () => {
     expect(result).toEqual({
       ok: false,
       line: 1,
-      field: 'Debe/Haber',
-      message: expect.any(String),
+      errors: [{ field: 'Debe/Haber', message: expect.any(String) }],
     });
   });
 

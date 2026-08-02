@@ -42,7 +42,7 @@ describe('resolveAsientoFiscal', () => {
     expect(result).toEqual({ resolved: false, reason: 'sin-mapeo', rut: '233669988774', dia: 5, valor: 'Código IVA 7' });
   });
 
-  it('resolves via Camino 2 by matching the Debe account, regardless of Libro', () => {
+  it('resolves via Camino 2 by matching the Debe account when the account has no venta/compra prefix (1/2)', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
     ];
@@ -79,6 +79,71 @@ describe('resolveAsientoFiscal', () => {
     );
 
     expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 220, rut: '233669988774' });
+  });
+
+  it('resolves via Camino 2 through a cuenta de IVA (prefix 2) when Libro is a venta libro (V/I)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '2131', codigoPadi: '502', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'V', debe: '2131', total: 1000 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '502', importe: 1000, rut: '233669988774' });
+  });
+
+  it('excludes the line when a venta account (prefix 2) comes with a compra Libro -- reproduces the accountant-reported TXT bug', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '2131', codigoPadi: '502', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'E', debe: '2131', total: 1000 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({
+      resolved: false,
+      reason: 'libro-inconsistente',
+      rut: '233669988774',
+      dia: 5,
+      valor: expect.stringContaining('2131'),
+    });
+  });
+
+  it('excludes the line when a compra account (prefix 1) comes with a venta Libro', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '1131', codigoPadi: '552', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'V', debe: '1131', total: 1000 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({
+      resolved: false,
+      reason: 'libro-inconsistente',
+      rut: '233669988774',
+      dia: 5,
+      valor: expect.stringContaining('1131'),
+    });
+  });
+
+  it('picks the candidate consistent with Libro when both Debe and Haber match the plan de cuentas', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '2131', codigoPadi: '502', codigoIva: null },
+      { cuentaContable: '1131', codigoPadi: '552', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'E', debe: '2131', haber: '1131', total: 1000 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '552', importe: 1000, rut: '233669988774' });
   });
 
   it('does not resolve via Camino 2 when neither Debe nor Haber is configured', () => {

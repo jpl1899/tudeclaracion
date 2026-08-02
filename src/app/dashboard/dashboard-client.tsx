@@ -100,7 +100,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     const resultado = parseAsientosTxt(contenido);
 
     if (!resultado.ok) {
-      return { kind: 'parse', line: resultado.line, field: resultado.field, message: resultado.message };
+      return { kind: 'parse', line: resultado.line, errors: resultado.errors };
     }
 
     const supabase = createClient();

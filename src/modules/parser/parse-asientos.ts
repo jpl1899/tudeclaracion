@@ -1,9 +1,11 @@
 const NUMERIC_FIELD_RE = /^\d+$/;
 const RUT_RE = /^\d{12}$/;
+/** Cotización: 0 (pesos) o dos dígitos enteros + dos decimales -- el peso uruguayo nunca cotiza por debajo de 10 (confirmado con el contador). */
+const COTIZACION_RE = /^\d{2}\.\d{2}$/;
 const LIBRO_VALUES = ['C', 'V', 'E', 'I', 'P'] as const;
 const TIPO_VALUES = ['504', 'CIE', 'RES', 'DIF', 'APE'] as const;
 
-type Libro = (typeof LIBRO_VALUES)[number];
+export type Libro = (typeof LIBRO_VALUES)[number];
 type Tipo = (typeof TIPO_VALUES)[number];
 
 export interface AsientoLine {
@@ -26,11 +28,15 @@ export interface ParseSuccess {
   lines: AsientoLine[]
 }
 
+export interface CampoInvalido {
+  field: string
+  message: string
+}
+
 export interface ParseFailure {
   ok: false
   line: number
-  field: string
-  message: string
+  errors: CampoInvalido[]
 }
 
 export type ParseResult = ParseSuccess | ParseFailure;
@@ -56,8 +62,8 @@ function splitFields(rawLine: string): string[] {
   return fields;
 }
 
-function fail({ line, field, message }: { line: number, field: string, message: string }): ParseFailure {
-  return { ok: false, line, field, message };
+function fail(line: number, errors: CampoInvalido[]): ParseFailure {
+  return { ok: false, line, errors };
 }
 
 /** El TXT puede venir con o sin fila de encabezado (confirmado 2026-07-22) — se detecta por el campo Día, que en una fila real siempre es numérico. */
@@ -69,69 +75,80 @@ function isHeaderLine(rawLine: string | undefined): boolean {
   return primerCampo.trim().toUpperCase() === 'DIA';
 }
 
+/**
+ * Valida todos los campos de la línea y acumula cada campo inválido -- no
+ * frena en el primero (confirmado con el contador: si una línea trae varios
+ * campos inválidos a la vez, ej. RUT y Moneda, Rosana necesita ver ambos de
+ * una sola pasada, no uno por reintento).
+ */
 function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFailure {
   const fields = splitFields(rawLine);
   if (fields.length !== 12) {
-    return fail({ line: lineNumber, field: 'línea', message: `Se esperaban 12 campos, se encontraron ${fields.length}` });
+    return fail(lineNumber, [{ field: 'línea', message: `Se esperaban 12 campos, se encontraron ${fields.length}` }]);
   }
   const [diaRaw, debe, haber, concepto, rut, monedaRaw, totalRaw, codigoIvaRaw, ivaRaw, cotizacionRaw, libroRaw, tipoRaw] = fields;
+  const errors: CampoInvalido[] = [];
 
   if (!NUMERIC_FIELD_RE.test(diaRaw) || Number(diaRaw) < 1 || Number(diaRaw) > 31) {
-    return fail({ line: lineNumber, field: 'Día', message: `"${diaRaw}" no es un día válido (1-31)` });
+    errors.push({ field: 'Día', message: `"${diaRaw}" no es un día válido (1-31)` });
   }
 
   if (debe.length === 0 && haber.length === 0) {
-    return fail({ line: lineNumber, field: 'Debe/Haber', message: 'Debe y Haber no pueden estar vacíos a la vez' });
+    errors.push({ field: 'Debe/Haber', message: 'Debe y Haber no pueden estar vacíos a la vez' });
   }
 
   if (debe.length > 0 && !NUMERIC_FIELD_RE.test(debe)) {
-    return fail({ line: lineNumber, field: 'Debe', message: `"${debe}" no es un código de cuenta contable válido` });
+    errors.push({ field: 'Debe', message: `"${debe}" no es un código de cuenta contable válido` });
   }
 
   if (haber.length > 0 && !NUMERIC_FIELD_RE.test(haber)) {
-    return fail({ line: lineNumber, field: 'Haber', message: `"${haber}" no es un código de cuenta contable válido` });
+    errors.push({ field: 'Haber', message: `"${haber}" no es un código de cuenta contable válido` });
   }
 
   if (concepto.length === 0) {
-    return fail({ line: lineNumber, field: 'Concepto', message: 'El concepto no puede estar vacío' });
+    errors.push({ field: 'Concepto', message: 'El concepto no puede estar vacío' });
   }
 
   if (!RUT_RE.test(rut)) {
-    return fail({ line: lineNumber, field: 'RUT', message: `"${rut}" no tiene el formato de 12 dígitos` });
+    errors.push({ field: 'RUT', message: `"${rut}" no tiene el formato de 12 dígitos` });
   }
 
   if (monedaRaw !== '0' && monedaRaw !== '1') {
-    return fail({ line: lineNumber, field: 'Moneda', message: `"${monedaRaw}" debe ser 0 (pesos) o 1 (dólares)` });
+    errors.push({ field: 'Moneda', message: `"${monedaRaw}" debe ser 0 (pesos) o 1 (dólares)` });
   }
 
   const total = Number(totalRaw);
   if (totalRaw.length === 0 || Number.isNaN(total)) {
-    return fail({ line: lineNumber, field: 'Total', message: `"${totalRaw}" no es un importe numérico válido` });
+    errors.push({ field: 'Total', message: `"${totalRaw}" no es un importe numérico válido` });
   }
 
   const codigoIva = Number(codigoIvaRaw);
   if (!NUMERIC_FIELD_RE.test(codigoIvaRaw) || codigoIva < 0 || codigoIva > 9) {
-    return fail({ line: lineNumber, field: 'Código IVA', message: `"${codigoIvaRaw}" debe ser un dígito entre 0 y 9` });
+    errors.push({ field: 'Código IVA', message: `"${codigoIvaRaw}" debe ser un dígito entre 0 y 9` });
   }
 
   const iva = Number(ivaRaw);
   if (ivaRaw.length === 0 || Number.isNaN(iva)) {
-    return fail({ line: lineNumber, field: 'IVA', message: `"${ivaRaw}" no es un importe numérico válido` });
+    errors.push({ field: 'IVA', message: `"${ivaRaw}" no es un importe numérico válido` });
   }
 
   const cotizacion = Number(cotizacionRaw);
-  if (cotizacionRaw.length === 0 || Number.isNaN(cotizacion)) {
-    return fail({ line: lineNumber, field: 'Cotización', message: `"${cotizacionRaw}" no es un valor numérico válido` });
+  if (cotizacionRaw !== '0' && !COTIZACION_RE.test(cotizacionRaw)) {
+    errors.push({ field: 'Cotización', message: `"${cotizacionRaw}" debe ser 0 o un valor con dos dígitos enteros y dos decimales (ej. 38.45)` });
   }
 
   const libro = libroRaw.toUpperCase();
   if (!LIBRO_VALUES.includes(libro as Libro)) {
-    return fail({ line: lineNumber, field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
+    errors.push({ field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
   }
 
   const tipo = tipoRaw.length === 0 ? null : tipoRaw;
   if (tipo !== null && !TIPO_VALUES.includes(tipo as (typeof TIPO_VALUES)[number])) {
-    return fail({ line: lineNumber, field: 'Tipo', message: `"${tipo}" debe ser uno de: ${TIPO_VALUES.join(', ')} o estar vacío` });
+    errors.push({ field: 'Tipo', message: `"${tipo}" debe ser uno de: ${TIPO_VALUES.join(', ')} o estar vacío` });
+  }
+
+  if (errors.length > 0) {
+    return fail(lineNumber, errors);
   }
 
   return {
