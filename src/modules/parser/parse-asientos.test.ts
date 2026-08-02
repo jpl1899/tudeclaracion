@@ -5,7 +5,7 @@ describe('parseAsientosTxt', () => {
   it('interprets a compra exenta line resolved by cuenta contable (Código IVA = 0)', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -30,7 +30,7 @@ describe('parseAsientosTxt', () => {
   it('interprets a line resolved by a direct Código IVA (not 0)', () => {
     const content = '10,"1234","5678","Factura B 9999","123456789012",0,1000,3,180.33,0,"V",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -42,7 +42,7 @@ describe('parseAsientosTxt', () => {
   it('parses an alphabetic Tipo value without interrupting interpretation', () => {
     const content = '15,"2000","3000","Cierre de ejercicio","123456789012",0,500,0,0,0,"P",CIE';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -52,7 +52,7 @@ describe('parseAsientosTxt', () => {
   it('parses the numeric Tipo value 504', () => {
     const content = '15,"2000","3000","Ajuste por 504","123456789012",0,500,0,0,0,"P",504';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -62,7 +62,7 @@ describe('parseAsientosTxt', () => {
   it('aborts the whole file and identifies the line and field when a value is invalid', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,ABC,0,0,0,"E",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -76,7 +76,7 @@ describe('parseAsientosTxt', () => {
     const invalidLine = '6,"5215","11111","Otro concepto","233669988774",0,1000,0,0,0,"Z",';
     const content = `${validLine}\n${invalidLine}`;
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -88,7 +88,7 @@ describe('parseAsientosTxt', () => {
   it('rejects a RUT that is not exactly 12 digits', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",0,1000,0,0,0,"E",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -100,7 +100,7 @@ describe('parseAsientosTxt', () => {
   it('reports every invalid field of the same line at once, not just the first one found', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",9,1000,0,0,-5,"E",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -116,7 +116,7 @@ describe('parseAsientosTxt', () => {
   it('accepts a cotización with two integer digits and two decimals', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,38.45,"E",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -126,7 +126,7 @@ describe('parseAsientosTxt', () => {
   it('rejects a cotización that is not 0 nor a two-integer-two-decimal value', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,8.4,"E",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -135,12 +135,62 @@ describe('parseAsientosTxt', () => {
     });
   });
 
+  it('reports a Libro inconsistent with the resolved cuenta de IVA prefix, alongside other invalid fields in the same line', () => {
+    const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: null }];
+    // Día 14, venta -- RUT, Moneda y Cotización inválidos, y Libro 'E' (compra) con una cuenta de venta (prefijo 2).
+    const content = '14,"2131","11111","Factura venta A 555","2336699887",9,1000,0,0,-5,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [
+        { field: 'RUT', message: expect.any(String) },
+        { field: 'Moneda', message: expect.any(String) },
+        { field: 'Cotización', message: expect.any(String) },
+        { field: 'Libro', message: expect.stringContaining('2131') },
+      ],
+    });
+  });
+
+  it('reports a Libro inconsistent with a compra account prefix (1) as its own error', () => {
+    const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: null }];
+    const content = '10,"1131","11111","Factura compra A 123","233669988774",0,1000,0,0,0,"V",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Libro', message: expect.stringContaining('1131') }],
+    });
+  });
+
+  it('does not flag Libro when the account does not match any entry in the plan de cuentas', () => {
+    const planCuentas = [{ cuentaContable: '9999', codigoPadi: '502', codigoIva: null }];
+    const content = '10,"2131","11111","Factura venta A 555","233669988774",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('does not flag Libro when it is consistent with the resolved cuenta de IVA prefix', () => {
+    const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: null }];
+    const content = '10,"2131","11111","Factura venta A 555","233669988774",0,1000,0,0,0,"V",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('skips a leading header row and parses the data line that follows it', () => {
     const header = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
     const content = `${header}\n${validLine}`;
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -151,7 +201,7 @@ describe('parseAsientosTxt', () => {
   it('parses correctly when the file has no header row', () => {
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
 
-    const result = parseAsientosTxt(validLine);
+    const result = parseAsientosTxt(validLine, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -163,7 +213,7 @@ describe('parseAsientosTxt', () => {
     const invalidLine = '6,"5215","11111","Otro concepto","233669988774",0,1000,0,0,0,"Z",';
     const content = `${header}\n${invalidLine}`;
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -175,7 +225,7 @@ describe('parseAsientosTxt', () => {
   it('accepts a lowercase Libro value and normalizes it to uppercase', () => {
     const content = '8,"1121001","","NC E factura A 1122","215487788992",0,-610,0,0,0,"v",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -185,7 +235,7 @@ describe('parseAsientosTxt', () => {
   it('accepts an asiento abierto line with an empty Haber', () => {
     const content = '6,"1121001","","Efactura A 5478","215487788992",0,1220,0,0,0,"V",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -195,7 +245,7 @@ describe('parseAsientosTxt', () => {
   it('accepts an asiento abierto line with an empty Debe', () => {
     const content = '6,"","21332","Efactura A 5478","215487788992",0,220,0,0,0,"V",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
@@ -205,7 +255,7 @@ describe('parseAsientosTxt', () => {
   it('rejects a line where both Debe and Haber are empty', () => {
     const content = '6,"","","Efactura A 5478","215487788992",0,220,0,0,0,"V",';
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result).toEqual({
       ok: false,
@@ -218,7 +268,7 @@ describe('parseAsientosTxt', () => {
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
     const content = `${validLine}\n\n`;
 
-    const result = parseAsientosTxt(content);
+    const result = parseAsientosTxt(content, []);
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }

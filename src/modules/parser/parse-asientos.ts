@@ -1,3 +1,6 @@
+import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+import { resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+
 const NUMERIC_FIELD_RE = /^\d+$/;
 const RUT_RE = /^\d{12}$/;
 /** Cotización: 0 (pesos) o dos dígitos enteros + dos decimales -- el peso uruguayo nunca cotiza por debajo de 10 (confirmado con el contador). */
@@ -81,7 +84,7 @@ function isHeaderLine(rawLine: string | undefined): boolean {
  * campos inválidos a la vez, ej. RUT y Moneda, Rosana necesita ver ambos de
  * una sola pasada, no uno por reintento).
  */
-function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFailure {
+function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaRow[]): AsientoLine | ParseFailure {
   const fields = splitFields(rawLine);
   if (fields.length !== 12) {
     return fail(lineNumber, [{ field: 'línea', message: `Se esperaban 12 campos, se encontraron ${fields.length}` }]);
@@ -141,6 +144,22 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
   if (!LIBRO_VALUES.includes(libro as Libro)) {
     errors.push({ field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
   }
+  else if (codigoIva === 0) {
+    /**
+     * Camino 2 (Código IVA = 0): cruza Libro contra el prefijo de la cuenta
+     * de IVA resuelta -- confirmado con el contador (2026-08-02) que este
+     * chequeo debe reportarse junto al resto de los campos inválidos de la
+     * línea, no solo cuando la línea llega intacta al motor tributario (ver
+     * `resolver-cuenta-camino-2.ts`, compartido con `normalize-asiento.ts`).
+     */
+    const { candidatos, cuentaMatch } = resolverCuentaCamino2(debe, haber, libro, planCuentas);
+    if (candidatos.length > 0 && !cuentaMatch) {
+      errors.push({
+        field: 'Libro',
+        message: `"${libroRaw}" es inconsistente con la cuenta ${candidatos.map(c => c.cuentaContable).join(' / ')} (venta si empieza con 2, compra si empieza con 1)`,
+      });
+    }
+  }
 
   const tipo = tipoRaw.length === 0 ? null : tipoRaw;
   if (tipo !== null && !TIPO_VALUES.includes(tipo as (typeof TIPO_VALUES)[number])) {
@@ -169,8 +188,12 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
 
 /**
  * Interpreta el TXT mensual del proveedor contable (formato confirmado en
- * SRS/05-parser.md, 2026-07-15). Puramente técnico: no aplica reglas
- * tributarias — solo transforma el texto en un modelo de datos interno.
+ * SRS/05-parser.md, 2026-07-15). Mayormente técnico -- no decide código PADI
+ * ni importes -- con una única excepción confirmada (2026-08-02): recibe el
+ * plan de cuentas de la empresa para poder cruzar Libro contra el prefijo de
+ * la cuenta de IVA resuelta (Camino 2) y reportarlo junto al resto de los
+ * campos inválidos de la misma línea, en vez de recién detectarlo en el
+ * motor tributario cuando la línea ya pasó el parseo estructural.
  *
  * El archivo puede traer o no una fila de encabezado como primera línea
  * (confirmado 2026-07-22) — si está, se descarta antes de interpretar datos.
@@ -178,13 +201,13 @@ function parseLine(rawLine: string, lineNumber: number): AsientoLine | ParseFail
  * Si cualquier campo de cualquier línea es inválido, aborta el archivo
  * completo (no devuelve resultados parciales) — regla confirmada 2026-07-16.
  */
-export function parseAsientosTxt(content: string): ParseResult {
+export function parseAsientosTxt(content: string, planCuentas: PlanCuentaRow[]): ParseResult {
   const rawLines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
   const lines: AsientoLine[] = [];
   const startIndex = isHeaderLine(rawLines[0]) ? 1 : 0;
 
   for (let i = startIndex; i < rawLines.length; i++) {
-    const result = parseLine(rawLines[i], i + 1);
+    const result = parseLine(rawLines[i], i + 1, planCuentas);
     if ('ok' in result) {
       return result;
     }

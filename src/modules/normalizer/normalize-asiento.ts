@@ -1,15 +1,11 @@
-import type { AsientoLine, Libro } from '@/modules/parser/parse-asientos';
+import type { AsientoLine } from '@/modules/parser/parse-asientos';
+import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+import { resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+
+export type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 
 const TIPO_504 = '504';
 const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
-const LIBROS_VENTA = ['V', 'I'] as const;
-const LIBROS_COMPRA = ['C', 'E'] as const;
-
-export interface PlanCuentaRow {
-  cuentaContable: string
-  codigoPadi: string
-  codigoIva: number | null
-}
 
 /**
  * TD-18: la rama `resolved: false` lleva `rut` + `dia` (identifica la línea)
@@ -27,21 +23,6 @@ function noResuelto(
   valor: string,
 ): NormalizedAsiento {
   return { resolved: false, reason, rut: asiento.rut, dia: asiento.dia, valor };
-}
-
-/**
- * El prefijo de la cuenta de IVA es el dato confiable para inferir
- * venta/compra -- Libro puede venir mal cargado en el TXT (confirmado con el
- * contador, revierte la decisión del 2026-07-21). Cuentas que no arrancan con
- * 1 o 2 (ej. Gastos, usadas para compras exentas) no tienen dirección propia
- * y no se cruzan contra Libro. `Libro = 'P'` tampoco tiene dirección inferible
- * (uso libre de data entry, ver `05-parser.md`).
- */
-function esConsistenteConLibro(cuenta: PlanCuentaRow, libro: Libro): boolean {
-  if (libro === 'P') { return true; }
-  if (cuenta.cuentaContable.startsWith('2')) { return (LIBROS_VENTA as readonly Libro[]).includes(libro); }
-  if (cuenta.cuentaContable.startsWith('1')) { return (LIBROS_COMPRA as readonly Libro[]).includes(libro); }
-  return true;
 }
 
 /** Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx). */
@@ -70,16 +51,13 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     // primero, Haber después, y entre los candidatos que matchean el plan de
     // cuentas se prefiere el consistente con Libro (revierte el 2026-07-21 --
     // Libro vuelve a ser decisorio, pero vía prefijo de cuenta, no posición).
-    const cuentasConDatos = [asiento.debe, asiento.haber].filter(cuenta => cuenta.length > 0);
-    const candidatos = cuentasConDatos
-      .map(cuenta => planCuentas.find(row => row.cuentaContable === cuenta))
-      .filter((match): match is PlanCuentaRow => match !== undefined);
+    // Lógica compartida con el parser (2026-08-02) -- ver `resolver-cuenta-camino-2.ts`.
+    const { candidatos, cuentaMatch } = resolverCuentaCamino2(asiento.debe, asiento.haber, asiento.libro, planCuentas);
 
     if (candidatos.length === 0) {
+      const cuentasConDatos = [asiento.debe, asiento.haber].filter(cuenta => cuenta.length > 0);
       return noResuelto(asiento, 'sin-mapeo', `cuenta ${cuentasConDatos.join(' / ')}`);
     }
-
-    const cuentaMatch = candidatos.find(cuenta => esConsistenteConLibro(cuenta, asiento.libro));
 
     if (!cuentaMatch) {
       return noResuelto(asiento, 'libro-inconsistente', `cuenta ${candidatos.map(c => c.cuentaContable).join(' / ')} con Libro ${asiento.libro}`);
