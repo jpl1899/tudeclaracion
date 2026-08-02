@@ -1,5 +1,5 @@
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
-import { resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+import { esConsistenteConLibro, resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 
 const NUMERIC_FIELD_RE = /^\d+$/;
 const RUT_RE = /^\d{12}$/;
@@ -143,6 +143,21 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
   const libro = libroRaw.toUpperCase();
   if (!LIBRO_VALUES.includes(libro as Libro)) {
     errors.push({ field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
+  }
+  else if (codigoIva > 0) {
+    /**
+     * Camino 1 (Código IVA directo): cruza Libro contra el prefijo de la
+     * cuenta asociada a ese Código IVA en el plan de cuentas -- corregido
+     * 2026-08-02, este chequeo se aplicaba antes solo a Camino 2, pero el
+     * caso reportado por el contador resolvía justamente por este camino.
+     */
+    const match = planCuentas.find(row => row.codigoIva === codigoIva);
+    if (match && !esConsistenteConLibro(match, libro)) {
+      errors.push({
+        field: 'Libro',
+        message: `"${libroRaw}" es inconsistente con la cuenta ${match.cuentaContable} (venta si empieza con 2, compra si empieza con 1)`,
+      });
+    }
   }
   else if (codigoIva === 0) {
     /**
