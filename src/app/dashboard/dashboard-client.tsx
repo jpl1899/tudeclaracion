@@ -2,6 +2,7 @@
 
 import type { ImportarAsientoError, ImportarAsientoOpciones } from '@/components/importar-asiento-dialog';
 import type { EstadoCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
+import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 import type { Json } from '@/types/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -96,14 +97,31 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
   }
 
   async function handleImportar(file: File, periodo: string, opciones: ImportarAsientoOpciones): Promise<ImportarAsientoError | null> {
+    const supabase = createClient();
+
+    /**
+     * El parser necesita el plan de cuentas para cruzar Libro contra el
+     * prefijo de la cuenta de IVA resuelta (Camino 2, confirmado con el
+     * contador 2026-08-02). Si la consulta falla, se sigue con un plan vacío
+     * -- el chequeo simplemente no encuentra candidatos y no bloquea la
+     * importación por un problema de red ajeno al archivo.
+     */
+    const { data: planCuentasRaw } = await supabase
+      .from('plan_cuentas')
+      .select('cuenta_contable, codigo_padi, codigo_iva')
+      .eq('empresa_id', empresaId);
+    const planCuentas: PlanCuentaRow[] = (planCuentasRaw ?? []).map(row => ({
+      cuentaContable: row.cuenta_contable,
+      codigoPadi: row.codigo_padi,
+      codigoIva: row.codigo_iva,
+    }));
+
     const contenido = await file.text();
-    const resultado = parseAsientosTxt(contenido);
+    const resultado = parseAsientosTxt(contenido, planCuentas);
 
     if (!resultado.ok) {
       return { kind: 'parse', line: resultado.line, errors: resultado.errors };
     }
-
-    const supabase = createClient();
 
     /**
      * TD-27 (2026-07-28): la columna Cotización del TXT manda si viene ≠0

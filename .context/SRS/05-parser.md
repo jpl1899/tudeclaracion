@@ -4,7 +4,9 @@
 
 ## Responsabilidad
 
-Interpreta el TXT mensual exportado por Memory → objetos estructurados. Puramente técnico: **sin decisiones tributarias** (esas viven en `08-tax-engine.md`).
+Interpreta el TXT mensual exportado por Memory → objetos estructurados. Mayormente técnico: **sin decisiones tributarias** (código PADI, importes — esas viven en `08-tax-engine.md`).
+
+**Excepción confirmada 2026-08-02**: el parser recibe el plan de cuentas de la empresa (`PlanCuentaRow[]`) para poder cruzar Libro contra el prefijo de la cuenta de IVA resuelta (Camino 2) y reportarlo **junto** al resto de los campos inválidos de la misma línea — no recién cuando la línea ya pasó el parseo estructural y llega al motor tributario. La lógica de matching (`resolverCuentaCamino2`) vive en `src/modules/plan-cuentas/`, compartida entre el parser y `normalize-asiento.ts` para no duplicarla. Esto significa que importar un TXT ya no es una operación puramente sincrónica/client-side: `handleImportar` (`dashboard-client.tsx`) primero busca el plan de cuentas de la empresa activa en Supabase y recién después llama al parser.
 
 ## Formato confirmado del TXT de entrada
 
@@ -39,6 +41,7 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 > - 2026-07-14: se asumía que no requería validación propia (el contador confirmó que venía pre-validado por Memory).
 > - **Revertido 2026-07-21**: la ampliación del 2026-07-15 (Libro decide si el Camino 2 mira Debe o Haber) quedó descartada — el usuario confirmó que Libro "es un dato innecesario para el motor" (una nota de crédito real traía `Libro='E'` con su cuenta de IVA en Haber, no en Debe, y esa regla posicional no la resolvía). El Camino 2 pasó a probar Debe y después Haber contra el plan de cuentas, sin mirar Libro.
 > - **Revertido de nuevo 2026-08-02** (sesión en vivo con el contador, TXT con un asiento de venta que traía `Libro='E'` por error): Libro vuelve a ser decisorio, pero ya no por posición (Debe/Haber) sino por **prefijo de la cuenta contable resuelta** — el contador confirmó que una cuenta de IVA que empieza con `2` es siempre venta (Libro debe ser `V`/`I`) y una que empieza con `1` es siempre compra (Libro debe ser `C`/`E`). Si el TXT trae un Libro inconsistente con el prefijo de la cuenta resuelta, la línea se excluye del PADI (mismo tratamiento que "sin mapeo") — esto es justamente lo que permite detectar un TXT mal generado, el caso que la regla del 2026-07-21 no cubría. Cuentas que no empiezan con `1` ni `2` (ej. Gastos, usadas para compras exentas) no tienen dirección propia y no se cruzan contra Libro; `Libro='P'` tampoco. Detalle de la implementación en `08-tax-engine.md`.
+> - **Ampliado, mismo día 2026-08-02**: el contador señaló que si la línea también trae otros campos estructuralmente inválidos (RUT, Moneda, Cotización), el error de Libro inconsistente debe reportarse **en la misma pasada**, no solo cuando la línea llega intacta al motor tributario. Como el archivo se aborta por completo ante cualquier campo inválido (ver más abajo), el motor nunca llegaba a evaluar esa línea. Por eso el parser ahora recibe el plan de cuentas y corre este mismo chequeo (Código IVA = 0 → busca la cuenta de Debe/Haber que matchea el plan de cuentas → cruza su prefijo contra Libro) como parte de la validación estructural de la línea.
 
 ## Confirmado 2026-07-22 — fila de encabezado opcional
 
