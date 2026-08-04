@@ -296,6 +296,38 @@ describe('parseAsientosTxt', () => {
     });
   });
 
+  it('parses a 13-field line (FMSSRL variant), ignoring the unused field between Libro and Tipo', () => {
+    const content = '30,"54010","2111099","Paola Dagosti F34","217785620017",0,15381.76,1,2773.76,0,"C","",""';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ libro: 'C', tipo: null });
+  });
+
+  it('reads the numeric Tipo value 504 from the last field of a 13-field line', () => {
+    const content = '15,"2000","3000","Ajuste por 504","123456789012",0,500,0,0,0,"P","",504';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].tipo).toBe('504');
+  });
+
+  it('rejects a line with a field count other than 12 or 13', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E","",""," extra"';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'línea', message: expect.stringContaining('14') }],
+    });
+  });
+
   it('ignores trailing blank lines', () => {
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
     const content = `${validLine}\n\n`;
