@@ -45,7 +45,9 @@ Cuenta debitada `5215` (combustible), Código IVA `0` → dispara la resolución
 
 ## Confirmado 2026-08-04 — variante de 13 campos (proveedor FMSSRL)
 
-Algunos proveedores contables (ej. FMSSRL, archivo `FMSSRL Asientos Abril 2026.TXT`, empresa real del contador en regresión) exportan la línea con **13 campos** en vez de 12: insertan un campo extra sin uso entre Libro (campo 11) y Tipo, corriendo Tipo de la posición 12 a la 13. El campo intermedio se ignora por completo — no se valida, no se usa. El parser acepta ambas variantes (12 o 13 campos) tratando siempre al **último campo de la línea** como Tipo.
+Algunos proveedores contables (ej. FMSSRL, archivo `FMSSRL Asientos Abril 2026.TXT`, empresa real del contador en regresión) exportan la línea con **13 campos** en vez de 12: agregan un campo extra sin uso **después** de Tipo (que se mantiene en su posición 12 de siempre). El campo 13 se ignora por completo — no se valida, no se usa. El parser acepta ambas variantes (12 o 13 campos) leyendo Tipo siempre de la posición fija 12.
+
+> **Corregido el mismo día**: la primera versión de esta corrección asumía (mal) que el campo nuevo se insertaba *antes* de Tipo, corriéndolo a la posición 13 — el contador confirmó con un ejemplo real (`Día 9, RUT 012547412548, Libro "E", Tipo "504"` en la posición 12, campo 13 vacío) que Tipo nunca se mueve de la posición 12; el campo nuevo siempre va al final.
 
 ## Confirmado 2026-07-22 — fila de encabezado opcional
 

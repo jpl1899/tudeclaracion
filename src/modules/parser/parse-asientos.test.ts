@@ -296,7 +296,7 @@ describe('parseAsientosTxt', () => {
     });
   });
 
-  it('parses a 13-field line (FMSSRL variant), ignoring the unused field between Libro and Tipo', () => {
+  it('parses a 13-field line (FMSSRL variant), ignoring the unused trailing 13th field', () => {
     const content = '30,"54010","2111099","Paola Dagosti F34","217785620017",0,15381.76,1,2773.76,0,"C","",""';
 
     const result = parseAsientosTxt(content, []);
@@ -306,8 +306,8 @@ describe('parseAsientosTxt', () => {
     expect(result.lines[0]).toMatchObject({ libro: 'C', tipo: null });
   });
 
-  it('reads the numeric Tipo value 504 from the last field of a 13-field line', () => {
-    const content = '15,"2000","3000","Ajuste por 504","123456789012",0,500,0,0,0,"P","",504';
+  it('reads the numeric Tipo value 504 from its fixed position (12th field) in a 13-field line', () => {
+    const content = '9,"5424","2143","Factura de compra exenta","012547412548",0,3000,0,0,0,"E","504",""';
 
     const result = parseAsientosTxt(content, []);
 

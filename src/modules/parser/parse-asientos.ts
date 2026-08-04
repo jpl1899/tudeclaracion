@@ -89,14 +89,13 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
   if (fields.length !== 12 && fields.length !== 13) {
     return fail(lineNumber, [{ field: 'línea', message: `Se esperaban 12 o 13 campos, se encontraron ${fields.length}` }]);
   }
-  const [diaRaw, debe, haber, concepto, rut, monedaRaw, totalRaw, codigoIvaRaw, ivaRaw, cotizacionRaw, libroRaw] = fields;
   /**
-   * Tipo es siempre el último campo -- confirmado 2026-08-04: algunos
-   * proveedores (ej. FMSSRL) insertan un campo extra sin uso entre Libro y
-   * Tipo, corriendo la línea de 12 a 13 campos. Ese campo intermedio (índice
-   * 11 cuando hay 13) se ignora por completo, no se valida ni se usa.
+   * Tipo se lee siempre de la posición fija 12 (índice 11) -- corregido
+   * 2026-08-04: algunos proveedores (ej. FMSSRL) agregan un 13er campo sin
+   * uso *después* de Tipo, no antes. El campo 13 (cuando está presente) se
+   * ignora por completo, no se valida ni se usa.
    */
-  const tipoRaw = fields[fields.length - 1];
+  const [diaRaw, debe, haber, concepto, rut, monedaRaw, totalRaw, codigoIvaRaw, ivaRaw, cotizacionRaw, libroRaw, tipoRaw] = fields;
   const errors: CampoInvalido[] = [];
 
   if (!NUMERIC_FIELD_RE.test(diaRaw) || Number(diaRaw) < 1 || Number(diaRaw) > 31) {
