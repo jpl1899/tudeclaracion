@@ -41,10 +41,18 @@ As Rosana Ferreira, I want clear confirmation that my file uploaded successfully
 
 ---
 
+## Traceability
+
+### Error (1)
+
+- [TD-26](https://lk-tudeclaracion.atlassian.net/browse/TD-26): Import: re-uploading a processed period silently duplicates asientos _(Deployed)_
+
+---
+
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 17/7/2026
+- **Updated:** 19/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Unassigned
 

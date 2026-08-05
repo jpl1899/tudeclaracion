@@ -371,5 +371,11 @@ Decision: stacked-to-main. Repo strategy is solo-main (single branch, direct com
 
 ---
 
+### Juan Leites - 12/7/2026, 6:22:10
+
+PR opened: https://github.com/jpl1899/tudeclaracion/pull/1 (feat/TD-4-signup -> staging). Pending before Ready For QA: Supabase Dashboard email-template + redirect-allowlist config (see PR body).
+
+---
+
 
 _Synced from Jira by sync-jira-issues_

@@ -3,7 +3,7 @@
 **Jira Key:** [TD-18](https://lk-tudeclaracion.atlassian.net/browse/TD-18)
 **Epic:** [TD-14](https://lk-tudeclaracion.atlassian.net/browse/TD-14) (Normalization & Validation)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** Deployed
 **Priority:** Medium
 **Story Points:** -
 
@@ -50,7 +50,7 @@ Whether an invalid record blocks the whole file or excludes only that line (part
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 19/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 

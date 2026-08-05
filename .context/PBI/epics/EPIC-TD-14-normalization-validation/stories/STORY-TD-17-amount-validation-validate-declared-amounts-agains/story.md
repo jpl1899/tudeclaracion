@@ -3,7 +3,7 @@
 **Jira Key:** [TD-17](https://lk-tudeclaracion.atlassian.net/browse/TD-17)
 **Epic:** [TD-14](https://lk-tudeclaracion.atlassian.net/browse/TD-14) (Normalization & Validation)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** Deployed
 **Priority:** Medium
 **Story Points:** -
 
@@ -52,7 +52,7 @@ Both files close with the same instruction: "No fabricar reglas de negocio — s
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 7/7/2026
+- **Updated:** 19/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 

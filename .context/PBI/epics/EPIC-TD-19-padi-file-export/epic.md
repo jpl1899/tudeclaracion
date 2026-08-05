@@ -30,7 +30,7 @@ This epic's stories are ready for implementation as soon as its upstream depende
 
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
-| [TD-20](https://lk-tudeclaracion.atlassian.net/browse/TD-20) | PADI Export | Download the generated PADI-compatible file | - | Medium | Tareas por hacer |
+| [TD-20](https://lk-tudeclaracion.atlassian.net/browse/TD-20) | PADI Export | Download the generated PADI-compatible file | - | Medium | Ready for QA-on QA |
 
 ---
 

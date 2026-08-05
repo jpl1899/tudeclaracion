@@ -46,10 +46,18 @@ As Rosana Ferreira (contadora), quiero descargar el archivo PADI generado una ve
 
 ---
 
+## Traceability
+
+### Error (1)
+
+- [TD-27](https://lk-tudeclaracion.atlassian.net/browse/TD-27): PADI export: importe rounds up on every non-zero decimal instead of only >5 _(Deployed)_
+
+---
+
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 17/7/2026
+- **Updated:** 19/7/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Unassigned
 

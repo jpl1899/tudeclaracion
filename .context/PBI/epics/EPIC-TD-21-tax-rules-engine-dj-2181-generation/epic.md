@@ -33,7 +33,7 @@ The domain gap that made this epic "0% domain content specified" is closed. In a
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
 | [TD-22](https://lk-tudeclaracion.atlassian.net/browse/TD-22) | Tax Line Mapping | Determine the correct PADI line/code for each fiscal concept | - | Medium | Finalizada |
-| [TD-23](https://lk-tudeclaracion.atlassian.net/browse/TD-23) | Amount Calculation | Calculate the declared amount for each PADI line | - | Medium | Planificación |
+| [TD-23](https://lk-tudeclaracion.atlassian.net/browse/TD-23) | Amount Calculation | Calculate the declared amount for each PADI line | - | Medium | Ready for QA-on QA |
 
 ---
 

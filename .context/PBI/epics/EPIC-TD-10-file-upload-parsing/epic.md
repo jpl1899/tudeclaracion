@@ -22,8 +22,8 @@ One story in this epic is currently blocked: automatic interpretation of the upl
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
 | [TD-11](https://lk-tudeclaracion.atlassian.net/browse/TD-11) | File Upload | Upload the monthly Memory export | - | Medium | Deployed |
-| [TD-12](https://lk-tudeclaracion.atlassian.net/browse/TD-12) | File Upload | Confirm successful upload before processing starts | - | Medium | Tareas por hacer |
-| [TD-13](https://lk-tudeclaracion.atlassian.net/browse/TD-13) | Automatic Interpretation | Process an uploaded file without manual edits | - | Medium | En curso |
+| [TD-12](https://lk-tudeclaracion.atlassian.net/browse/TD-12) | File Upload | Confirm successful upload before processing starts | - | Medium | Ready for QA-on QA |
+| [TD-13](https://lk-tudeclaracion.atlassian.net/browse/TD-13) | Automatic Interpretation | Process an uploaded file without manual edits | - | Medium | Ready for QA-on QA |
 
 ---
 
