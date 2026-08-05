@@ -32,6 +32,10 @@
         "N8N_API_URL": "${N8N_API_URL}",
         "N8N_API_KEY": "${N8N_API_KEY}"
       }
+    },
+    "sql": {
+      "command": "npx",
+      "args": ["-y", "@bytebase/dbhub@latest", "--config", "dbhub.local.toml"]
     }
   }
 }
