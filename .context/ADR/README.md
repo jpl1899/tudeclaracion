@@ -64,6 +64,7 @@ Who authors: a human architect directly, **or** an AI workflow that detected an 
 | [ADR-0001](./ADR-0001-modular-reusable-tax-platform.md) | Modular architecture built for a reusable multi-form tax platform | Accepted | — | — |
 | [ADR-0002](./ADR-0002-auth-email-delivery-via-resend.md) | Auth email delivery via Supabase Send Email Hook + Resend | Accepted | — | — |
 | [ADR-0003](./ADR-0003-declaracion-periodo-entity.md) | Introduce a `declaracion` entity to model período and processing status | Accepted | — | — |
+| [ADR-0004](./ADR-0004-google-oauth-automatic-identity-linking.md) | Login con Google vía Supabase Auth, con linking automático por email | Proposed | — | — |
 
 > Keep this table in sync whenever an ADR is added or its status changes. It is the fast index every session reads first.
 
