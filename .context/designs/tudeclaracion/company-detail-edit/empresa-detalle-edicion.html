@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tuDeclaracion - Editar empresa</title>
+  <style>
+    :root {
+      --bg: oklch(98.4% 0.004 248);
+      --surface: oklch(100% 0 0);
+      --surface-alt: oklch(97.2% 0.006 248);
+      --fg: oklch(32% 0.03 255);
+      --muted: oklch(55% 0.02 255);
+      --border: oklch(91% 0.01 248);
+      --accent: oklch(45% 0.13 252);
+      --success: oklch(62% 0.17 145);
+      --warning: oklch(76% 0.16 72);
+      --error: oklch(63% 0.22 27);
+      --radius: 12px;
+      --shadow-sm: 0 8px 20px color-mix(in oklab, black 6%, transparent);
+      --shadow-md: 0 16px 36px color-mix(in oklab, black 8%, transparent);
+      --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--bg), white);
+      color: var(--fg);
+      font-family: var(--font);
+    }
+    button, input, select { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .shell {
+      width: min(1280px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      gap: 20px;
+    }
+    .topbar,
+    .hero-row,
+    .toolbar,
+    .field-row,
+    .table-head,
+    .row-actions,
+    .footer-actions,
+    .summary-row,
+    .table-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+    }
+    .back,
+    .btn,
+    .btn-link,
+    .icon-btn {
+      min-height: 52px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .btn,
+    .icon-btn { cursor: pointer; color: var(--fg); }
+    .btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      color: white;
+    }
+    .btn-link {
+      color: var(--accent);
+      background: color-mix(in oklab, var(--accent) 8%, white 92%);
+      border-color: color-mix(in oklab, var(--accent) 16%, white 84%);
+    }
+    .icon-btn {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0 12px;
+    }
+    .panel,
+    .table-shell,
+    .summary-card,
+    .banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .hero,
+    .content,
+    .summary,
+    .banner {
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+    .content {
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
+      align-items: start;
+    }
+    .form-stack,
+    .summary,
+    .table-content,
+    .row-fields,
+    .field-stack {
+      display: grid;
+      gap: 16px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--accent) 10%, white 90%);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      max-width: 12ch;
+    }
+    h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      line-height: 1.14;
+      letter-spacing: -0.02em;
+    }
+    .lead,
+    .muted,
+    .helper { color: var(--muted); }
+    .lead {
+      max-width: 68ch;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .helper {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .field-row {
+      align-items: end;
+    }
+    .field-stack { min-width: 0; }
+    .field-stack.grow { flex: 1 1 260px; }
+    .label {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .field,
+    .select {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--fg);
+    }
+    .field:focus,
+    .select:focus {
+      outline: 3px solid color-mix(in oklab, var(--accent) 24%, white 76%);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+    .field.invalid,
+    .select.invalid {
+      border-color: color-mix(in oklab, var(--error) 24%, white 76%);
+      background: color-mix(in oklab, var(--error) 5%, white 95%);
+    }
+    .table-shell {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+    .table-row {
+      align-items: end;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+    }
+    .row-fields {
+      flex: 1 1 640px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .table-row.exenta .row-fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .summary-card {
+      padding: 16px;
+      display: grid;
+      gap: 8px;
+    }
+    .summary-card strong {
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+    .badge {
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .badge.success {
+      background: color-mix(in oklab, var(--success) 12%, white 88%);
+      color: var(--success);
+    }
+    .badge.warning {
+      background: color-mix(in oklab, var(--warning) 12%, white 88%);
+      color: oklch(45% 0.12 72);
+    }
+    .badge.info {
+      background: color-mix(in oklab, var(--accent) 12%, white 88%);
+      color: var(--accent);
+    }
+    .banner {
+      display: none;
+      border-radius: 16px;
+    }
+    .banner strong { display: block; }
+    .banner.success {
+      border-color: color-mix(in oklab, var(--success) 20%, white 80%);
+      background: color-mix(in oklab, var(--success) 10%, white 90%);
+    }
+    .banner.error {
+      border-color: color-mix(in oklab, var(--error) 22%, white 78%);
+      background: color-mix(in oklab, var(--error) 10%, white 90%);
+      color: var(--error);
+    }
+    .banner.warning {
+      border-color: color-mix(in oklab, var(--warning) 24%, white 76%);
+      background: color-mix(in oklab, var(--warning) 10%, white 90%);
+    }
+    @media (max-width: 1080px) {
+      .content { grid-template-columns: 1fr; }
+      .row-fields { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .shell { width: calc(100% - 24px); }
+      .topbar,
+      .hero-row,
+      .toolbar,
+      .field-row,
+      .table-head,
+      .row-actions,
+      .footer-actions,
+      .summary-row,
+      .table-row { display: grid; grid-template-columns: 1fr; }
+      h1 { max-width: none; }
+      .btn,
+      .btn-link,
+      .back { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">TD</div>
+        <div>
+          <div>tuDeclaracion</div>
+          <div class="muted" style="font-size:13px; letter-spacing:0.02em;">Empresa existente</div>
+        </div>
+      </div>
+      <a class="back" href="empresas-listado-ver-empresa.html">Volver al listado</a>
+    </header>
+
+    <section class="panel hero">
+      <div class="eyebrow">Edición de empresa existente</div>
+      <div class="hero-row">
+        <div>
+          <h1>Revisa y edita datos de empresa.</h1>
+          <p class="lead">Esta pantalla no crea una empresa nueva. Solo permite consultar y actualizar la ficha ya existente, junto con la parametrización contable que usa el estudio para IVA y compras exentas.</p>
+        </div>
+        <div class="summary-card" style="max-width: 320px;">
+          <strong>Contexto actual</strong>
+          <div class="summary-row"><span class="muted">Empresa</span><span id="headerCompany">Estudio Rivera</span></div>
+          <div class="summary-row"><span class="muted">RUT</span><span class="mono" id="headerRut">213456780012</span></div>
+          <div class="summary-row"><span class="muted">Estado</span><span class="badge info">Edición habilitada</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="banner success" id="successBanner">
+      <strong>Cambios guardados correctamente.</strong>
+      <span>La empresa quedó actualizada y la parametrización contable ya está disponible para próximas declaraciones.</span>
+    </div>
+
+    <div class="banner error" id="saveErrorBanner">
+      <strong>No fue posible guardar los cambios.</strong>
+      <span id="saveErrorText">Ya existe otra empresa en esta cuenta con el mismo RUT.</span>
+    </div>
+
+    <div class="banner warning" id="validationBanner">
+      <strong>Revisá los datos antes de guardar.</strong>
+      <span>Faltan campos obligatorios o hay filas incompletas en la configuración contable.</span>
+    </div>
+
+    <section class="content">
+      <div class="form-stack">
+        <div class="panel" style="padding:28px; display:grid; gap:18px;">
+          <div class="toolbar">
+            <div>
+              <h2>Datos generales</h2>
+              <p class="helper" style="margin-top:8px;">Nombre y RUT identifican la empresa sobre la que ya estás trabajando. Si cancelas, vuelves al listado sin guardar.</p>
+            </div>
+            <span class="badge warning">Empresa existente</span>
+          </div>
+
+          <div class="field-row">
+            <div class="field-stack grow">
+              <label class="label" for="companyName">Nombre de empresa</label>
+              <input class="field" id="companyName" type="text" value="Estudio Rivera" />
+            </div>
+            <div class="field-stack" style="flex: 0 1 280px;">
+              <label class="label" for="companyRut">RUT (12 dígitos)</label>
+              <input class="field mono" id="companyRut" type="text" inputmode="numeric" value="213456780012" maxlength="12" />
+            </div>
+          </div>
+        </div>
+
+        <section class="table-shell">
+          <div class="table-head">
+            <div>
+              <h2>Códigos de formato rápido de IVA</h2>
+              <p class="helper" style="margin-top:8px;">Cada fila relaciona código de IVA, cuenta contable y línea PADI para automatizar la generación.</p>
+            </div>
+            <button class="btn-link" id="addIvaRow" type="button">Agregar fila de IVA</button>
+          </div>
+          <div class="table-content" id="ivaTable"></div>
+        </section>
+
+        <section class="table-shell">
+          <div class="table-head">
+            <div>
+              <h2>Compras Exentas</h2>
+              <p class="helper" style="margin-top:8px;">Estas cuentas se declaran siempre en línea PADI 504. Mantenelas separadas para evitar carga manual posterior.</p>
+            </div>
+            <button class="btn-link" id="addExemptRow" type="button">Agregar cuenta exenta</button>
+          </div>
+          <div class="table-content" id="exemptTable"></div>
+        </section>
+
+        <div class="footer-actions">
+          <a class="btn" href="empresas-listado-ver-empresa.html">Volver sin guardar</a>
+          <button class="btn primary" id="saveBtn" type="button">Guardar cambios</button>
+        </div>
+      </div>
+
+      <aside class="summary">
+        <div class="summary-card">
+          <strong>Ficha activa</strong>
+          <div class="summary-row"><span class="muted">Empresa</span><span id="summaryCompany">Estudio Rivera</span></div>
+          <div class="summary-row"><span class="muted">RUT</span><span class="mono" id="summaryRut">213456780012</span></div>
+        </div>
+        <div class="summary-card">
+          <strong>Impacto de la edición</strong>
+          <div class="helper">Los cambios afectan próximas declaraciones generadas para esta empresa. No modifican archivos ya exportados.</div>
+        </div>
+        <div class="summary-card">
+          <strong>Validaciones incluidas</strong>
+          <div class="helper">Se controla formato de RUT, filas incompletas y conflicto por RUT duplicado con otra empresa de la misma cuenta.</div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <template id="ivaRowTemplate">
+    <div class="table-row iva">
+      <div class="row-fields">
+        <div class="field-stack">
+          <label class="label">Código IVA</label>
+          <select class="select iva-code">
+            <option value="">Seleccionar</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+          </select>
+        </div>
+        <div class="field-stack">
+          <label class="label">Cuenta contable</label>
+          <input class="field iva-account" type="text" placeholder="Ej. 2110-IVA Compras" />
+        </div>
+        <div class="field-stack">
+          <label class="label">Línea PADI</label>
+          <input class="field mono iva-padi" type="text" inputmode="numeric" placeholder="Ej. 314" />
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn remove-row" type="button" aria-label="Quitar fila">Quitar</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="exemptRowTemplate">
+    <div class="table-row exenta">
+      <div class="row-fields">
+        <div class="field-stack">
+          <label class="label">Cuenta contable</label>
+          <input class="field exempt-account" type="text" placeholder="Ej. 5140-Compras exentas" />
+        </div>
+      </div>
+      <div class="row-actions">
+        <span class="badge info">Línea 504</span>
+        <button class="icon-btn remove-row" type="button" aria-label="Quitar fila">Quitar</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var companyName = document.getElementById('companyName');
+      var companyRut = document.getElementById('companyRut');
+      var headerCompany = document.getElementById('headerCompany');
+      var headerRut = document.getElementById('headerRut');
+      var summaryCompany = document.getElementById('summaryCompany');
+      var summaryRut = document.getElementById('summaryRut');
+      var ivaTable = document.getElementById('ivaTable');
+      var exemptTable = document.getElementById('exemptTable');
+      var ivaTemplate = document.getElementById('ivaRowTemplate');
+      var exemptTemplate = document.getElementById('exemptRowTemplate');
+      var addIvaRow = document.getElementById('addIvaRow');
+      var addExemptRow = document.getElementById('addExemptRow');
+      var saveBtn = document.getElementById('saveBtn');
+      var successBanner = document.getElementById('successBanner');
+      var saveErrorBanner = document.getElementById('saveErrorBanner');
+      var saveErrorText = document.getElementById('saveErrorText');
+      var validationBanner = document.getElementById('validationBanner');
+      var duplicateRut = '219999990001';
+
+      var dataByCompany = {
+        rivera: {
+          name: 'Estudio Rivera',
+          rut: '213456780012',
+          iva: [
+            { code: '1', account: '2110-IVA Compras Gravadas', padi: '314' },
+            { code: '5', account: '2115-IVA Servicios', padi: '318' }
+          ],
+          exempt: [
+            { account: '5140-Compras exentas plaza' },
+            { account: '5145-Honorarios exentos' }
+          ]
+        },
+        sur: {
+          name: 'Comercial del Sur',
+          rut: '215998440019',
+          iva: [
+            { code: '2', account: '2122-IVA Importaciones', padi: '320' }
+          ],
+          exempt: [
+            { account: '5180-Compras exentas importación' }
+          ]
+        },
+        agro: {
+          name: 'Agro Litoral',
+          rut: '217774120016',
+          iva: [
+            { code: '0', account: '2100-Insumos agropecuarios', padi: '304' },
+            { code: '4', account: '2104-Servicios rurales', padi: '312' }
+          ],
+          exempt: [
+            { account: '5190-Compras exentas rurales' }
+          ]
+        },
+        delta: {
+          name: 'Servicios Delta',
+          rut: '210345670018',
+          iva: [
+            { code: '3', account: '2130-Servicios profesionales', padi: '316' }
+          ],
+          exempt: []
+        }
+      };
+
+      function syncHeader() {
+        headerCompany.textContent = companyName.value.trim() || 'Sin nombre';
+        summaryCompany.textContent = companyName.value.trim() || 'Sin nombre';
+        headerRut.textContent = companyRut.value.trim() || '—';
+        summaryRut.textContent = companyRut.value.trim() || '—';
+      }
+
+      function clearBanners() {
+        successBanner.style.display = 'none';
+        saveErrorBanner.style.display = 'none';
+        validationBanner.style.display = 'none';
+      }
+
+      function createIvaRow(data) {
+        var node = ivaTemplate.content.firstElementChild.cloneNode(true);
+        node.querySelector('.iva-code').value = data.code || '';
+        node.querySelector('.iva-account').value = data.account || '';
+        node.querySelector('.iva-padi').value = data.padi || '';
+        node.querySelector('.remove-row').addEventListener('click', function () {
+          node.remove();
+          clearBanners();
+        });
+        return node;
+      }
+
+      function createExemptRow(data) {
+        var node = exemptTemplate.content.firstElementChild.cloneNode(true);
+        node.querySelector('.exempt-account').value = data.account || '';
+        node.querySelector('.remove-row').addEventListener('click', function () {
+          node.remove();
+          clearBanners();
+        });
+        return node;
+      }
+
+      function renderTables(data) {
+        ivaTable.innerHTML = '';
+        exemptTable.innerHTML = '';
+        data.iva.forEach(function (item) {
+          ivaTable.appendChild(createIvaRow(item));
+        });
+        data.exempt.forEach(function (item) {
+          exemptTable.appendChild(createExemptRow(item));
+        });
+      }
+
+      function markInvalid(node, invalid) {
+        node.classList.toggle('invalid', invalid);
+      }
+
+      function validateRows() {
+        var valid = true;
+
+        markInvalid(companyName, companyName.value.trim() === '');
+        if (companyName.value.trim() === '') valid = false;
+
+        var rutValid = /^\d{12}$/.test(companyRut.value.trim());
+        markInvalid(companyRut, !rutValid);
+        if (!rutValid) valid = false;
+
+        Array.prototype.forEach.call(ivaTable.querySelectorAll('.table-row'), function (row) {
+          var code = row.querySelector('.iva-code');
+          var account = row.querySelector('.iva-account');
+          var padi = row.querySelector('.iva-padi');
+          var rowValid = code.value !== '' && account.value.trim() !== '' && padi.value.trim() !== '';
+          markInvalid(code, code.value === '');
+          markInvalid(account, account.value.trim() === '');
+          markInvalid(padi, padi.value.trim() === '');
+          if (!rowValid) valid = false;
+        });
+
+        Array.prototype.forEach.call(exemptTable.querySelectorAll('.table-row'), function (row) {
+          var account = row.querySelector('.exempt-account');
+          var rowValid = account.value.trim() !== '';
+          markInvalid(account, !rowValid);
+          if (!rowValid) valid = false;
+        });
+
+        return valid;
+      }
+
+      function saveCompany() {
+        clearBanners();
+
+        if (!validateRows()) {
+          validationBanner.style.display = 'grid';
+          return;
+        }
+
+        if (companyRut.value.trim() === duplicateRut || params.get('state') === 'save-error') {
+          saveErrorText.textContent = 'Ya existe otra empresa en esta cuenta con el RUT ' + companyRut.value.trim() + '.';
+          saveErrorBanner.style.display = 'grid';
+          return;
+        }
+
+        successBanner.style.display = 'grid';
+      }
+
+      var activeCompany = dataByCompany[params.get('empresa')] || dataByCompany.rivera;
+      companyName.value = activeCompany.name;
+      companyRut.value = activeCompany.rut;
+      renderTables(activeCompany);
+      syncHeader();
+
+      addIvaRow.addEventListener('click', function () {
+        ivaTable.appendChild(createIvaRow({ code: '', account: '', padi: '' }));
+        clearBanners();
+      });
+      addExemptRow.addEventListener('click', function () {
+        exemptTable.appendChild(createExemptRow({ account: '' }));
+        clearBanners();
+      });
+      saveBtn.addEventListener('click', saveCompany);
+      companyName.addEventListener('input', function () { syncHeader(); clearBanners(); });
+      companyRut.addEventListener('input', function () { syncHeader(); clearBanners(); });
+      document.addEventListener('input', function (event) {
+        if (event.target.classList.contains('field') || event.target.classList.contains('select')) {
+          event.target.classList.remove('invalid');
+          clearBanners();
+        }
+      });
+
+      if (params.get('state') === 'validation') {
+        companyRut.value = '21345';
+        if (ivaTable.firstElementChild) {
+          ivaTable.firstElementChild.querySelector('.iva-account').value = '';
+        }
+        if (exemptTable.firstElementChild) {
+          exemptTable.firstElementChild.querySelector('.exempt-account').value = '';
+        }
+        syncHeader();
+        saveCompany();
+      } else if (params.get('state') === 'save-success') {
+        successBanner.style.display = 'grid';
+      } else if (params.get('state') === 'save-error') {
+        companyRut.value = duplicateRut;
+        syncHeader();
+        saveCompany();
+      }
+    })();
+  </script>
+</body>
+</html>

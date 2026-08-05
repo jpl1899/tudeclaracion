@@ -12,8 +12,9 @@ Toda historia de usuario con interfaz debe citar su pantalla en el mapa §8 **an
 |---|---|---|
 | Portada (landing) | mockup listo, sin código | — |
 | Acceso (login) | mockup listo, sin código | link "Recuperar acceso" ahora tiene destino — ver §4.6 |
-| Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta (TD-8, ahora incluye TD-7) ya tiene mockup — ver §4.4, §4.7 |
+| Selección de empresa | mockup listo, sin código | card "Agregar nueva empresa" agregada; el flujo de alta (TD-8, ahora incluye TD-7) ya tiene mockup — ver §4.4, §4.7. Acción "Ver empresa" por card agregada (batch `company-detail-edit`, pre-backlog) — ver §4.4, §4.9 |
 | Agregar nueva empresa (TD-8 + TD-7) | mockup recibido, build diverge del mockup (ver D4) | combina alta de empresa (RUT/nombre) + mapeo fijo de 5 cuentas contables (self-service, revertido 2026-07-12) — ver §4.7 |
+| Detalle y edición de empresa (nueva) | mockup recibido, build diverge del mockup (ver D8) | pantalla nueva a la que redirige "Ver empresa" — edita RUT/nombre + tabla de códigos IVA + tabla de Compras Exentas de una empresa existente — ver §4.9. Historia TD-30 creada |
 | Dashboard / Panel principal | mockup listo, requiere ajuste | el wizard real de "Iniciar nueva declaración" (US 3.x) NO está mockeado — el botón del prototipo solo dispara un `alert()`; falta agregar el indicador/link de empresa activa en el sidebar (ver §5, D2) |
 | Crear cuenta (signup) | mockup listo, sin código | generado just-in-time para TD-4 vía brief (`references/screen-design-brief.md`), Open Design — ver §4.5 |
 | Recuperar acceso (forgot/reset password) | mockup recibido, build diverge del mockup (ver D3) | generado just-in-time para TD-9; el mockup trae tokens y composición nuevos no coherentes con el resto del batch — build real usa el shell/tokens ya vivos, mockup solo aporta estados/copy — ver §4.6, §5 D3 |
@@ -37,7 +38,7 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 - **Ruta esperada**: `/` (pública, pre-login)
 - **Propósito**: presentar el valor del producto y dirigir a login. Superficie de confianza, no de venta agresiva.
 - **Provenance**: `.context/designs/tudeclaracion/mvp-core-screens/landing-2.html` (copiado de `C:\Projects\Personal\Design\landing-2.html`, sin `BRIEF.md` — prototipo pre-existente).
-- **Historias de usuario**: ninguna del MVP scope actual la cubre directamente (`mvp-scope.md` no tiene una épica de "landing/marketing") — es superficie de soporte, no bloquea ninguna US.
+- **Historias de usuario**: TD-29 (epic TD-28 "General Features", 2026-08-01) — primera story que la cubre. Sigue siendo superficie de soporte fuera del MVP core (`mvp-scope.md` no tiene épica de "landing/marketing"), no bloquea ninguna US del motor tributario.
 - **Contenido observado**: hero con propuesta de valor + CTA único ("Ingresar al sistema"), sección "Criterios de confianza" (3 cards: lectura inmediata, próximo paso obvio, escalable), disclaimer legal ("Herramienta de apoyo. No reemplaza asesoramiento contable ni legal.").
 - **Checklist de fidelidad**:
   - [ ] Un solo CTA primario (a login) — no competir con otros botones.
@@ -83,11 +84,13 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 - **Flujo confirmado por el usuario**: tras el login, se muestra este listado de empresas del contador; al seleccionar una, redirige al `dashboard` scoped a esa empresa. Desde el `dashboard`, un indicador/link de empresa activa en el sidebar permite volver acá para cambiar de empresa sin cerrar sesión.
 - **Contenido observado**: layout 2 columnas (lista + detalle), buscador por nombre/RUT con contador de resultados, cards de empresa con badge de estado (Operativa/Pendiente) + último movimiento + responsable, panel de detalle con datos de la empresa seleccionada, CTA único "Ingresar al dashboard" (deshabilitado si no hay selección), estado vacío para búsqueda sin resultados. Card final con borde punteado "Agregar nueva empresa" (agregada 2026-07-05 a pedido del usuario) — dispara un `alert()` placeholder, mismo patrón que el wizard de `dashboard.html`; el flujo de alta en sí todavía no está mockeado.
 - **Nota**: la card "Agregar nueva empresa" solo abre la puerta a US 1.3 — no resuelve el formulario/flujo de alta, que sigue sin pantalla propia.
+- **Actualización (2026-08-05, batch `company-detail-edit`)**: se agrega una acción **"Ver empresa"** por card, independiente de la selección/highlight existente — coexiste con el botón de selección sin reemplazarlo, navega al detalle/edición de esa empresa puntual (§4.9). Provenance: `.context/designs/tudeclaracion/company-detail-edit/empresas-listado-ver-empresa.html`, generado a partir de `.context/designs/tudeclaracion/company-detail-edit/BRIEF.md` (brief just-in-time, modo FOLLOW-UP). Sin historia de Jira todavía — ver §9.
 - **Checklist de fidelidad**:
   - [ ] Objetivos táctiles ≥48px en cards de empresa y CTA (mockup usa 52px en botones, cards sin altura mínima explícita — revisar en implementación).
   - [ ] RUT en tipografía `mono` (ya materializado en el mockup).
   - [ ] Responsive: layout pasa a 1 columna bajo 980px (observado).
   - [ ] CTA primario deshabilitado hasta que haya una empresa seleccionada (ya materializado — accesibilidad de estado).
+  - [ ] "Ver empresa" visualmente distinguible de la acción de selección (ya materializado en el mockup — pill separada, no reemplaza el botón de selección).
 
 ### 4.5 — Crear cuenta (signup)
 
@@ -156,6 +159,28 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
   - [ ] Los 3 estados del AC cubiertos: descarga exitosa tras procesar, descarga ausente/deshabilitada mientras procesa o si falló, nombre de archivo con la convención confirmada.
   - [ ] El estado "con errores" no reutiliza el mismo tono visual que "procesando" salvo que sea una decisión consciente — el mockup los diferencia con el hero (`warning` vs `error`) y un alert adicional, no con el badge superior (ambos quedaron `warning`); replicar esa distinción con los tokens reales.
 
+### 4.9 — Detalle y edición de empresa
+
+- **Slug**: `empresa-detalle-edicion`
+- **Ruta esperada**: `/empresas/[id]` (autenticado, alcanzada desde el botón "Ver empresa" en `company-select`, §4.4)
+- **Propósito**: consultar y editar los datos de una empresa cliente ya existente — nombre, RUT y la parametrización contable de códigos de IVA y Compras Exentas usada para generar declaraciones. No crea una empresa nueva (eso sigue siendo `company-onboarding`, §4.7).
+- **Provenance**: `.context/designs/tudeclaracion/company-detail-edit/empresa-detalle-edicion.html`, generado a partir de `.context/designs/tudeclaracion/company-detail-edit/BRIEF.md` (brief just-in-time, modo FOLLOW-UP — mismo proyecto de herramienta de diseño que el resto del batch). Slug del archivo coincide exactamente con el pedido en el brief, sin rename.
+- **Historias de usuario**: sin historia de Jira todavía (pre-backlog) — ver nota en §9. Cubre funcionalmente la edición de los mismos datos que TD-8/US 1.3 crea (§4.7).
+- **Contenido observado**:
+  - Datos generales: "Nombre de empresa" y "RUT (12 dígitos, `mono`)", ambos precargados con el valor de la empresa.
+  - Tabla "Códigos de formato rápido de IVA": columnas Código IVA (0–9), Cuenta contable, Línea PADI (`mono`); filas agregables/quitables, precargadas con la configuración vigente de la empresa.
+  - Tabla "Compras Exentas": columna Cuenta contable + badge fijo "Línea 504"; filas agregables/quitables. El mockup no cubre el estado vacío de esta tabla cuando una empresa no tiene filas cargadas — gap a decidir en la construcción.
+  - Botones: "Guardar cambios" (primario) y "Volver sin guardar" (vuelve al listado sin persistir).
+  - Señales de "empresa existente, no nueva": eyebrow "Edición de empresa existente", lead explícito ("Esta pantalla no crea una empresa nueva..."), badge "Empresa existente" junto a "Datos generales", campos siempre precargados (nunca vacíos).
+  - Estados: edición en curso (limpia banners al tipear), error de validación ("Revisá los datos antes de guardar." — RUT inválido o filas de IVA/exentas incompletas), guardado exitoso ("Cambios guardados correctamente."), error de guardado por RUT duplicado ("Ya existe otra empresa en esta cuenta con el RUT {rut}.").
+- **Nota dev-side**: hoy no existe RPC de edición — solo `crear_empresa_con_plan_cuentas` (creación). Se necesita un RPC nuevo (o extender el existente) antes de implementar esta historia.
+- **Checklist de fidelidad**:
+  - [ ] Construido con el shell/chrome ya vivo de `/empresas` — NO con el topbar independiente del mockup (mismo patrón que D4/D6, ver D8).
+  - [ ] Tokens reales (`DESIGN.md`, `#08569A` + semánticos `success/warning/error`), no la paleta `oklch` propia del mockup (ver D8).
+  - [ ] Badge "Empresa existente" usa un tono neutral/informativo (`badgeInfo` o similar) en el build real — el mockup lo muestra en `warning` (ámbar), semánticamente cuestionable para un estado que no es una advertencia.
+  - [ ] Los 4 escenarios cubiertos: precarga de datos existentes, error de validación, guardado exitoso, RUT duplicado.
+  - [ ] Definir estado vacío de la tabla "Compras Exentas" cuando la empresa no tiene filas (gap del mockup).
+
 | # | Pantalla | Divergencia | Ratificada por | Razón |
 |---|---|---|---|---|
 | D1 | Login | Nota original "¿Primera vez? Contactá al administrador del estudio" sugería que el alta de cuenta (US 1.1) podría NO ser self-service | **Ratificado 2026-07-05** | Usuario confirmó que el alta de cuenta ES self-service, tal como asume `mvp-scope.md`. El mockup estaba desactualizado — corregido a "¿Primera vez? Creá tu cuenta". No requiere cambios en PRD/SRS. |
@@ -165,6 +190,7 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 | D5 | Dashboard — modal "Importar asiento" (TD-11) | El wizard de carga del TXT (US 3.x) nunca tuvo mockup — hoy el botón "Iniciar nueva declaración" dispara un placeholder de texto (`dashboard/page.tsx`). No hay diseño de referencia para el modal de import. | **Ratificado 2026-07-14** | Usuario confirmó build spec-only sin mockup: modal con dos vías equivalentes para aportar el archivo — explorador de archivos (input nativo) o arrastrar y soltar sobre el área del modal. Reutiliza los tokens/componentes ya vivos (Button, Card, bordes) vía el primitivo `dialog` de shadcn (primer uso en el repo). No cubre la carga real al backend (TD-12/TD-13, fuera de alcance de esta historia). |
 | D7 | Dashboard — confirmación de carga (TD-12) | El estado de confirmación post-carga (nombre de archivo + timestamp, distinto visualmente del estado de error) nunca tuvo mockup — es una extensión del mismo modal "Importar asiento" que D5 ya dejó spec-only. | **Ratificado 2026-07-17 (mismo patrón que D5)** | Usuario confirmó build spec-only: agrega un estado de confirmación dentro del mismo `ImportarAsientoDialog`, reutilizando sus tokens/componentes (Card, badge de éxito). No requiere pantalla ni mockup propio — es contenido nuevo sobre un shell ya ratificado. |
 | D6 | Detalle de declaración (TD-20) | El mockup recibido trae, otra vez, una paleta propia (variables `oklch` custom — `--accent: oklch(45% 0.13 252)`, `--success`/`--warning`/`--error` propios) en vez del `#08569A` congelado y los tokens semánticos de `DESIGN.md`, y un topbar independiente (marca + link "Volver") en vez del sidebar ya vivo de `/dashboard` (con indicador de empresa activa) — no existe ningún otro punto del flujo autenticado con ese chrome de topbar suelto. | **Ratificado 2026-07-17 (mismo patrón que D3/D4)** | Build real usa el shell de `/dashboard` ya vivo (sidebar + empresa activa) como chrome envolvente — el mockup solo aporta el contenido del panel de estado/descarga (3 estados, tarjeta de archivo, copy) y los tokens reales de `DESIGN.md`. El selector de estados del mockup (Procesando/Generada/Con errores) es un artefacto de demo, no un control de producción — el estado real viene del backend. |
+| D8 | Ver empresa (§4.4) + Detalle y edición de empresa (§4.9) | Los dos mockups del batch `company-detail-edit` traen, otra vez, la misma paleta propia `oklch` (`--accent: oklch(45% 0.13 252)`, `--bg`/`--surface`/`--fg`/`--muted`/`--border` custom, `--success`/`--warning`/`--error` mezclados con `color-mix()`) en vez de los tokens `DESIGN.md`, y un topbar independiente (marca + link) en vez del shell real de `/empresas`. Radio (`12px`) y sombras sí coinciden con la escala congelada. | **Ratificado 2026-08-05 (mismo patrón que D3/D4/D6)** | Build real usa los tokens y el shell/chrome ya vivos de `/empresas` — el mockup solo aporta estructura, copy y estados (validación, guardado exitoso, RUT duplicado). Badge "Empresa existente" del mockup usa `warning`; en el build real conviene un tono neutral/informativo. |
 
 ## §8 — US → Screen map
 
@@ -187,9 +213,12 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 | US 6.2 — flujo completo <5 min | — | Cross-cutting, no una pantalla |
 | US 7.1 — listado de declaraciones | `dashboard` | Tabla "Actividad reciente" |
 | US 7.2 — estado de cada declaración | `dashboard` | Badges de estado en la misma tabla |
+| TD-29 — landing pública | `landing` | Mockup listo — ver §4.1. Épica TD-28 "General Features" (fuera del backbone de motor tributario) |
+| TD-30 — ver y editar empresa existente | `company-select` (entrada "Ver empresa") / `empresa-detalle-edicion` (pantalla) | Mockup listo — ver §4.4, §4.9. Épica TD-28 "General Features" |
 
 ## §9 — Maintenance
 
+- **Historia creada (2026-08-05)**: TD-30 cubre §4.4 (actualización "Ver empresa") y §4.9 (Detalle y edición de empresa) — ver fila en §8.
 - **Re-run incremental**: cuando se diseñe el wizard de carga (US 3.x), el flujo de error (US 4.2/4.3), la pantalla de recuperación de contraseña (US 1.4) o el selector/alta de empresa (US 1.3/2.1), correr de nuevo esta fase — genera un `BRIEF.md` nuevo por batch si no hay mockup, o mapea directamente si el usuario ya lo tiene (como en esta sesión).
 - **UPSERT, nunca wipe**: agregar filas a §4/§8 y entradas a §5 — no reescribir desde cero.
 - **No mapeadas intencionalmente**: `design-system.html` (consumido íntegramente en `DESIGN.md`, no es una pantalla de producto), `index.html` y `tudeclaracion-sistema-base.html` (páginas de resumen/pitch del prototipo, contenido idéntico entre ambas, no son rutas reales de la app — quedan en la drop zone como referencia pero sin fila propia acá).

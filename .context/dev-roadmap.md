@@ -132,6 +132,9 @@ Legend: `A ──> B` hard gate. No soft (`··>`) edges found. No 🔒 glyphs h
 
 **TD-22 and TD-24 removed from this table** — both closed 2026-07-16, superseded by TD-15 (TD-22) and TD-7's rework (TD-24). Neither ever had a real UI surface of its own.
 
+| TD-29 — Landing (new epic TD-28, "General Features" — outside the tax-engine backbone in §2) | `landing` | Pre-existing prototype `.context/designs/tudeclaracion/mvp-core-screens/landing-2.html`, mapped in `master-design-plan.md` §4.1 ("mockup listo, sin código") | not gated (mockup ready) |
+| TD-30 — View/edit existing company (epic TD-28, "General Features") | `company-select` (updated) / `empresa-detalle-edicion` (new) | Mockup received 2026-08-05, mapped in `master-design-plan.md` §4.4/§4.9 (D8 ratified — build with live tokens/shell) | not gated (mockup ready) |
+
 **Mockup-gated total: 6** (TD-7, TD-8, TD-16, TD-17, TD-18; TD-20 cleared 2026-07-17 via D6, TD-12 cleared 2026-07-17 via D7; tentatively 7 if TD-25's UI need is confirmed).
 
 ---
@@ -172,11 +175,14 @@ acli jira workitem search --jql "project = TD AND statusCategory != Done ORDER B
 | TD-20 | **Merged 2026-07-17** | Introduced ADR-0003 (`declaracion` entity + período). PR #10 merged to staging, deployed to Render (live). Stage 3 reviewed (1 MAJOR + 2 MINOR fixed, 2 MINOR deferred — see `review.md`). Jira `Ready for QA-on QA`, unassigned. **This closes out the 2181 core pipeline** (TD-13 → TD-15 → TD-23 → TD-20), all merged to staging. |
 | TD-12 | **Merged 2026-07-17** | Confirmation state (filename + timestamp) added to the same "Importar asiento" modal as TD-11, spec-only (D7). Stage 3 reviewed (2 MAJOR fixed — close-during-import race, lost focus on success — 1 MINOR deferred, 1 NIT not actionable, see `review.md`). PR #11 merged to staging, deployed to Render (live). Jira `Ready for QA-on QA`, unassigned. |
 | TD-4, TD-5, TD-6, TD-8, TD-9, TD-11, TD-16, TD-18 | Not blocked (content-wise) | Unchanged this run. Several are still mockup-gated per §5 — separate axis. |
+| TD-29 | Not blocked | New (2026-08-01). No §3 dependency — standalone landing page, no engine-pipeline predecessor. Mockup ready per §5. |
+| TD-30 | Not blocked | New (2026-08-05). No §3 dependency — extends the company-select screen (TD-5) and the company-onboarding data model (TD-8/TD-7), but neither is a hard blocker (both already merged/live). Mockup ready per §5 (D8 ratified). No RPC exists yet to edit a company (only `crear_empresa_con_plan_cuentas` for creation) — a dev-side gap to resolve during Stage 1 planning, not a sequencing blocker. |
 
 **Edge-mapping TODO**:
 - Re-run the live `issuelinks` pull periodically — still zero formal links across 18 stories; §3/§4 stay prose-built until someone provisions a `dependencies` link type or starts using `blocks`/`relates` in the tracker.
 - No `.context/master-implementation-plan.md` exists yet — §2's "Master Sprint" column stays N/A.
 - No `.context/business/business-data-map.md` exists yet — §2 backbone stays prose-derived.
+- **New epic TD-28 "General Features" (2026-08-01)** is a deliberate catch-all for non-engine/supporting tickets (TD-29 landing is its first story) — intentionally outside the §2 tax-engine backbone. Not added to §2's table; §4 execution sprints will pick it up as an unblocked leaf on the next full `/dev-roadmap` regen.
 
 ---
 
