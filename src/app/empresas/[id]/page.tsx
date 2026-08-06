@@ -21,6 +21,11 @@ export default async function EmpresaDetallePage({ params }: { params: Promise<{
     redirect('/login');
   }
 
+  const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_PATTERN.test(id)) {
+    notFound();
+  }
+
   const { data: empresa, error: empresaError } = await supabase
     .from('empresa')
     .select('id, nombre, rut')
