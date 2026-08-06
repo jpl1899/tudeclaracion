@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
+import { CODIGO_PADI_EXENTA, CODIGOS_PADI_IVA, DUPLICATE_RUT_ERROR_CODE } from '@/modules/empresa/plan-cuentas';
 
 /**
  * Agregar nueva empresa — .context/design/master-design-plan.md §4.7,
@@ -22,17 +23,6 @@ import { cn } from '@/lib/utils';
  * libre. Ambas partes se guardan en una sola transacción vía el RPC
  * crear_empresa_con_plan_cuentas.
  */
-const CODIGOS_PADI_IVA = [
-  { value: '505', label: '505 — IVA compras tasa básica' },
-  { value: '506', label: '506 — IVA compras tasa mínima' },
-  { value: '502', label: '502 — IVA ventas tasa básica' },
-  { value: '503', label: '503 — IVA ventas tasa mínima' },
-] as const;
-
-const CODIGO_PADI_EXENTA = '504';
-
-const DUPLICATE_RUT_ERROR_CODE = '23505';
-
 const selectClassName = cn(
   'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
 );

@@ -353,6 +353,10 @@ export type Database = {
         Args: { p_cuentas: Json; p_nombre: string; p_rut: string }
         Returns: string
       }
+      editar_empresa_con_plan_cuentas: {
+        Args: { p_cuentas: Json; p_empresa_id: string; p_nombre: string; p_rut: string }
+        Returns: undefined
+      }
       insertar_asientos: {
         Args: {
           p_empresa_id: string
