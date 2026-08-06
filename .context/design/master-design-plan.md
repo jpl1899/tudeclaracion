@@ -86,11 +86,11 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
 - **Nota**: la card "Agregar nueva empresa" solo abre la puerta a US 1.3 — no resuelve el formulario/flujo de alta, que sigue sin pantalla propia.
 - **Actualización (2026-08-05, batch `company-detail-edit`)**: se agrega una acción **"Ver empresa"** por card, independiente de la selección/highlight existente — coexiste con el botón de selección sin reemplazarlo, navega al detalle/edición de esa empresa puntual (§4.9). Provenance: `.context/designs/tudeclaracion/company-detail-edit/empresas-listado-ver-empresa.html`, generado a partir de `.context/designs/tudeclaracion/company-detail-edit/BRIEF.md` (brief just-in-time, modo FOLLOW-UP). Sin historia de Jira todavía — ver §9.
 - **Checklist de fidelidad**:
-  - [ ] Objetivos táctiles ≥48px en cards de empresa y CTA (mockup usa 52px en botones, cards sin altura mínima explícita — revisar en implementación).
-  - [ ] RUT en tipografía `mono` (ya materializado en el mockup).
-  - [ ] Responsive: layout pasa a 1 columna bajo 980px (observado).
-  - [ ] CTA primario deshabilitado hasta que haya una empresa seleccionada (ya materializado — accesibilidad de estado).
-  - [ ] "Ver empresa" visualmente distinguible de la acción de selección (ya materializado en el mockup — pill separada, no reemplaza el botón de selección).
+  - [ ] Objetivos táctiles ≥48px en cards de empresa y CTA (mockup usa 52px en botones, cards sin altura mínima explícita — revisar en implementación). **Gap conocido (TD-30, 2026-08-06)**: el link "Ver empresa" se implementó con `Button size="sm"` (32px de alto) — ninguna variante de tamaño existente en `button.tsx` llega a 48px (`sm`=32px, `default`=36px, `lg`=40px). El resto de los CTA de esta pantalla (búsqueda, "Ingresar al dashboard") sí usan `h-[52px]` explícito. Divergencia documentada, no bloqueante para el merge — evaluar si vale un ajuste de tamaño en un pase posterior.
+  - [x] RUT en tipografía `mono` (ya materializado en el mockup).
+  - [x] Responsive: layout pasa a 1 columna bajo 980px (observado).
+  - [x] CTA primario deshabilitado hasta que haya una empresa seleccionada (ya materializado — accesibilidad de estado).
+  - [x] "Ver empresa" visualmente distinguible de la acción de selección (implementado como pill separada — `Button variant="secondary"` — sibling del botón de selección, no lo reemplaza; TD-30 PR2, mergeado 2026-08-06).
 
 ### 4.5 — Crear cuenta (signup)
 
@@ -175,11 +175,11 @@ La autoridad de tokens es `DESIGN.md` (raíz del repo) — este plan **no duplic
   - Estados: edición en curso (limpia banners al tipear), error de validación ("Revisá los datos antes de guardar." — RUT inválido o filas de IVA/exentas incompletas), guardado exitoso ("Cambios guardados correctamente."), error de guardado por RUT duplicado ("Ya existe otra empresa en esta cuenta con el RUT {rut}.").
 - **Nota dev-side**: hoy no existe RPC de edición — solo `crear_empresa_con_plan_cuentas` (creación). Se necesita un RPC nuevo (o extender el existente) antes de implementar esta historia.
 - **Checklist de fidelidad**:
-  - [ ] Construido con el shell/chrome ya vivo de `/empresas` — NO con el topbar independiente del mockup (mismo patrón que D4/D6, ver D8).
-  - [ ] Tokens reales (`DESIGN.md`, `#08569A` + semánticos `success/warning/error`), no la paleta `oklch` propia del mockup (ver D8).
-  - [ ] Badge "Empresa existente" usa un tono neutral/informativo (`badgeInfo` o similar) en el build real — el mockup lo muestra en `warning` (ámbar), semánticamente cuestionable para un estado que no es una advertencia.
-  - [ ] Los 4 escenarios cubiertos: precarga de datos existentes, error de validación, guardado exitoso, RUT duplicado.
-  - [ ] Definir estado vacío de la tabla "Compras Exentas" cuando la empresa no tiene filas (gap del mockup).
+  - [x] Construido con el shell/chrome ya vivo de `/empresas` — NO con el topbar independiente del mockup (mismo patrón que D4/D6, ver D8). Confirmado: `empresa-detalle-client.tsx` reutiliza el layout de card centrada ya vivo, sin topbar propio.
+  - [x] Tokens reales (`DESIGN.md`, `#08569A` + semánticos `success/warning/error`), no la paleta `oklch` propia del mockup (ver D8). Confirmado en el código (`bg-success-bg`/`text-error-text`/etc.).
+  - [x] Badge "Empresa existente" usa un tono neutral/informativo en el build real — implementado como `Badge variant="outline"` (no existe una variante `info` dedicada en `badge.tsx`; `outline` es la más cercana sin connotación de advertencia — decisión documentada en el plan de implementación de TD-30, no `warning` como el mockup).
+  - [x] Los 4 escenarios cubiertos: precarga de datos existentes, error de validación, guardado exitoso, RUT duplicado. Verificados en vivo (Playwright) contra la DB de staging, TD-30 PR1 (mergeado 2026-08-06).
+  - [x] Estado vacío de la tabla "Compras Exentas" (y también IVA) definido: copy "Todavía no hay ... cargados para esta empresa." — verificado en vivo con una empresa de 0 filas.
 
 | # | Pantalla | Divergencia | Ratificada por | Razón |
 |---|---|---|---|---|
