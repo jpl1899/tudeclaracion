@@ -107,7 +107,7 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
                 className={`grid gap-3 rounded-2xl border p-4.5 transition-colors ${
                   selected?.id === empresa.id
                     ? 'border-primary/40 bg-primary/5 shadow-md'
-                    : 'border-border bg-card hover:border-primary/25 hover:shadow-sm'
+                    : 'border-border bg-card has-[button:hover]:border-primary/25 has-[button:hover]:shadow-sm has-[button:focus-visible]:border-primary/25 has-[button:focus-visible]:shadow-sm'
                 }`}
               >
                 <button
