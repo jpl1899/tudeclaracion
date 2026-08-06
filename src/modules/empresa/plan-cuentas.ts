@@ -15,3 +15,8 @@ export const CODIGOS_PADI_IVA = [
 export const CODIGO_PADI_EXENTA = '504';
 
 export const DUPLICATE_RUT_ERROR_CODE = '23505';
+
+// `plan_cuentas` also carries UNIQUE(empresa_id, codigo_iva) and
+// UNIQUE(empresa_id, cuenta_contable), which raise the same 23505 code —
+// the constraint name disambiguates a real RUT conflict from those.
+export const RUT_UNIQUE_CONSTRAINT = 'empresa_cuenta_rut_unique';

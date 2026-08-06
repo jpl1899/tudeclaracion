@@ -8,7 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
-import { CODIGO_PADI_EXENTA, CODIGOS_PADI_IVA, DUPLICATE_RUT_ERROR_CODE } from '@/modules/empresa/plan-cuentas';
+import {
+  CODIGO_PADI_EXENTA,
+  CODIGOS_PADI_IVA,
+  DUPLICATE_RUT_ERROR_CODE,
+  RUT_UNIQUE_CONSTRAINT,
+} from '@/modules/empresa/plan-cuentas';
 
 /**
  * Detalle/edición de empresa existente — TD-30, .context/design/master-design-plan.md
@@ -181,7 +186,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
     });
     setIsSubmitting(false);
 
-    if (error?.code === DUPLICATE_RUT_ERROR_CODE) {
+    if (error?.code === DUPLICATE_RUT_ERROR_CODE && error.message.includes(RUT_UNIQUE_CONSTRAINT)) {
       setSaveState('save-error');
       setSaveErrorMessage(`Ya existe otra empresa en esta cuenta con el RUT ${trimmedRut}.`);
       return;
