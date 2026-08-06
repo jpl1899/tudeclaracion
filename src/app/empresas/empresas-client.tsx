@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -101,42 +102,51 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
 
           <div className="grid gap-3">
             {filtered.map(empresa => (
-              <button
+              <div
                 key={empresa.id}
-                type="button"
-                onClick={() => setSelected(empresa)}
-                className={`grid gap-3.5 rounded-2xl border p-4.5 text-left transition-colors ${
+                className={`grid gap-3 rounded-2xl border p-4.5 transition-colors ${
                   selected?.id === empresa.id
                     ? 'border-primary/40 bg-primary/5 shadow-md'
-                    : 'border-border bg-card hover:border-primary/25 hover:shadow-sm'
+                    : 'border-border bg-card has-[button:hover]:border-primary/25 has-[button:hover]:shadow-sm has-[button:focus-visible]:border-primary/25 has-[button:focus-visible]:shadow-sm'
                 }`}
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="grid gap-1.5">
-                    <strong>{empresa.nombre}</strong>
-                    <span className="font-mono text-sm text-muted-foreground">
-                      RUT
+                <button
+                  type="button"
+                  onClick={() => setSelected(empresa)}
+                  className="grid gap-3.5 text-left"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="grid gap-1.5">
+                      <strong>{empresa.nombre}</strong>
+                      <span className="font-mono text-sm text-muted-foreground">
+                        RUT
+                        {' '}
+                        {empresa.rut}
+                      </span>
+                    </div>
+                    <Badge variant={empresa.estado === 'Operativa' ? 'success' : 'warning'}>
+                      {empresa.estado}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-4 text-sm text-muted-foreground">
+                    <span>
+                      Último movimiento:
                       {' '}
-                      {empresa.rut}
+                      {empresa.ultimoMovimiento}
+                    </span>
+                    <span>
+                      Responsable:
+                      {' '}
+                      {empresa.responsable}
                     </span>
                   </div>
-                  <Badge variant={empresa.estado === 'Operativa' ? 'success' : 'warning'}>
-                    {empresa.estado}
-                  </Badge>
+                </button>
+                <div className="flex justify-end">
+                  <Button asChild variant="secondary" size="sm">
+                    <Link href={`/empresas/${empresa.id}`}>Ver empresa</Link>
+                  </Button>
                 </div>
-                <div className="flex flex-wrap justify-between gap-4 text-sm text-muted-foreground">
-                  <span>
-                    Último movimiento:
-                    {' '}
-                    {empresa.ultimoMovimiento}
-                  </span>
-                  <span>
-                    Responsable:
-                    {' '}
-                    {empresa.responsable}
-                  </span>
-                </div>
-              </button>
+              </div>
             ))}
 
             <button
