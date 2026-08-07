@@ -16,7 +16,7 @@ import { getPasswordRules, passwordMeetsRequirements } from '@/lib/validation/pa
  * otherwise-successful signUp call) — see the story's implementation plan,
  * Decision 1, before changing this branch.
  */
-type AuthError = 'duplicate' | 'required-email' | null;
+type AuthError = 'duplicate' | 'required-email' | 'signup-failed' | null;
 
 const RULE_LABELS: { key: keyof ReturnType<typeof getPasswordRules>, label: string }[] = [
   { key: 'length', label: 'Al menos 10 caracteres.' },
@@ -40,7 +40,7 @@ export default function SignupPage() {
 
   function handleEmailChange(value: string) {
     setEmail(value);
-    if (authError === 'duplicate' || authError === 'required-email') {
+    if (authError !== null) {
       setAuthError(null);
     }
   }
@@ -82,7 +82,8 @@ export default function SignupPage() {
     }
 
     if (error) {
-      setAuthError('required-email');
+      console.error('[signup] Supabase signUp error:', error.message);
+      setAuthError('signup-failed');
       return;
     }
 
@@ -131,6 +132,13 @@ export default function SignupPage() {
             <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
               <strong className="mb-1 block">Introduce un correo electrónico.</strong>
               Necesitamos un correo profesional válido para crear la cuenta.
+            </div>
+          )}
+
+          {authError === 'signup-failed' && (
+            <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
+              <strong className="mb-1 block">No pudimos crear la cuenta.</strong>
+              Ocurrió un error al procesar tu solicitud. Intenta nuevamente en unos minutos.
             </div>
           )}
 
