@@ -1,8 +1,9 @@
 'use client';
 
-import type { CampoInvalido } from '@/modules/parser/parse-asientos';
+import type { CampoEspecial, CampoInvalido } from '@/modules/parser/parse-asientos';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { CAMPOS_ESPECIALES, contarCamposPrimeraLineaDeDatos } from '@/modules/parser/parse-asientos';
 
 const ACCEPTED_EXTENSION = '.txt';
+
+/** Etiquetas legibles para el checklist de columnas especiales (ADR-0005, TD-31) -- las keys internas viven en el parser. */
+const ETIQUETAS_CAMPOS_ESPECIALES: Record<CampoEspecial, string> = {
+  costos: 'C.Costos',
+  comprobante: 'Comprobante',
+  numero: 'Número',
+  emision: 'Emisión',
+  vencimiento: 'Vencimiento',
+  numeroDocumento: 'Número Documento',
+  serieDocumento: 'Serie Documento',
+  serie: 'Serie',
+  numeroAsiento: 'Número Asiento',
+};
 
 /** `null` = éxito. `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
 export type ImportarAsientoError
@@ -25,6 +40,7 @@ export type ImportarAsientoError
 
 export interface ImportarAsientoOpciones {
   reemplazar: boolean
+  camposEspecialesHabilitados: Set<CampoEspecial>
 }
 
 interface ImportarAsientoDialogProps {
@@ -54,11 +70,35 @@ export function ImportarAsientoDialog({
   const [periodo, setPeriodo] = useState('');
   const [confirmarReemplazo, setConfirmarReemplazo] = useState(false);
   const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date } | null>(null);
+  const [camposDetectados, setCamposDetectados] = useState<number | null>(null);
+  const [camposEspecialesSeleccionados, setCamposEspecialesSeleccionados] = useState<Set<CampoEspecial>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const listoButtonRef = useRef<HTMLButtonElement>(null);
   const reemplazarButtonRef = useRef<HTMLButtonElement>(null);
 
-  const puedeImportar = archivo !== null && periodo.length === 7 && empresaActiva.length > 0 && !importando;
+  /** ADR-0005 (TD-31): 11/12 campos es el modelo clásico, sin configuración adicional. */
+  const esNoEstandar = camposDetectados !== null && camposDetectados !== 11 && camposDetectados !== 12;
+  const anchoDeclarado = 12 + camposEspecialesSeleccionados.size;
+  const configEspecialCompleta = anchoDeclarado === camposDetectados;
+
+  const puedeImportar = archivo !== null
+    && periodo.length === 7
+    && empresaActiva.length > 0
+    && !importando
+    && (!esNoEstandar || configEspecialCompleta);
+
+  function toggleCampoEspecial(campo: CampoEspecial, marcado: boolean) {
+    setCamposEspecialesSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (marcado) {
+        next.add(campo);
+      }
+      else {
+        next.delete(campo);
+      }
+      return next;
+    });
+  }
 
   // Radix solo maneja foco en apertura/cierre del diálogo, no en swaps de
   // contenido interno -- sin esto, el foco cae al <body> al pasar al estado
@@ -75,21 +115,26 @@ export function ImportarAsientoDialog({
     }
   }, [confirmarReemplazo]);
 
-  function seleccionarArchivo(file: File | undefined) {
+  async function seleccionarArchivo(file: File | undefined) {
     if (!file) { return; }
     if (!isArchivoValido(file)) {
       setArchivo(null);
       setArchivoInvalido(true);
+      setCamposDetectados(null);
+      setCamposEspecialesSeleccionados(new Set());
       return;
     }
     setArchivo(file);
     setArchivoInvalido(false);
+    setCamposEspecialesSeleccionados(new Set());
+    const contenido = await file.text();
+    setCamposDetectados(contarCamposPrimeraLineaDeDatos(contenido));
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setArrastrando(false);
-    seleccionarArchivo(event.dataTransfer.files[0]);
+    void seleccionarArchivo(event.dataTransfer.files[0]);
   }
 
   function resetEstado() {
@@ -101,6 +146,8 @@ export function ImportarAsientoDialog({
     setPeriodo('');
     setConfirmarReemplazo(false);
     setConfirmacion(null);
+    setCamposDetectados(null);
+    setCamposEspecialesSeleccionados(new Set());
   }
 
   function handleClose(nextOpen: boolean) {
@@ -119,7 +166,10 @@ export function ImportarAsientoDialog({
     if (!archivo) { return; }
     setImportando(true);
     const nombreArchivo = archivo.name;
-    const resultado = await onImportar(archivo, periodo.replace('-', ''), { reemplazar });
+    const resultado = await onImportar(archivo, periodo.replace('-', ''), {
+      reemplazar,
+      camposEspecialesHabilitados: camposEspecialesSeleccionados,
+    });
     setImportando(false);
     setConfirmarReemplazo(false);
 
@@ -227,7 +277,7 @@ export function ImportarAsientoDialog({
                       type="file"
                       accept={ACCEPTED_EXTENSION}
                       className="hidden"
-                      onChange={event => seleccionarArchivo(event.target.files?.[0])}
+                      onChange={event => void seleccionarArchivo(event.target.files?.[0])}
                     />
                     {archivo && (
                       <p className="font-medium text-foreground">{archivo.name}</p>
@@ -240,6 +290,48 @@ export function ImportarAsientoDialog({
                       </p>
                     )}
                   </div>
+
+                  {esNoEstandar && (
+                    <div
+                      data-testid="importar_asiento_config_especial"
+                      className="grid gap-3 rounded-md border border-border bg-muted/40 px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-medium">Este archivo no tiene el formato estándar.</p>
+                        <p className="text-sm text-muted-foreground">
+                          Se detectaron
+                          {' '}
+                          {camposDetectados}
+                          {' '}
+                          campos por línea. Marcá qué columnas adicionales trae tu archivo.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {CAMPOS_ESPECIALES.map(campo => (
+                          <label key={campo} className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              checked={camposEspecialesSeleccionados.has(campo)}
+                              onCheckedChange={checked => toggleCampoEspecial(campo, checked === true)}
+                            />
+                            {ETIQUETAS_CAMPOS_ESPECIALES[campo]}
+                          </label>
+                        ))}
+                      </div>
+
+                      <p className={cn('text-sm', configEspecialCompleta ? 'text-muted-foreground' : 'text-warning-text')}>
+                        Columnas configuradas: 12 +
+                        {' '}
+                        {camposEspecialesSeleccionados.size}
+                        {' = '}
+                        {anchoDeclarado}
+                        {' de '}
+                        {camposDetectados}
+                        {' '}
+                        detectados.
+                      </p>
+                    </div>
+                  )}
 
                   {error && (
                     <div

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAsientosTxt } from './parse-asientos';
+import { contarCamposPrimeraLineaDeDatos, derivarLayout, parseAsientosTxt } from './parse-asientos';
 
 describe('parseAsientosTxt', () => {
   it('interprets a compra exenta line resolved by cuenta contable (Código IVA = 0)', () => {
@@ -296,27 +296,39 @@ describe('parseAsientosTxt', () => {
     });
   });
 
-  it('parses a 13-field line (FMSSRL variant), ignoring the unused trailing 13th field', () => {
+  it('parses a 13-field line (FMSSRL variant) when Número Asiento is declared, ignoring its value', () => {
     const content = '30,"54010","2111099","Paola Dagosti F34","217785620017",0,15381.76,1,2773.76,0,"C","",""';
 
-    const result = parseAsientosTxt(content, []);
+    const result = parseAsientosTxt(content, [], new Set(['numeroAsiento']));
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
     expect(result.lines[0]).toMatchObject({ libro: 'C', tipo: null });
   });
 
-  it('reads the numeric Tipo value 504 from its fixed position (12th field) in a 13-field line', () => {
+  it('reads the numeric Tipo value 504 from its fixed position (12th field) in a 13-field line with Número Asiento declared', () => {
     const content = '9,"5424","2143","Factura de compra exenta","012547412548",0,3000,0,0,0,"E","504",""';
 
-    const result = parseAsientosTxt(content, []);
+    const result = parseAsientosTxt(content, [], new Set(['numeroAsiento']));
 
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
     expect(result.lines[0].tipo).toBe('504');
   });
 
-  it('rejects a line with a field count other than 12 or 13', () => {
+  it('rejects a 13-field line when no special columns are declared (ADR-0005 generalizes and replaces the old always-tolerant FMSSRL fix)', () => {
+    const content = '30,"54010","2111099","Paola Dagosti F34","217785620017",0,15381.76,1,2773.76,0,"C","",""';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'línea', message: expect.stringContaining('13') }],
+    });
+  });
+
+  it('rejects a line with a field count that does not match the classic model (default, no special columns declared)', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E","",""," extra"';
 
     const result = parseAsientosTxt(content, []);
@@ -325,6 +337,111 @@ describe('parseAsientosTxt', () => {
       ok: false,
       line: 1,
       errors: [{ field: 'línea', message: expect.stringContaining('14') }],
+    });
+  });
+
+  it('accepts an 11-field classic line with Tipo fully omitted (no trailing comma)', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E"';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ libro: 'E', tipo: null });
+  });
+
+  it('rejects a line with a field count that does not match a declared special-column layout', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(content, [], new Set(['costos', 'emision']));
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'línea', message: expect.stringContaining('12') }],
+    });
+  });
+
+  it('interprets a line with two special columns straddling Concepto, ignoring their values', () => {
+    // Layout: Día, Debe, Haber, [C.Costos], Concepto, [Emisión], RUT, Moneda, Total, Código IVA, IVA, Cotización, Libro, Tipo
+    const content = '5,"5215","11111","costos-value","Ancap Ticket A 12452548","emision-value","233669988774",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(content, [], new Set(['costos', 'emision']));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ debe: '5215', haber: '11111', concepto: 'Ancap Ticket A 12452548', rut: '233669988774' });
+  });
+
+  it('treats an empty value in an enabled special column as blank, not as a missing/misaligned field', () => {
+    const content = '5,"5215","11111","","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(content, [], new Set(['costos']));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: 'Ancap Ticket A 12452548' });
+  });
+
+  describe('derivarLayout', () => {
+    it('returns the 12 mandatory fields in canonical order when no special columns are enabled', () => {
+      expect(derivarLayout(new Set())).toEqual([
+        'dia',
+        'debe',
+        'haber',
+        'concepto',
+        'rut',
+        'moneda',
+        'total',
+        'codigoIva',
+        'iva',
+        'cotizacion',
+        'libro',
+        'tipo',
+      ]);
+    });
+
+    it('places Número Asiento last, reproducing the FMSSRL fixed-position case', () => {
+      const layout = derivarLayout(new Set(['numeroAsiento']));
+      expect(layout).toHaveLength(13);
+      expect(layout[layout.length - 1]).toBe('numeroAsiento');
+      expect(layout[11]).toBe('tipo');
+    });
+
+    it('interleaves multiple special columns at their canonical relative positions', () => {
+      expect(derivarLayout(new Set(['costos', 'emision']))).toEqual([
+        'dia',
+        'debe',
+        'haber',
+        'costos',
+        'concepto',
+        'emision',
+        'rut',
+        'moneda',
+        'total',
+        'codigoIva',
+        'iva',
+        'cotizacion',
+        'libro',
+        'tipo',
+      ]);
+    });
+  });
+
+  describe('contarCamposPrimeraLineaDeDatos', () => {
+    it('counts the fields of the first data line when there is no header', () => {
+      const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+      expect(contarCamposPrimeraLineaDeDatos(content)).toBe(12);
+    });
+
+    it('skips the header row before counting', () => {
+      const header = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
+      const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+      expect(contarCamposPrimeraLineaDeDatos(`${header}\n${validLine}`)).toBe(12);
+    });
+
+    it('returns 0 for an empty file', () => {
+      expect(contarCamposPrimeraLineaDeDatos('')).toBe(0);
     });
   });
 
