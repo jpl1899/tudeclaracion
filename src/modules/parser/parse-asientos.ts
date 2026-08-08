@@ -44,6 +44,69 @@ export interface ParseFailure {
 
 export type ParseResult = ParseSuccess | ParseFailure;
 
+/**
+ * Las 9 columnas adicionales conocidas que un proveedor contable puede
+ * agregar al TXT (ADR-0005). Se ignoran por completo -- nunca se validan ni
+ * se usan -- solo ocupan una posición en el ancho de línea.
+ */
+export const CAMPOS_ESPECIALES = [
+  'costos',
+  'comprobante',
+  'numero',
+  'emision',
+  'vencimiento',
+  'numeroDocumento',
+  'serieDocumento',
+  'serie',
+  'numeroAsiento',
+] as const;
+
+export type CampoEspecial = (typeof CAMPOS_ESPECIALES)[number];
+
+interface PosicionCanonica {
+  key: string
+  especial: CampoEspecial | null
+}
+
+/**
+ * Orden canónico fijo de los 21 campos posibles (`SRS/05-parser.md`
+ * §"Aceptado 2026-08-07"), tal como lo definió la pestaña 3 del Excel
+ * aportado por el contador. La posición de cada campo se deriva SIEMPRE de
+ * esta tabla + cuáles especiales están habilitados -- nunca del contenido de
+ * la línea, porque varios especiales comparten tipo de dato y no hay forma
+ * de distinguirlos por valor.
+ */
+const ORDEN_CANONICO: PosicionCanonica[] = [
+  { key: 'dia', especial: null },
+  { key: 'debe', especial: null },
+  { key: 'haber', especial: null },
+  { key: 'costos', especial: 'costos' },
+  { key: 'comprobante', especial: 'comprobante' },
+  { key: 'numero', especial: 'numero' },
+  { key: 'concepto', especial: null },
+  { key: 'emision', especial: 'emision' },
+  { key: 'vencimiento', especial: 'vencimiento' },
+  { key: 'rut', especial: null },
+  { key: 'moneda', especial: null },
+  { key: 'total', especial: null },
+  { key: 'codigoIva', especial: null },
+  { key: 'iva', especial: null },
+  { key: 'cotizacion', especial: null },
+  { key: 'libro', especial: null },
+  { key: 'tipo', especial: null },
+  { key: 'numeroDocumento', especial: 'numeroDocumento' },
+  { key: 'serieDocumento', especial: 'serieDocumento' },
+  { key: 'serie', especial: 'serie' },
+  { key: 'numeroAsiento', especial: 'numeroAsiento' },
+];
+
+/** Filtra el orden canónico a las posiciones activas para un archivo dado. */
+export function derivarLayout(especialesHabilitados: Set<CampoEspecial>): string[] {
+  return ORDEN_CANONICO
+    .filter(pos => pos.especial === null || especialesHabilitados.has(pos.especial))
+    .map(pos => pos.key);
+}
+
 function splitFields(rawLine: string): string[] {
   const fields: string[] = [];
   let current = '';
@@ -79,23 +142,61 @@ function isHeaderLine(rawLine: string | undefined): boolean {
 }
 
 /**
+ * Cantidad de campos de la primera línea de datos del archivo (descartando
+ * el encabezado si viene) -- usado por la UI (`ImportarAsientoDialog`, TD-31)
+ * para decidir si el archivo matchea el modelo clásico (11/12 campos) o
+ * necesita que el usuario declare qué columnas especiales trae, antes de
+ * llamar a `parseAsientosTxt`. Reutiliza `splitFields`/`isHeaderLine` para no
+ * duplicar el parseo CSV quote-aware.
+ */
+export function contarCamposPrimeraLineaDeDatos(content: string): number {
+  const rawLines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+  const startIndex = isHeaderLine(rawLines[0]) ? 1 : 0;
+  const primeraLinea = rawLines[startIndex];
+  return primeraLinea === undefined ? 0 : splitFields(primeraLinea).length;
+}
+
+/**
  * Valida todos los campos de la línea y acumula cada campo inválido -- no
  * frena en el primero (confirmado con el contador: si una línea trae varios
  * campos inválidos a la vez, ej. RUT y Moneda, Rosana necesita ver ambos de
  * una sola pasada, no uno por reintento).
  */
-function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaRow[]): AsientoLine | ParseFailure {
+function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaRow[], layout: string[]): AsientoLine | ParseFailure {
   const fields = splitFields(rawLine);
-  if (fields.length !== 12 && fields.length !== 13) {
-    return fail(lineNumber, [{ field: 'línea', message: `Se esperaban 12 o 13 campos, se encontraron ${fields.length}` }]);
-  }
+
   /**
-   * Tipo se lee siempre de la posición fija 12 (índice 11) -- corregido
-   * 2026-08-04: algunos proveedores (ej. FMSSRL) agregan un 13er campo sin
-   * uso *después* de Tipo, no antes. El campo 13 (cuando está presente) se
-   * ignora por completo, no se valida ni se usa.
+   * El ancho esperado se deriva del layout (12 + especiales habilitados,
+   * ADR-0005). El modelo clásico (sin especiales) conserva además la
+   * leniencia ya existente de 11 campos -- Tipo omitido por completo, sin
+   * coma final -- documentada en `SRS/05-parser.md` como parte del modelo
+   * clásico; esa leniencia NO se generaliza a layouts con especiales, donde
+   * el ancho debe matchear exacto.
    */
-  const [diaRaw, debe, haber, concepto, rut, monedaRaw, totalRaw, codigoIvaRaw, ivaRaw, cotizacionRaw, libroRaw, tipoRaw] = fields;
+  const esModeloClasico = layout.length === 12;
+  const anchoValido = fields.length === layout.length || (esModeloClasico && fields.length === layout.length - 1);
+  if (!anchoValido) {
+    const anchosEsperados = esModeloClasico ? `${layout.length - 1} o ${layout.length}` : `${layout.length}`;
+    return fail(lineNumber, [{ field: 'línea', message: `Se esperaban ${anchosEsperados} campos, se encontraron ${fields.length}` }]);
+  }
+  // Línea de 11 campos del modelo clásico: Tipo viene ausente, no vacío-con-coma -- se completa acá.
+  const valores = fields.length === layout.length ? fields : [...fields, ''];
+
+  const valorPorCampo: Record<string, string> = {};
+  layout.forEach((key, index) => { valorPorCampo[key] = valores[index]; });
+
+  const diaRaw = valorPorCampo.dia;
+  const debe = valorPorCampo.debe;
+  const haber = valorPorCampo.haber;
+  const concepto = valorPorCampo.concepto;
+  const rut = valorPorCampo.rut;
+  const monedaRaw = valorPorCampo.moneda;
+  const totalRaw = valorPorCampo.total;
+  const codigoIvaRaw = valorPorCampo.codigoIva;
+  const ivaRaw = valorPorCampo.iva;
+  const cotizacionRaw = valorPorCampo.cotizacion;
+  const libroRaw = valorPorCampo.libro;
+  const tipoRaw = valorPorCampo.tipo;
   const errors: CampoInvalido[] = [];
 
   if (!NUMERIC_FIELD_RE.test(diaRaw) || Number(diaRaw) < 1 || Number(diaRaw) > 31) {
@@ -221,14 +322,24 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
  *
  * Si cualquier campo de cualquier línea es inválido, aborta el archivo
  * completo (no devuelve resultados parciales) — regla confirmada 2026-07-16.
+ *
+ * `camposEspecialesHabilitados` (ADR-0005, TD-31): columnas adicionales que
+ * el usuario declaró antes de subir un archivo no estándar -- derivan la
+ * posición de cada campo junto con el orden canónico fijo. Vacío por default
+ * (modelo clásico, 11/12 campos), igual que hoy.
  */
-export function parseAsientosTxt(content: string, planCuentas: PlanCuentaRow[]): ParseResult {
+export function parseAsientosTxt(
+  content: string,
+  planCuentas: PlanCuentaRow[],
+  camposEspecialesHabilitados: Set<CampoEspecial> = new Set(),
+): ParseResult {
+  const layout = derivarLayout(camposEspecialesHabilitados);
   const rawLines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
   const lines: AsientoLine[] = [];
   const startIndex = isHeaderLine(rawLines[0]) ? 1 : 0;
 
   for (let i = startIndex; i < rawLines.length; i++) {
-    const result = parseLine(rawLines[i], i + 1, planCuentas);
+    const result = parseLine(rawLines[i], i + 1, planCuentas, layout);
     if ('ok' in result) {
       return result;
     }
