@@ -20,7 +20,7 @@ This epic is intentionally open-ended. It is not meant to be decomposed into a f
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
 | [TD-29](https://lk-tudeclaracion.atlassian.net/browse/TD-29) | Landing | Present the product to prospective accountants before signup | - | Medium | En curso |
-| [TD-30](https://lk-tudeclaracion.atlassian.net/browse/TD-30) | Company | View and edit an existing company's profile | - | Medium | Tareas por hacer |
+| [TD-30](https://lk-tudeclaracion.atlassian.net/browse/TD-30) | Company | View and edit an existing company's profile | - | Medium | Ready for QA-on QA |
 
 ---
 

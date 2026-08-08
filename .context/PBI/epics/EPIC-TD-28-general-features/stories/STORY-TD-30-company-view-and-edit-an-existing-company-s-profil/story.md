@@ -3,7 +3,7 @@
 **Jira Key:** [TD-30](https://lk-tudeclaracion.atlassian.net/browse/TD-30)
 **Epic:** [TD-28](https://lk-tudeclaracion.atlassian.net/browse/TD-28) (General Features)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -53,7 +53,7 @@ tax-account mapping without having to recreate the company from scratch.
 ## Metadata
 
 - **Created:** 5/8/2026
-- **Updated:** 5/8/2026
+- **Updated:** 6/8/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** feature-extension, implementation-plan-ready, post-mvp

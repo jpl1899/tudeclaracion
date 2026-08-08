@@ -48,5 +48,26 @@ Scenario: Confirmation includes filename and timestamp
 
 ---
 
+### Juan Leites - 17/7/2026, 14:39:12
+
+## Spec Implementation Plan (Dev) — confirmed 2026-07-17
+
+Spec-only build (D7, no mockup), same pattern as TD-11.
+
+### Technical plan
+
+- Extend ImportarAsientoDialog (src/components/importar-asiento-dialog.tsx): on a successful import (onImportar resolves null), instead of immediately closing the dialog, show a confirmation state -- filename + upload timestamp (Date.now() at success), success-toned (border-success/bg-success-bg, mirrors the existing error-state styling but with the success token pair). A single close button dismisses it, resetting state.
+- Failure state already exists and is visually/textually distinct (error banner, dialog stays open) -- covered by AC scenario 2 already, no change needed there.
+- No schema, no new route -- same modal, same shell, per D7.
+
+## Review Workload Forecast
+
+Estimated: ~40 additions = ~40 total lines (component change only)
+400-line budget risk: Low
+Chain strategy: stacked-to-main (feature/TD-7-plan-cuentas-rework)
+Decision needed before apply: No
+
+---
+
 
 _Synced from Jira by sync-jira-issues_

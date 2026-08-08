@@ -4,12 +4,14 @@ _Project: TD_
 
 ---
 
-## [TD-28](https://lk-tudeclaracion.atlassian.net/browse/TD-28) - General Features
+## [TD-10](https://lk-tudeclaracion.atlassian.net/browse/TD-10) - File Upload & Parsing
 
-**Status:** Planificación | **Stories:** 2 | **Points:** 0
+**Status:** Planificación | **Stories:** 4 | **Points:** 0
 
-- [TD-29](https://lk-tudeclaracion.atlassian.net/browse/TD-29) Landing | Present the product to prospective accountants before signup _(- pts, En curso)_
-- [TD-30](https://lk-tudeclaracion.atlassian.net/browse/TD-30) Company | View and edit an existing company's profile _(- pts, Tareas por hacer)_
+- [TD-11](https://lk-tudeclaracion.atlassian.net/browse/TD-11) File Upload | Upload the monthly Memory export _(- pts, Deployed)_
+- [TD-12](https://lk-tudeclaracion.atlassian.net/browse/TD-12) File Upload | Confirm successful upload before processing starts _(- pts, Ready for QA-on QA)_
+- [TD-13](https://lk-tudeclaracion.atlassian.net/browse/TD-13) Automatic Interpretation | Process an uploaded file without manual edits _(- pts, Ready for QA-on QA)_
+- [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31) TXT Layout | Declare special columns before uploading a non-standard file _(- pts, Tareas por hacer)_
 
 ---
 

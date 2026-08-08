@@ -39,10 +39,18 @@ Resolved. `SRS/05-parser.md` now documents the confirmed input format (delimiter
 
 ---
 
+## Traceability
+
+### Historia (1)
+
+- [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31): TXT Layout | Declare special columns before uploading a non-standard file _(Tareas por hacer)_
+
+---
+
 ## Metadata
 
 - **Created:** 7/7/2026
-- **Updated:** 17/7/2026
+- **Updated:** 7/8/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Unassigned
 
