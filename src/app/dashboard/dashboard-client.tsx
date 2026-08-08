@@ -117,7 +117,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     }));
 
     const contenido = await file.text();
-    const resultado = parseAsientosTxt(contenido, planCuentas);
+    const resultado = parseAsientosTxt(contenido, planCuentas, opciones.camposEspecialesHabilitados);
 
     if (!resultado.ok) {
       return { kind: 'parse', line: resultado.line, errors: resultado.errors };
