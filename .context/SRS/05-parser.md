@@ -55,7 +55,7 @@ El TXT puede venir con o sin una primera fila de encabezado (`DIA,DEBE,HABER,CON
 
 ## Aceptado 2026-08-07 — layout configurable de campos (reemplaza el caso FMSSRL puntual)
 
-**Ver `ADR-0005-configurable-txt-field-layout-2181.md` para el detalle completo de contexto, decisión y alternativas descartadas.** Pendiente de implementación en `parse-asientos.ts` — esta sección documenta la regla ya aceptada, no el estado actual del código.
+**Ver `ADR-0005-configurable-txt-field-layout-2181.md` para el detalle completo de contexto, decisión y alternativas descartadas.** Implementado en `parse-asientos.ts` (TD-31, 2026-08-08) — el fix ad-hoc del 13er campo (FMSSRL) queda cubierto como el caso particular de `numeroAsiento` habilitado. La configuración de columnas especiales es efímera (estado de `ImportarAsientoDialog`, se descarta al cerrar el diálogo) — no hay tabla nueva en Supabase.
 
 El TXT puede traer hasta 9 columnas adicionales conocidas, agregadas por distintos proveedores contables: C.Costos, Comprobante, Número, Emisión, Vencimiento, Número Documento, Serie Documento, Serie, Número Asiento. Estas se ignoran por completo (no se validan, no se usan) — junto con los 12 campos obligatorios (Día, Debe, Haber, Concepto, RUT, Moneda, Total, Código IVA, IVA, Cotización, Libro, Tipo), forman el universo cerrado de 21 campos posibles, en un **orden canónico fijo**:
 
