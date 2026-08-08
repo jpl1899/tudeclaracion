@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 .next/
+.vercel/
 
 # Test artifacts
 test-results/
