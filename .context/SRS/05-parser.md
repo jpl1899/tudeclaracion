@@ -53,6 +53,34 @@ Algunos proveedores contables (ej. FMSSRL, archivo `FMSSRL Asientos Abril 2026.T
 
 El TXT puede venir con o sin una primera fila de encabezado (`DIA,DEBE,HABER,CONCEPTO,RUT,...`) describiendo los campos — depende de cómo lo exporte el proveedor contable en cada caso. El parser la detecta (campo Día no numérico, valor `DIA`) y la descarta antes de interpretar datos; no se trata como una línea inválida y no corre el conteo de línea de los asientos reales.
 
+## Aceptado 2026-08-07 — layout configurable de campos (reemplaza el caso FMSSRL puntual)
+
+**Ver `ADR-0005-configurable-txt-field-layout-2181.md` para el detalle completo de contexto, decisión y alternativas descartadas.** Pendiente de implementación en `parse-asientos.ts` — esta sección documenta la regla ya aceptada, no el estado actual del código.
+
+El TXT puede traer hasta 9 columnas adicionales conocidas, agregadas por distintos proveedores contables: C.Costos, Comprobante, Número, Emisión, Vencimiento, Número Documento, Serie Documento, Serie, Número Asiento. Estas se ignoran por completo (no se validan, no se usan) — junto con los 12 campos obligatorios (Día, Debe, Haber, Concepto, RUT, Moneda, Total, Código IVA, IVA, Cotización, Libro, Tipo), forman el universo cerrado de 21 campos posibles, en un **orden canónico fijo**:
+
+```
+Día, Debe, Haber, [C.Costos, Comprobante, Número], Concepto, [Emisión, Vencimiento],
+RUT, Moneda, Total, Código IVA, IVA, Cotización, Libro,
+[Número Documento, Serie Documento, Serie, Número Asiento]
+```
+
+(entre corchetes, los campos opcionales — su presencia o ausencia no altera el orden relativo del resto).
+
+**Archivos de 11 o 12 campos** (modelo clásico, sin columnas adicionales): se procesan exactamente como hoy, sin ningún cambio ni configuración.
+
+**Archivos con otra cantidad de campos**: la subida queda bloqueada hasta que el usuario complete una configuración previa — checklist de los 21 campos posibles, los 12 obligatorios siempre habilitados, los 9 especiales deshabilitados por defecto. El usuario habilita solo los que su archivo puntual trae. La posición de cada campo se deriva de esa selección + el orden canónico fijo — nunca se infiere por el contenido/forma del valor (dos campos especiales pueden compartir tipo de dato y cantidad de dígitos sin ambigüedad, porque nunca se identifican por su valor).
+
+Reglas de la configuración:
+- Es **por archivo completo**, nunca por línea individual ni por asiento. El ancho de línea (cantidad de campos separados por coma) es fijo para todo el archivo: 12 + cantidad de especiales habilitados.
+- **Invariante**: toda línea del archivo debe tener exactamente esa cantidad de campos. Una línea con una cantidad distinta es un campo estructuralmente inválido — mismo tratamiento que hoy (aborta el archivo completo, ver sección más abajo).
+- Un campo especial habilitado que no tiene dato aplicable en una línea puntual viene **vacío** en su posición (no ausente) — esto permite que distintas líneas del mismo archivo tengan contenido distinto sin requerir esquemas distintos entre sí.
+- Un campo que no está en ninguna de las dos listas (ni de los 12 obligatorios ni de los 9 especiales conocidos) se reporta al usuario como campo desconocido.
+
+Esta regla **generaliza y reemplaza** el fix puntual del 2026-08-04 (proveedor FMSSRL, campo 13 fijo después de Tipo) — ese caso queda cubierto como una instancia particular (solo "Número Asiento" u otro campo único habilitado) de esta mecánica general.
+
+**No forma parte de este alcance, decidido explícitamente que no se implementa**: tope de longitud en Debe/Haber, tope de importe en Total/IVA, tabla de monedas configurable, ampliación del rango de Tipo más allá de `504`/`CIE`/`RES`/`DIF`/`APE`. Código IVA no cambia — `0` sigue siendo el sentinel que dispara Camino 2.
+
 ## Pendiente de producto (no bloquea el motor)
 
 - Agregar botón **"Importar asiento"** (archivo `.txt`) en `/dashboard`, luego de presionar "Iniciar nueva declaración" (contador, 2026-07-14).
