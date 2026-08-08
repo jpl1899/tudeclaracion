@@ -65,7 +65,7 @@ Implementa la decisión ya aceptada en `ADR-0005-configurable-txt-field-layout-2
 ## Metadata
 
 - **Created:** 7/8/2026
-- **Updated:** 7/8/2026
+- **Updated:** 8/8/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** parser, tax-engine
