@@ -81,6 +81,31 @@ Esta regla **generaliza y reemplaza** el fix puntual del 2026-08-04 (proveedor F
 
 **No forma parte de este alcance, decidido explícitamente que no se implementa**: tope de longitud en Debe/Haber, tope de importe en Total/IVA, tabla de monedas configurable, ampliación del rango de Tipo más allá de `504`/`CIE`/`RES`/`DIF`/`APE`. Código IVA no cambia — `0` sigue siendo el sentinel que dispara Camino 2.
 
+## Confirmado 2026-08-17 — advertencia genérica cuando faltan columnas obligatorias
+
+`ImportarAsientoDialog` (TD-31, ADR-0005) ya distingue el modelo clásico (11/12 campos) del caso con columnas de más, mostrando un checklist para que el usuario declare cuáles de las 9 especiales trae su archivo. Nunca contempló el caso inverso: un archivo con **menos** de 11 campos, porque le falta alguna de las 12 obligatorias.
+
+**Caso real disparador**: el contador recibió el TXT mensual de un cliente (`Estancia los molles.txt`, setiembre 2026) con 10 campos por línea en las 106 líneas del archivo — sin columna RUT, algo que ese cliente normalmente sí incluye y que el contador no advirtió al recibirlo.
+
+Hoy ese archivo cae en la misma rama que "sobran columnas" (`esNoEstandar`): muestra el checklist de especiales, cuyo ancho declarado arranca en 12 y solo puede subir. Con 10 campos detectados nunca hay forma de igualar ese ancho, así que el botón "Importar" queda deshabilitado sin ninguna explicación de por qué.
+
+**Decisión**: cuando se detectan menos de 11 campos en la primera línea de datos, mostrar un mensaje de bloqueo genérico — sin intentar adivinar cuál columna falta — y esperar que el usuario (el contador, con conocimiento del dominio) pida al proveedor contable una versión completa del archivo. No hay ningún camino de importación para este caso.
+
+- Nueva condición, independiente de `esNoEstandar` (que queda acotada a más de 12 campos): `esFaltante = camposDetectados !== null && camposDetectados < 11`.
+- El mensaje tiene dos líneas: "Faltan N columna(s), por favor revisa los asientos" (con `N = 11 - camposDetectados` y singular/plural según corresponda) y, debajo, "Campos esperados en orden: Día, Debe, Haber, Concepto, RUT, Moneda, Total, Código IVA, IVA, Cotización, Libro." No incluye título ni el cierre de "pedile al proveedor contable...".
+- El botón "Importar" queda deshabilitado siempre que `esFaltante` sea true — no existe ninguna configuración que lo desbloquee, a diferencia del checklist de especiales.
+- No se toca `parse-asientos.ts`: el chequeo vive enteramente en `ImportarAsientoDialog`, antes de siquiera intentar `parseAsientosTxt` — igual que hoy hace `esNoEstandar`.
+
+**Corregido 2026-08-17, mismo día (verificación manual con un archivo real editado a propósito)**: probando con un archivo real donde además de faltarle una columna en toda la línea (setiembre, `Estancia los molles.txt`) se le sacaron campos adicionales solo en una línea puntual (línea 44, no toda la línea), se confirmó que `camposDetectados` solo mira la primera línea de datos — el mensaje no puede reflejar problemas de líneas específicas más abajo sin escanear el archivo completo, algo fuera de alcance por decisión explícita. El conteo "N" es siempre el de la primera línea, puede haber más líneas con otros problemas que el mensaje no refleja. El texto se simplificó a "Faltan N columna(s), por favor revisa los asientos" (con singular/plural), pero conserva la lista de campos obligatorios en orden — el usuario confirmó que esa lista tiene que quedar.
+
+**Alternativas descartadas**:
+- *Detección automática de cuál campo falta*, probando cada combinación posible contra las reglas de validación de cada campo (RUT 12 dígitos, Moneda 0/1, Libro enum, etc.) hasta encontrar la que hace válido el archivo completo. Más preciso que el conteo puro que rechazó ADR-0005 — los campos obligatorios tienen validaciones bien distintas entre sí —, pero el usuario lo descartó explícitamente: no tiene sentido intentar cubrir cada variante de error humano en el archivo de origen, el espacio de casos es infinito. Consistente además con la filosofía de ADR-0005: nunca se infiere el layout por contenido.
+- *Checklist inverso* (como el de especiales, pero el usuario destilda cuáles de los 12 obligatorios faltan) — descartado a favor del mensaje genérico: no hace falta que el usuario "confirme" nada en la UI, el archivo de todos modos queda bloqueado sin importar cuál sea el campo faltante.
+
+**Consecuencias**: el mensaje es el mismo sin importar cuál(es) columna(s) falten — deliberadamente no distingue "falta RUT" de "falta Moneda y Cotización". Si en el futuro aparece evidencia real de que el mensaje genérico no alcanza, se puede revisar esta decisión con un caso concreto, no antes.
+
+No amerita un ADR nuevo — no pasa el gate 2 de `.context/ADR/README.md` (hard to reverse): es una extensión de bajo riesgo de la lógica de UI ya cubierta por ADR-0005, sin tocar el modelo de datos ni el parser.
+
 ## Pendiente de producto (no bloquea el motor)
 
 - Agregar botón **"Importar asiento"** (archivo `.txt`) en `/dashboard`, luego de presionar "Iniciar nueva declaración" (contador, 2026-07-14).

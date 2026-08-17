@@ -32,6 +32,9 @@ const ETIQUETAS_CAMPOS_ESPECIALES: Record<CampoEspecial, string> = {
   numeroAsiento: 'Número Asiento',
 };
 
+/** Los 11 campos obligatorios del modelo clásico, en orden canónico (`SRS/05-parser.md` §"Confirmado 2026-08-17") -- Tipo queda afuera porque ya es opcional hoy. */
+const CAMPOS_OBLIGATORIOS_LABELS = ['Día', 'Debe', 'Haber', 'Concepto', 'RUT', 'Moneda', 'Total', 'Código IVA', 'IVA', 'Cotización', 'Libro'];
+
 /** `null` = éxito. `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
 export type ImportarAsientoError
   = | { kind: 'parse', line: number, errors: CampoInvalido[] }
@@ -77,7 +80,9 @@ export function ImportarAsientoDialog({
   const reemplazarButtonRef = useRef<HTMLButtonElement>(null);
 
   /** ADR-0005 (TD-31): 11/12 campos es el modelo clásico, sin configuración adicional. */
-  const esNoEstandar = camposDetectados !== null && camposDetectados !== 11 && camposDetectados !== 12;
+  const esNoEstandar = camposDetectados !== null && camposDetectados > 12;
+  /** SRS/05-parser.md §"Confirmado 2026-08-17": al archivo le falta alguno de los 11 campos obligatorios -- nunca hay forma de completarlo desde la UI, el usuario debe conseguir una versión completa del archivo. */
+  const esFaltante = camposDetectados !== null && camposDetectados < 11;
   const anchoDeclarado = 12 + camposEspecialesSeleccionados.size;
   const configEspecialCompleta = anchoDeclarado === camposDetectados;
 
@@ -85,6 +90,7 @@ export function ImportarAsientoDialog({
     && periodo.length === 7
     && empresaActiva.length > 0
     && !importando
+    && !esFaltante
     && (!esNoEstandar || configEspecialCompleta);
 
   function toggleCampoEspecial(campo: CampoEspecial, marcado: boolean) {
@@ -290,6 +296,32 @@ export function ImportarAsientoDialog({
                       </p>
                     )}
                   </div>
+
+                  {esFaltante && (() => {
+                    const columnasFaltantes = 11 - (camposDetectados ?? 0);
+                    return (
+                      <div
+                        data-testid="importar_asiento_faltante"
+                        className="grid gap-1.5 rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
+                      >
+                        <p className="font-medium">
+                          Faltan
+                          {' '}
+                          {columnasFaltantes}
+                          {' '}
+                          columna
+                          {columnasFaltantes === 1 ? '' : 's'}
+                          , por favor revisa los asientos.
+                        </p>
+                        <p className="text-sm">
+                          Campos esperados en orden:
+                          {' '}
+                          {CAMPOS_OBLIGATORIOS_LABELS.join(', ')}
+                          .
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {esNoEstandar && (
                     <div
