@@ -35,6 +35,24 @@ const ETIQUETAS_CAMPOS_ESPECIALES: Record<CampoEspecial, string> = {
 /** Los 11 campos obligatorios del modelo clásico, en orden canónico (`SRS/05-parser.md` §"Confirmado 2026-08-17") -- Tipo queda afuera porque ya es opcional hoy. */
 const CAMPOS_OBLIGATORIOS_LABELS = ['Día', 'Debe', 'Haber', 'Concepto', 'RUT', 'Moneda', 'Total', 'Código IVA', 'IVA', 'Cotización', 'Libro'];
 
+/**
+ * A partir de esta cantidad de campos inválidos simultáneos en la misma
+ * línea, el listado campo-por-campo deja de ser una advertencia útil y pasa
+ * a ser ruido -- confirmado con el contador (2026-08-18): un typo real
+ * (1-2 campos) sigue mostrando el detalle para poder corregirlo, pero 3+
+ * campos fallando a la vez es la firma de un corrimiento de columnas
+ * (ej. un RUT de 12 dígitos colado después de Haber), no de varios datos
+ * mal tipeados a la vez -- incumple lo que a partir de ahora llamamos las
+ * "reglas básicas del TXT" (12 campos, cada uno con su forma esperada en su
+ * posición). No se intenta detectar QUÉ campo se corrió -- es imposible
+ * cubrir todas las formas en que un proveedor puede mandar un archivo mal
+ * armado -- solo se generaliza la señal.
+ */
+const UMBRAL_CAMPOS_INVALIDOS_SIMULTANEOS = 3;
+
+/** Módulo Ayuda todavía no existe (a crearse más adelante) -- por ahora es texto plano, sin link, en todo mensaje de formato no aceptado. */
+const MENSAJE_AYUDA = 'Consultá el módulo Ayuda para la guía de cómo debe venir el archivo.';
+
 /** `null` = éxito. `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
 export type ImportarAsientoError
   = | { kind: 'parse', line: number, errors: CampoInvalido[] }
@@ -319,6 +337,7 @@ export function ImportarAsientoDialog({
                           {CAMPOS_OBLIGATORIOS_LABELS.join(', ')}
                           .
                         </p>
+                        <p className="text-sm">{MENSAJE_AYUDA}</p>
                       </div>
                     );
                   })()}
@@ -362,6 +381,7 @@ export function ImportarAsientoDialog({
                         {' '}
                         detectados.
                       </p>
+                      <p className="text-sm text-muted-foreground">{MENSAJE_AYUDA}</p>
                     </div>
                   )}
 
@@ -372,21 +392,42 @@ export function ImportarAsientoDialog({
                     >
                       {error.kind === 'parse'
                         ? (
-                            <>
-                              <p className="font-medium">
-                                Línea
-                                {' '}
-                                {error.line}
-                                :
-                              </p>
-                              <ul className="list-disc pl-4">
-                                {error.errors.map(campoError => (
-                                  <li key={campoError.field}>
-                                    {`Campo "${campoError.field}": ${campoError.message}`}
-                                  </li>
-                                ))}
-                              </ul>
-                            </>
+                            error.errors.length >= UMBRAL_CAMPOS_INVALIDOS_SIMULTANEOS
+                              ? (
+                                  <>
+                                    <p className="font-medium">
+                                      Este archivo no cumple las reglas básicas del TXT.
+                                    </p>
+                                    <p className="text-sm">
+                                      Línea
+                                      {' '}
+                                      {error.line}
+                                      : se detectaron
+                                      {' '}
+                                      {error.errors.length}
+                                      {' '}
+                                      campos inválidos a la vez -- es probable que las columnas no coincidan con el orden esperado.
+                                    </p>
+                                    <p className="text-sm">{MENSAJE_AYUDA}</p>
+                                  </>
+                                )
+                              : (
+                                  <>
+                                    <p className="font-medium">
+                                      Línea
+                                      {' '}
+                                      {error.line}
+                                      :
+                                    </p>
+                                    <ul className="list-disc pl-4">
+                                      {error.errors.map(campoError => (
+                                        <li key={campoError.field}>
+                                          {`Campo "${campoError.field}": ${campoError.message}`}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </>
+                                )
                           )
                         : error.message}
                     </div>
