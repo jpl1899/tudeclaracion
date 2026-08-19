@@ -237,6 +237,24 @@ describe('parseAsientosTxt', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('does not flag Libro via Camino 2 when Total is negative -- reproduces the accountant-reported nota de crédito (cuenta 11332, Libro I, Total -66)', () => {
+    const planCuentas = [{ cuentaContable: '11332', codigoPadi: '505', codigoIva: null }];
+    const content = '2,"11332","","NC efactura A 9988","235487521253",1,-66,0,0,0,"I",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('does not flag Libro via Código IVA directo (Camino 1) when Total is negative', () => {
+    const planCuentas = [{ cuentaContable: '1131', codigoPadi: '505', codigoIva: 3 }];
+    const content = '16,"1234","5678","NC compra A 123","233669988774",0,-1000,3,-180.33,0,"V",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('skips a leading header row and parses the data line that follows it', () => {
     const header = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
     const validLine = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';

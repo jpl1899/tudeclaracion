@@ -59,7 +59,7 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     // (2026-08-02, corregido -- se aplicaba antes solo a Camino 2, pero el
     // caso reportado por el contador era justamente uno resuelto por Código
     // IVA directo).
-    if (!esConsistenteConLibro(match, asiento.libro)) {
+    if (!esConsistenteConLibro(match, asiento.libro, asiento.total)) {
       return noResuelto(asiento, 'libro-inconsistente', `cuenta ${match.cuentaContable} con Libro ${asiento.libro}`);
     }
     resolucion = { codigoPadi: match.codigoPadi, importe: convertirImporte(asiento.iva, asiento) };
@@ -70,7 +70,7 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     // cuentas se prefiere el consistente con Libro (revierte el 2026-07-21 --
     // Libro vuelve a ser decisorio, pero vía prefijo de cuenta, no posición).
     // Lógica compartida con el parser (2026-08-02) -- ver `resolver-cuenta-camino-2.ts`.
-    const { candidatos, cuentaMatch } = resolverCuentaCamino2(asiento.debe, asiento.haber, asiento.libro, planCuentas);
+    const { candidatos, cuentaMatch } = resolverCuentaCamino2(asiento.debe, asiento.haber, asiento.libro, asiento.total, planCuentas);
 
     if (candidatos.length === 0) {
       const cuentasConDatos = [asiento.debe, asiento.haber].filter(cuenta => cuenta.length > 0);

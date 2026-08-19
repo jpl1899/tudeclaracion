@@ -158,6 +158,32 @@ describe('resolveAsientoFiscal', () => {
     });
   });
 
+  it('does not flag Libro inconsistency via Camino 2 when Total is negative -- reproduces the accountant-reported nota de crédito (cuenta 11332, Libro I, Total -66)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '11332', codigoPadi: '505', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'I', debe: '11332', total: -66 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '505', importe: -66, rut: '233669988774' });
+  });
+
+  it('does not flag Libro inconsistency via Camino 1 when Total is negative (nota de crédito resuelta por Código IVA directo)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '1131', codigoPadi: '505', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 3, iva: -180.33, libro: 'V', total: -1000 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '505', importe: -180.33, rut: '233669988774' });
+  });
+
   it('picks the candidate consistent with Libro when both Debe and Haber match the plan de cuentas', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '2131', codigoPadi: '502', codigoIva: null },

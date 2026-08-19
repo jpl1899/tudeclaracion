@@ -22,9 +22,15 @@ export interface ResolucionCuentaCamino2 {
  * (cuenta asociada al Código IVA) como Camino 2 (cuenta de Debe/Haber, ver
  * `resolverCuentaCamino2` más abajo) -- corregido 2026-08-02, antes solo
  * cubría Camino 2.
+ *
+ * **Corregido 2026-08-19**: un `total` negativo (nota de crédito/devolución,
+ * mismo criterio que `normalize-asiento.ts`) tampoco tiene dirección
+ * inferible -- confirmado con el contador que la reversión rompe la
+ * convención Libro/cuenta habitual (ej. cuenta de IVA compras en Debe con
+ * Libro de venta, por una NC de una efactura A con importes negativos).
  */
-export function esConsistenteConLibro(cuenta: PlanCuentaRow, libro: string): boolean {
-  if (libro === 'P') { return true; }
+export function esConsistenteConLibro(cuenta: PlanCuentaRow, libro: string, total: number): boolean {
+  if (libro === 'P' || total < 0) { return true; }
   if (cuenta.cuentaContable.startsWith('2')) { return LIBROS_VENTA.includes(libro); }
   if (cuenta.cuentaContable.startsWith('1')) { return LIBROS_COMPRA.includes(libro); }
   return true;
@@ -37,13 +43,13 @@ export function esConsistenteConLibro(cuenta: PlanCuentaRow, libro: string): boo
  * Libro inconsistente junto al resto de los campos inválidos de la línea,
  * 2026-08-02) y el motor tributario (para resolver o excluir la línea).
  */
-export function resolverCuentaCamino2(debe: string, haber: string, libro: string, planCuentas: PlanCuentaRow[]): ResolucionCuentaCamino2 {
+export function resolverCuentaCamino2(debe: string, haber: string, libro: string, total: number, planCuentas: PlanCuentaRow[]): ResolucionCuentaCamino2 {
   const candidatos = [debe, haber]
     .filter(cuenta => cuenta.length > 0)
     .map(cuenta => planCuentas.find(row => row.cuentaContable === cuenta))
     .filter((match): match is PlanCuentaRow => match !== undefined);
 
-  const cuentaMatch = candidatos.find(cuenta => esConsistenteConLibro(cuenta, libro));
+  const cuentaMatch = candidatos.find(cuenta => esConsistenteConLibro(cuenta, libro, total));
 
   return { candidatos, cuentaMatch };
 }

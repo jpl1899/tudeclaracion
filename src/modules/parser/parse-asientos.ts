@@ -267,7 +267,7 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
      * caso reportado por el contador resolvía justamente por este camino.
      */
     const match = planCuentas.find(row => row.codigoIva === codigoIva);
-    if (match && !esConsistenteConLibro(match, libro)) {
+    if (match && !esConsistenteConLibro(match, libro, total)) {
       errors.push({
         field: 'Libro',
         message: `"${libroRaw}" es inconsistente con la cuenta ${match.cuentaContable} (venta si empieza con 2, compra si empieza con 1)`,
@@ -282,7 +282,7 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
      * línea, no solo cuando la línea llega intacta al motor tributario (ver
      * `resolver-cuenta-camino-2.ts`, compartido con `normalize-asiento.ts`).
      */
-    const { candidatos, cuentaMatch } = resolverCuentaCamino2(debe, haber, libro, planCuentas);
+    const { candidatos, cuentaMatch } = resolverCuentaCamino2(debe, haber, libro, total, planCuentas);
     if (candidatos.length > 0 && !cuentaMatch) {
       errors.push({
         field: 'Libro',
