@@ -3,8 +3,16 @@ import { esConsistenteConLibro, resolverCuentaCamino2 } from '@/modules/plan-cue
 
 const NUMERIC_FIELD_RE = /^\d+$/;
 const RUT_RE = /^\d{12}$/;
-/** Cotización: 0 (pesos) o dos dígitos enteros + dos decimales -- el peso uruguayo nunca cotiza por debajo de 10 (confirmado con el contador). */
-const COTIZACION_RE = /^\d{2}\.\d{2}$/;
+/**
+ * Cotización: 0 (pesos) o dos dígitos enteros + cualquier cantidad de
+ * decimales (o ninguno) -- el peso uruguayo nunca cotiza por debajo de 10
+ * (confirmado con el contador). Antes exigía exactamente 2 decimales, pero
+ * el TXT real trae la precisión cruda del banco/BCU (ej. `39.60396039`) --
+ * confirmado 2026-08-19: esa precisión debe pasar intacta al cálculo del
+ * importe convertido (`normalize-asiento.ts`), que es donde se redondea el
+ * resultado final, no acá.
+ */
+const COTIZACION_RE = /^\d{2}(?:\.\d+)?$/;
 const LIBRO_VALUES = ['C', 'V', 'E', 'I', 'P'] as const;
 const TIPO_VALUES = ['504', 'CIE', 'RES', 'DIF', 'APE'] as const;
 

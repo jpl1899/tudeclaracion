@@ -123,7 +123,7 @@ describe('parseAsientosTxt', () => {
     expect(result.lines[0].cotizacion).toBe(38.45);
   });
 
-  it('rejects a cotización that is not 0 nor a two-integer-two-decimal value', () => {
+  it('rejects a cotización that is not 0 nor at least two integer digits (el peso uruguayo nunca cotiza por debajo de 10)', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,8.4,"E",';
 
     const result = parseAsientosTxt(content, []);
@@ -133,6 +133,26 @@ describe('parseAsientosTxt', () => {
       line: 1,
       errors: [{ field: 'Cotización', message: expect.stringContaining('8.4') }],
     });
+  });
+
+  it('accepts a cotización with any number of decimals -- el TXT real trae la precisión cruda del banco/BCU (confirmado 2026-08-19)', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,39.60396039,"E",';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].cotizacion).toBe(39.60396039);
+  });
+
+  it('accepts a cotización with no decimals at all', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,40,"E",';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].cotizacion).toBe(40);
   });
 
   it('reports a Libro inconsistent with the cuenta resolved via Código IVA directo (Camino 1)', () => {

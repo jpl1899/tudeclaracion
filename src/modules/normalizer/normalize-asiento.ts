@@ -25,9 +25,20 @@ function noResuelto(
   return { resolved: false, reason, rut: asiento.rut, dia: asiento.dia, valor };
 }
 
-/** Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx). */
+/**
+ * Redondeo de mitad hacia abajo: parte decimal <= 0.50 trunca, > 0.50
+ * redondea al entero siguiente (confirmado con el contador 2026-08-19,
+ * ej. 4115.50792 -> 4116; 4115.50 -> 4115) -- distinto del redondeo estándar
+ * de JS (`Math.round`), que redondea 0.50 hacia arriba.
+ */
+function redondearMitadAbajo(valor: number): number {
+  const piso = Math.floor(valor);
+  return valor - piso > 0.5 ? piso + 1 : piso;
+}
+
+/** Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx), redondeando el producto final a un entero. */
 function convertirImporte(importe: number, asiento: AsientoLine): number {
-  return asiento.moneda === 1 ? importe * asiento.cotizacion : importe;
+  return asiento.moneda === 1 ? redondearMitadAbajo(importe * asiento.cotizacion) : importe;
 }
 
 export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuentaRow[]): NormalizedAsiento {

@@ -298,4 +298,43 @@ describe('resolveAsientoFiscal', () => {
 
     expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: -1, rut: '233669988774' });
   });
+
+  it('rounds the converted importe up when the decimal part is above .50 (confirmado con el contador 2026-08-19: 103.54 x 39.748 = 4115.50792 -> 4116)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, debe: '5215', total: 103.54, moneda: 1, cotizacion: 39.748 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 4116, rut: '233669988774' });
+  });
+
+  it('rounds the converted importe down when the decimal part is exactly .50 (mitad hacia abajo, no el redondeo estándar de JS)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, debe: '5215', total: 1, moneda: 1, cotizacion: 38.5 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: 38, rut: '233669988774' });
+  });
+
+  it('rounds a negative converted importe using the same mitad-hacia-abajo rule (nota de crédito en dólares)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '21332', codigoPadi: '504', codigoIva: null },
+    ];
+
+    const result = resolveAsientoFiscal(
+      asiento({ codigoIva: 0, libro: 'V', debe: '', haber: '21332', total: -103.54, moneda: 1, cotizacion: 39.748 }),
+      planCuentas,
+    );
+
+    expect(result).toEqual({ resolved: true, codigoPadi: '504', importe: -4116, rut: '233669988774' });
+  });
 });
