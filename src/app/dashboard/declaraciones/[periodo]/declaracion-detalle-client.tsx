@@ -42,6 +42,7 @@ interface DeclaracionDetalleClientProps {
   asientosSinResolver: AsientoSinResolver[]
   totalAsientos: number
   lineas: LineaDeclaracion[]
+  tieneAsientosNegativos: boolean
 }
 
 function nombreArchivo(rut: string, periodo: string) {
@@ -57,6 +58,7 @@ export function DeclaracionDetalleClient({
   asientosSinResolver,
   totalAsientos,
   lineas,
+  tieneAsientosNegativos,
 }: DeclaracionDetalleClientProps) {
   const [estadoActual, setEstadoActual] = useState(estado);
   const [descargando, setDescargando] = useState(false);
@@ -178,6 +180,15 @@ export function DeclaracionDetalleClient({
                   ? 'El archivo PADI ya fue generado para este período. Podés volver a descargarlo cuando quieras.'
                   : 'Todos los asientos de este período resolvieron correctamente. Generá el archivo PADI cuando estés listo.'}
               </p>
+            )}
+
+            {tieneAsientosNegativos && (
+              <div
+                data-testid="declaracion_asientos_negativos"
+                className="rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+              >
+                Archivo con resultado negativo en algunos asientos. El archivo puede incluir líneas vacías.
+              </div>
             )}
           </Card>
 

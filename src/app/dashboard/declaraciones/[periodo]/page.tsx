@@ -91,6 +91,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
   const resueltos = asientoLines.map(linea => resolveAsientoFiscal(linea, planCuentasRows));
   const asientosSinResolver = filtrarAsientosSinResolver(asientoLines, resueltos);
   const lineas = consolidarLineasDeclaracion(resueltos);
+  const tieneAsientosNegativos = asientoLines.some(asiento => asiento.total < 0 || asiento.iva < 0);
 
   return (
     <DeclaracionDetalleClient
@@ -102,6 +103,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
       asientosSinResolver={asientosSinResolver}
       totalAsientos={resueltos.length}
       lineas={lineas}
+      tieneAsientosNegativos={tieneAsientosNegativos}
     />
   );
 }
