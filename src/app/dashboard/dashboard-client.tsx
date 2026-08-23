@@ -1,6 +1,6 @@
 'use client';
 
-import type { ImportarAsientoError, ImportarAsientoOpciones } from '@/components/importar-asiento-dialog';
+import type { ImportarAsientoOpciones, ImportarAsientoResultado } from '@/components/importar-asiento-dialog';
 import type { EstadoCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 import type { Json } from '@/types/supabase';
@@ -96,7 +96,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     return (count ?? 0) > 0;
   }
 
-  async function handleImportar(file: File, periodo: string, opciones: ImportarAsientoOpciones): Promise<ImportarAsientoError | null> {
+  async function handleImportar(file: File, periodo: string, opciones: ImportarAsientoOpciones): Promise<ImportarAsientoResultado> {
     const supabase = createClient();
 
     /**
@@ -161,7 +161,8 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     }
 
     router.refresh();
-    return null;
+    const tieneAsientosNegativos = lineas.some(linea => linea.total < 0 || linea.iva < 0);
+    return { kind: 'ok', tieneAsientosNegativos };
   }
 
   return (

@@ -53,11 +53,16 @@ const UMBRAL_CAMPOS_INVALIDOS_SIMULTANEOS = 3;
 /** Módulo Ayuda todavía no existe (a crearse más adelante) -- por ahora es texto plano, sin link, en todo mensaje de formato no aceptado. */
 const MENSAJE_AYUDA = 'Consultá el módulo Ayuda para la guía de cómo debe venir el archivo.';
 
-/** `null` = éxito. `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
+/** `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
 export type ImportarAsientoError
   = | { kind: 'parse', line: number, errors: CampoInvalido[] }
     | { kind: 'cotizacion-no-disponible', message: string }
     | { kind: 'guardado', message: string };
+
+/** `ok` = éxito -- `tieneAsientosNegativos` refleja si alguna línea importada tiene Total o IVA negativo (misma señal que el banner de la pantalla de detalle), para avisar en el momento en vez de recién al navegar ahí. */
+export type ImportarAsientoResultado
+  = | { kind: 'ok', tieneAsientosNegativos: boolean }
+    | ImportarAsientoError;
 
 export interface ImportarAsientoOpciones {
   reemplazar: boolean
@@ -69,7 +74,7 @@ interface ImportarAsientoDialogProps {
   onOpenChange: (open: boolean) => void
   empresaActiva: string
   onCheckPeriodo: (periodo: string) => Promise<boolean>
-  onImportar: (file: File, periodo: string, opciones: ImportarAsientoOpciones) => Promise<ImportarAsientoError | null>
+  onImportar: (file: File, periodo: string, opciones: ImportarAsientoOpciones) => Promise<ImportarAsientoResultado>
 }
 
 function isArchivoValido(file: File) {
@@ -90,7 +95,7 @@ export function ImportarAsientoDialog({
   const [error, setError] = useState<ImportarAsientoError | null>(null);
   const [periodo, setPeriodo] = useState('');
   const [confirmarReemplazo, setConfirmarReemplazo] = useState(false);
-  const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date } | null>(null);
+  const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date, tieneAsientosNegativos: boolean } | null>(null);
   const [camposDetectados, setCamposDetectados] = useState<number | null>(null);
   const [camposEspecialesSeleccionados, setCamposEspecialesSeleccionados] = useState<Set<CampoEspecial>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -197,11 +202,11 @@ export function ImportarAsientoDialog({
     setImportando(false);
     setConfirmarReemplazo(false);
 
-    if (resultado) {
+    if (resultado.kind !== 'ok') {
       setError(resultado);
       return;
     }
-    setConfirmacion({ archivo: nombreArchivo, timestamp: new Date() });
+    setConfirmacion({ archivo: nombreArchivo, timestamp: new Date(), tieneAsientosNegativos: resultado.tieneAsientosNegativos });
   }
 
   async function handleImportarClick() {
@@ -233,21 +238,32 @@ export function ImportarAsientoDialog({
 
         {confirmacion
           ? (
-              <div
-                data-testid="importar_asiento_confirmacion"
-                className="grid gap-1.5 rounded-md border border-success/25 bg-success-bg px-4 py-3 text-success-text"
-              >
-                <p className="font-medium">Carga exitosa</p>
-                <p>
-                  Archivo
-                  {' '}
-                  <span className="font-medium">{confirmacion.archivo}</span>
-                  {' '}
-                  cargado el
-                  {' '}
-                  {confirmacion.timestamp.toLocaleString('es-UY')}
-                  .
-                </p>
+              <div className="grid gap-3">
+                <div
+                  data-testid="importar_asiento_confirmacion"
+                  className="grid gap-1.5 rounded-md border border-success/25 bg-success-bg px-4 py-3 text-success-text"
+                >
+                  <p className="font-medium">Carga exitosa</p>
+                  <p>
+                    Archivo
+                    {' '}
+                    <span className="font-medium">{confirmacion.archivo}</span>
+                    {' '}
+                    cargado el
+                    {' '}
+                    {confirmacion.timestamp.toLocaleString('es-UY')}
+                    .
+                  </p>
+                </div>
+
+                {confirmacion.tieneAsientosNegativos && (
+                  <div
+                    data-testid="importar_asiento_negativos"
+                    className="rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+                  >
+                    Archivo con resultado negativo en algunos asientos. El archivo puede incluir líneas vacías.
+                  </div>
+                )}
               </div>
             )
           : confirmarReemplazo
