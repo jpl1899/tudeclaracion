@@ -78,3 +78,48 @@
 **Expected Outcome (deseado, no confirmado):** Rosana sabe de entrada que necesita configurar el plan de cuentas antes de procesar el primer archivo de una empresa nueva, y tiene un camino claro (aunque no autoservicio) para lograrlo.
 
 **Pendiente de confirmar con el usuario:** este journey completo depende de decisiones aún no tomadas sobre el mecanismo de carga inicial del plan de cuentas (ver `mvp-scope.md` EPIC-TD-02 y `SRS/06-normalizer.md`). No fabricar el mecanismo — dejarlo abierto hasta que el usuario lo defina.
+
+---
+
+## Journey 4 — Happy Path: paquete mensual de un cliente CEDE/GC (2181 + 1376)
+
+> Agregado 2026-08-27 (MVP 2 Track A). Es el flujo objetivo del nuevo formulario 1376. Varias decisiones siguen abiertas — marcadas inline, no fabricadas.
+
+**Persona:** Rosana Ferreira (Contador, principal)
+**Scenario:** "Cliente D" es un contribuyente CEDE. Cada mes Rosana debe presentar ante DGI la **1376** (DJ de IVA + anticipos) con la **2181** como anexo. Ya tiene la empresa dada de alta con su plan de cuentas (MVP 1).
+
+**Precondición — configuración del mapeo 1376 (una vez por empresa):**
+- User Action: Rosana define, para "Cliente D", qué cuenta contable alimenta cada código de línea del 1376 y si se toma por el Debe o por el Haber (ej. `4101 Ventas Plaza 22% → Haber → línea de ventas gravadas tasa básica`; `112511 Anticipos IRAE → Debe → línea de anticipos de IRAE`).
+- System Response: guarda la matriz de mapeo asociada a la empresa, separada del plan de cuentas del 2181 (semántica distinta: Debe/Haber, saldo neto, sin RUT).
+- Pain Point: si el catálogo de líneas 1376 no está bien definido, el mapeo queda incompleto — hoy es una pregunta abierta (ver `mvp-scope.md` → Pendiente).
+
+**Steps:**
+
+1. **Login y selección de empresa** — igual que Journey 1.
+
+2. **Carga del archivo**
+   - User Action: sube el TXT mensual de Memory de "Cliente D" — **el mismo archivo** que usa para la 2181.
+   - System Response: lo procesa una vez y lo usa para las dos declaraciones del período.
+
+3. **Generación de la 2181 (anexo)** — el flujo ya existente de MVP 1 (consolidación por RUT → archivo PADI de líneas).
+
+4. **Generación de la 1376**
+   - User Action: espera (procesamiento automático).
+   - System Response: agrega el saldo de cada cuenta (Debe − Haber), lo lleva al código de línea 1376 configurado, y totaliza por código. Muestra los totales (IVA ventas, IVA compras, anticipos) para revisión.
+   - Pain Point: si una cuenta con movimiento no está mapeada, el total sale incompleto — el sistema debe avisar antes de dejar descargar (US M2.10).
+   - Abierto: si el sistema además **determina la liquidación / el saldo a pagar** o solo entrega totales por código de línea — hoy el ejemplo real es solo totales (`CODIGO;MONTO`).
+
+5. **Descarga**
+   - User Action: descarga el archivo de la 1376.
+   - System Response: entrega el `.txt` con formato `CODIGO;MONTO` (un renglón por código, montos enteros), listo para importar en PADI, junto con el archivo de la 2181 del mismo período.
+
+6. **Historial**
+   - System Response: ambas declaraciones del período quedan listadas juntas para "Cliente D", con su estado.
+
+**Expected Outcome:** Rosana obtiene el par 2181 + 1376 de "Cliente D" para el período, a partir de un solo TXT de Memory, sin totalizar cuentas a mano.
+
+**Alternative Paths / Edge Cases (abiertos — no fabricar):**
+- **Panel 1 pide ventas/compras acumuladas del ejercicio**, dato que el TXT mensual no trae — fuente sin definir (¿acumular varios meses? ¿carga aparte?).
+- **DJ sin movimiento**: si el mes no tiene ingresos ni anticipos, igual hay que presentar la 1376 marcada "sin movimiento" — ¿el producto lo soporta en MVP 2?
+- **Giro agropecuario** (líneas 33/36/54 + códigos especiales rural), **IVA en Suspenso**, **chatarra/residuos** — ¿en alcance?
+- **Selección de código según tipo de contribuyente** (IRAE 108/126/128, IPAT 328/320/323) — regla no definida.

@@ -10,7 +10,8 @@ Desglose de módulos del pipeline (`ADR-0001-modular-reusable-tax-platform.md`).
 | 4 | Validator | `07-validator.md` | Valida RUTs, mínimos DGI, importes (corre ANTES del Tax Rules Engine) | Genérico | Parcial (formato RUT confirmado) |
 | 5 | Tax Rules Engine | `08-tax-engine.md` | Aplica reglas tributarias: concepto fiscal → línea/código PADI (reglas en `.context/tax-rules/`) | Reglas específicas por formulario, motor genérico | Pendiente (reglas no definidas aún) |
 | 6 | Forms / Form Builder (2181) | `09-forms.md` | Arma la declaración por formulario; catálogo de líneas/códigos del 2181 | Específico del 2181 | Parcial (códigos conocidos, lista incompleta) |
-| 7 | Exporter | `10-exporter.md` | Genera el TXT de salida compatible con PADI | Genérico | **Confirmado** |
+| 6b | Motor / Form Builder (1376) | `13-forms-1376.md` | DJ 1376: agregación de saldos por cuenta → matching cuenta→código de línea → totales por código (sin RUT). Reusa el Parser, no el resto del pipeline del 2181 | Específico del 1376 (MVP 2 Track A) | Estructura sembrada, contenido tributario `[PLACEHOLDER]` — ver `ADR-0006` |
+| 7 | Exporter | `10-exporter.md` | Genera el TXT de salida compatible con PADI (2181). El 1376 tiene su propio formato de salida `CODIGO;MONTO`, documentado en `13-forms-1376.md` | Genérico (2181) / variante propia (1376) | **Confirmado** (2181) · Confirmado formato (1376) |
 | 8 | API | `11-api.md` | Contrato de API expuesto al frontend | Genérico | Pendiente |
 | 9 | Security | `12-security.md` | Requisitos de seguridad (datos tributarios/RUT = sensibles) | Genérico | Pendiente |
 

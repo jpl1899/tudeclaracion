@@ -20,8 +20,11 @@ Outputs of `/project-foundation` Phase 2 — Architecture (Software side). Turns
 | `10-exporter.md` | PADI-compatible output TXT format — **confirmed**, see file |
 | `11-api.md` | API contract |
 | `12-security.md` | Security/NFR requirements |
+| `13-forms-1376.md` | **MVP 2 Track A** — DJ 1376 module: aggregation-by-account motor, mapping matrix, `CODIGO;MONTO` output. Structure seeded 2026-08-27; tax content `[PLACEHOLDER]`. See `ADR-0006`. |
 
 Most files are still stubs (`Pendiente`) — populated incrementally as the user provides domain detail (tax rules, input TXT format, PADI code catalog).
+
+> **2026-08-27 — MVP 2 Track A added `13-forms-1376.md`.** The `13-` file extends the custom structure for the second DGI form (1376). It stays a per-module file, consistent with the override above; the 1376 reuses `05-parser.md` and diverges downstream.
 
 ## Default template (superseded, kept for reference)
 

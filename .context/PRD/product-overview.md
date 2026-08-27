@@ -24,7 +24,9 @@ tuDeclaracion.com automatiza el flujo completo TXT (Memory) → archivo compatib
 
 **Cómo resuelve el problema**: reemplaza el armado manual del archivo por un pipeline automático (`ADR-0001`), reduciendo el tiempo de la tarea de un proceso manual a minutos, sin requerir que el contador sea un usuario técnico.
 
-**Fuera del MVP, pero contemplado en la arquitectura** (no una limitación de diseño, una decisión de secuencia): soporte a formularios DGI más allá del 2181, UI de autoconfiguración del plan de cuentas, remediación automática de errores de validación — ver `mvp-scope.md` y `future-roadmap.md`.
+**Fuera del MVP 1, pero contemplado en la arquitectura** (no una limitación de diseño, una decisión de secuencia): soporte a formularios DGI más allá del 2181, UI de autoconfiguración del plan de cuentas, remediación automática de errores de validación — ver `mvp-scope.md` y `future-roadmap.md`.
+
+**MVP 2 (desde 2026-08-27)** empieza a concretar ese "más allá del 2181": **Track A** agrega la **DJ 1376** (declaración mensual de IVA + anticipos de IRAE/IPAT/ICOSA/IRPF para contribuyentes CEDE y Grandes Contribuyentes, de la cual la 2181 es anexo). El motor del 1376 reusa el mismo TXT de Memory y agrega saldos por cuenta contable hacia códigos de línea, en vez de consolidar por RUT. Detalle en `mvp-scope.md` → "MVP 2 — Track A: Formulario 1376". Los formularios de retenciones 1146/1246 quedan diferidos.
 
 ## 3. Value Proposition
 

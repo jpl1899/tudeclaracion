@@ -106,6 +106,10 @@ Hoy ese archivo cae en la misma rama que "sobran columnas" (`esNoEstandar`): mue
 
 No amerita un ADR nuevo — no pasa el gate 2 de `.context/ADR/README.md` (hard to reverse): es una extensión de bajo riesgo de la lógica de UI ya cubierta por ADR-0005, sin tocar el modelo de datos ni el parser.
 
+## Compartido con el 1376 (MVP 2 Track A) — 2026-08-27
+
+El motor de la DJ 1376 (`13-forms-1376.md`) consume **el mismo TXT de entrada** que el 2181 — mismo formato, mismo Parser, sin cambios acá. La divergencia empieza aguas abajo: el 1376 agrega saldos por cuenta contable en vez de resolver línea por línea y consolidar por RUT (ver `08-tax-engine.md` §"Modo 1376" y `ADR-0006`). Abierto: cómo se computa el saldo de una cuenta desde este formato (donde `Debe`/`Haber` son códigos de cuenta, no importes) — `[PLACEHOLDER]` en `13-forms-1376.md`.
+
 ## Pendiente de producto (no bloquea el motor)
 
 - Agregar botón **"Importar asiento"** (archivo `.txt`) en `/dashboard`, luego de presionar "Iniciar nueva declaración" (contador, 2026-07-14).
