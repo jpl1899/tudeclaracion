@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,9 +53,7 @@ export default function LoginPage() {
       <div className="grid w-full max-w-[980px] grid-cols-1 overflow-hidden rounded-lg border border-border bg-card shadow-md md:grid-cols-[1fr_420px]">
         <section className="grid gap-6 bg-gradient-to-b from-primary/5 to-white p-10">
           <div>
-            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-              TD
-            </div>
+            <Logo variant="mark" className="mb-4 h-11 w-11" priority />
             <h1 className="mb-3 font-heading text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-5xl">
               Acceso simple para trabajo diario.
             </h1>

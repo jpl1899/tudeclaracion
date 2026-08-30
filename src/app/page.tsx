@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -14,9 +15,7 @@ export default function RootPage() {
     <main className="min-h-screen bg-gradient-to-b from-background to-white">
       <div className="mx-auto w-full max-w-[1200px] px-4">
         <header className="flex min-h-[72px] items-center gap-3 py-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-            TD
-          </div>
+          <Logo variant="mark" className="h-11 w-11" priority />
           <span className="font-semibold text-foreground">tuDeclaracion</span>
         </header>
 

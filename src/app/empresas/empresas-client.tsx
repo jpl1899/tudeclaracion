@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { Logo } from '@/components/brand/logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,9 +57,7 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
     <main className="mx-auto w-[min(1200px,calc(100%-32px))] py-6 pb-10">
       <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-[42px] w-[42px] items-center justify-center rounded-md bg-primary font-bold text-primary-foreground shadow-sm">
-            TD
-          </div>
+          <Logo variant="mark" className="h-[42px] w-[42px]" priority />
           <div>
             <div className="font-semibold tracking-tight">tuDeclaracion</div>
             <div className="text-sm text-muted-foreground">Selección de empresa</div>
