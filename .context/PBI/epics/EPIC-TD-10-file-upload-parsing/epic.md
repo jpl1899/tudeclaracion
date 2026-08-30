@@ -24,7 +24,7 @@ One story in this epic is currently blocked: automatic interpretation of the upl
 | [TD-11](https://lk-tudeclaracion.atlassian.net/browse/TD-11) | File Upload | Upload the monthly Memory export | - | Medium | Deployed |
 | [TD-12](https://lk-tudeclaracion.atlassian.net/browse/TD-12) | File Upload | Confirm successful upload before processing starts | - | Medium | Ready for QA-on QA |
 | [TD-13](https://lk-tudeclaracion.atlassian.net/browse/TD-13) | Automatic Interpretation | Process an uploaded file without manual edits | - | Medium | Ready for QA-on QA |
-| [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31) | TXT Layout | Declare special columns before uploading a non-standard file | - | Medium | Tareas por hacer |
+| [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31) | TXT Layout | Declare special columns before uploading a non-standard file | - | Medium | Deployed |
 
 ---
 

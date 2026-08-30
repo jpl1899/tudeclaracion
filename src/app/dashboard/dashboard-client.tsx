@@ -7,6 +7,7 @@ import type { Json } from '@/types/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { Logo } from '@/components/brand/logo';
 import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -169,9 +170,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
       <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-            TD
-          </div>
+          <Logo variant="mark" className="h-10 w-10" priority alt="" />
           <div>tuDeclaracion</div>
         </div>
 

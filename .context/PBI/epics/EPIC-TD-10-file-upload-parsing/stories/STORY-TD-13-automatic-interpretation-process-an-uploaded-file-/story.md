@@ -43,7 +43,7 @@ Resolved. `SRS/05-parser.md` now documents the confirmed input format (delimiter
 
 ### Historia (1)
 
-- [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31): TXT Layout | Declare special columns before uploading a non-standard file _(Tareas por hacer)_
+- [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31): TXT Layout | Declare special columns before uploading a non-standard file _(Deployed)_
 
 ---
 
