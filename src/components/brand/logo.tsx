@@ -2,10 +2,12 @@ import Image from 'next/image';
 
 import { cn } from '@/lib/utils';
 
-const MARK_SRC = '/brand/icon-192.png';
+// logo-mark.png has a transparent background; the icon-*.png files carry a solid
+// white matte (they are PWA/app icons) and must not be used for the inline logo.
+const MARK_SRC = '/brand/logo-mark.png';
 const FULL_SRC = '/brand/logo-horizontal.png';
 
-const MARK_INTRINSIC = { width: 192, height: 192 };
+const MARK_INTRINSIC = { width: 369, height: 452 };
 const FULL_INTRINSIC = { width: 1097, height: 448 };
 
 interface LogoProps {
