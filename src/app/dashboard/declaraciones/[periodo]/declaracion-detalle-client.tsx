@@ -104,7 +104,7 @@ export function DeclaracionDetalleClient({
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
       <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 font-semibold">
-          <Logo variant="mark" className="h-10 w-10" priority />
+          <Logo variant="mark" className="h-10 w-10" priority alt="" />
           <div>tuDeclaracion</div>
         </div>
 

@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'tuDeclaración',
-    short_name: 'tuDeclaración',
+    name: 'tuDeclaracion',
+    short_name: 'tuDeclaracion',
     description:
       'Genera declaraciones juradas DGI a partir del TXT contable, con un flujo claro y seguro.',
     start_url: '/',

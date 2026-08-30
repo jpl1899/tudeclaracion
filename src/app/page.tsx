@@ -15,7 +15,7 @@ export default function RootPage() {
     <main className="min-h-screen bg-gradient-to-b from-background to-white">
       <div className="mx-auto w-full max-w-[1200px] px-4">
         <header className="flex min-h-[72px] items-center gap-3 py-4">
-          <Logo variant="mark" className="h-11 w-11" priority />
+          <Logo variant="mark" className="h-11 w-11" priority alt="" />
           <span className="font-semibold text-foreground">tuDeclaracion</span>
         </header>
 
