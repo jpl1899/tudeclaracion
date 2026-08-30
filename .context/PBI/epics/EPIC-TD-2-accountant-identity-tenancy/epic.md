@@ -25,6 +25,7 @@ This epic delivers the account and company-management flows an accountant needs 
 | [TD-6](https://lk-tudeclaracion.atlassian.net/browse/TD-6) | Login | Sign in with account credentials | - | Medium | Finalizada |
 | [TD-8](https://lk-tudeclaracion.atlassian.net/browse/TD-8) | Company Onboarding | Add a new client company under my account | - | Medium | Ready for QA-on QA |
 | [TD-9](https://lk-tudeclaracion.atlassian.net/browse/TD-9) | Password Recovery | Reset a forgotten password | - | Medium | Ready for QA-on QA |
+| [TD-32](https://lk-tudeclaracion.atlassian.net/browse/TD-32) | Authentication | Sign in with a Google account | - | Medium | Tareas por hacer |
 
 ---
 
