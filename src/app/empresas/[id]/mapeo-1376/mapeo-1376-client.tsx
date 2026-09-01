@@ -12,6 +12,7 @@ import {
   COLUMNA_IMPORTE_OPCIONES,
   construirFilasParaGuardar,
   filaIncompleta,
+  filaTieneCuenta,
   LADO_OPCIONES,
   UNIQUE_VIOLATION_CODE,
   validarMapeo,
@@ -89,6 +90,9 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
       throw new Error(`No se pudo guardar el mapeo: ${error.message}`);
     }
 
+    // Alinea el estado con lo que quedó persistido: una fila sin cuenta no
+    // guarda lado ni columna, así que se limpian también en pantalla.
+    setFilas(prev => prev.map(f => (filaTieneCuenta(f) ? f : { ...f, lado: '', columnaImporte: '' })));
     setSaveState('success');
   }
 
