@@ -435,6 +435,20 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
             Volver sin guardar
           </Button>
         </div>
+
+        <p className="text-sm text-muted-foreground">
+          ¿Esta empresa presenta el Formulario 1376?
+          {' '}
+          <button
+            type="button"
+            className="font-medium text-primary underline underline-offset-4"
+            onClick={() => router.push(`/empresas/${empresa.id}/mapeo-1376`)}
+          >
+            Configurar el mapeo del 1376
+          </button>
+          {' '}
+          — es una parametrización aparte del plan de cuentas del 2181.
+        </p>
       </div>
     </main>
   );

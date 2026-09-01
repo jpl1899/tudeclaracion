@@ -1,22 +1,27 @@
 # Fórmulas — Formulario 1376
 
-> Estado: **`[PLACEHOLDER]`.** Nada confirmado. Este archivo describe cómo se computa el monto de cada código de línea del 1376 a partir de los asientos del período. Se completa cuando el usuario / la contadora aporten las reglas y ejemplos reales.
+> Estado: **confirmado con la contadora 2026-09-01** (sesión de verificación de TD-41, con Rosana presente). Quedan dos puntos abiertos, marcados abajo.
 
-## Modelo de agregación (según el diseño del usuario, sin confirmar el detalle)
+## Modelo de agregación (confirmado)
 
-- Para cada cuenta contable con movimiento en el período: **saldo de la cuenta**.
-- El saldo se asigna al código de línea 1376 configurado en la matriz de mapeo (`mapping.md`).
-- Un código de línea acumula (suma) los saldos de todas las cuentas mapeadas a él.
-- Salida: un monto entero por código de línea (`codigo;monto`).
+- El contador configura, **por empresa**, una matriz de mapeo biyectiva (TD-38): **un código de línea 1376 ↔ una única cuenta contable**. Cada fila lleva además:
+  - **lado**: Debe o Haber.
+  - **columna de importe**: `Total` o `IVA` — de qué columna del TXT sale el saldo de esa cuenta.
+- Regla de la columna de importe: depende del **formato del asiento**, no del tipo de línea.
+  - Asiento **abierto** (multilínea, una cuenta por línea) → `Total`.
+  - **Formato rápido** de Memory Conty (asiento colapsado, IVA en su columna dedicada) → `IVA`.
+  - El contador elige el valor correcto por fila al armar el mapeo.
+- Por cada cuenta mapeada: se juntan sus movimientos del período en el TXT, se toma el importe de la columna configurada y se hace la **suma simple con signo** (positivos y negativos juntos — devoluciones / notas de crédito entran como importes negativos).
+- Cada código de línea acumula el saldo de su única cuenta mapeada (biyección → no hay suma de varias cuentas por código).
+- **Conversión de moneda**: para movimientos en dólares (`Moneda = 1`), misma conversión por cotización que el 2181.
+- **Redondeo**: mismo criterio que el 2181 (2 decimales, mitad hacia abajo).
+- **Salida**: un monto entero por código de línea con al menos una cuenta mapeada con movimiento — archivo `código; monto`, un renglón por código. Sin apertura por RUT.
 
-## Preguntas abiertas críticas
+## Puntos todavía abiertos
 
-1. **Cómo se computa el saldo de una cuenta desde el TXT.** El Excel del usuario asume un formato `(Fecha, Cuenta, Debe, Haber)` con `Saldo = Debe − Haber` donde Debe/Haber son **importes**. Pero el TXT real del 2181 (`SRS/05-parser.md`) trae `Debe`/`Haber` como **códigos de cuenta**, y los importes en `Total` / `IVA`. Falta definir la fórmula real: por cada línea del TXT, ¿qué importe (`Total`? `IVA`?) se imputa a la cuenta de `Debe` y cuál a la de `Haber`? ¿Depende del código de línea destino (análogo a los dos caminos del 2181)?
-2. **Qué columna de importe alimenta cada tipo de línea.** Líneas de base imponible (ventas, costos) probablemente `Total`; líneas de IVA (débito/crédito fiscal) probablemente `IVA`. Sin confirmar.
-3. **Conversión de moneda.** Si `Moneda = 1` (dólares), ¿se aplica la misma conversión por cotización que el 2181 (`SRS/08-tax-engine.md`, `tax-rules/common/`)? Presumiblemente sí, pero sin confirmar.
-4. **Signo / notas de crédito.** Cómo entran los movimientos negativos (devoluciones, NC) en la agregación.
-5. **Redondeo.** ¿Mismo criterio que el 2181 (2 decimales contra 0,50) o distinto? El ejemplo real muestra enteros.
-6. **Acumulados del ejercicio (Panel 1).** Fórmula y fuente del dato — el TXT mensual no lo trae.
-7. **Determinación de la liquidación.** Si el motor calcula saldo a pagar / crédito (líneas 322 y siguientes) o se limita a totales por código.
+1. **Determinación de la liquidación.** Si el motor además calcula el saldo a pagar (líneas 322/970/971/972, boleto 2908) o se limita a totales por código. Diferido el 2026-09-01 — "lo vemos en la marcha". Por ahora TD-41 = solo totales por código (consistente con ADR-0006).
+2. **Acumulados del ejercicio (Panel 1).** Fórmula y fuente del dato "ventas/compras acumuladas del ejercicio" — el TXT mensual no lo trae. Sin resolver.
 
-No fabricar fórmulas — este archivo, junto con `mapping.md`, es el contenido más crítico y menos definido de `tax-rules/1376/`.
+## Catálogo de códigos de línea
+
+Provisorio — ver `codigos.md` y `open-questions.md`. TD-38 lo sembró como tabla configurable `codigo_linea_1376` con los 10 códigos del diseño del usuario (101/102/103/201/301/302/501/502/510/601). Se reemplaza cuando llegue el catálogo real de DGI, sin tocar código.
