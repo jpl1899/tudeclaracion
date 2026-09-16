@@ -14,6 +14,32 @@ export const CODIGOS_PADI_IVA = [
 
 export const CODIGO_PADI_EXENTA = '504';
 
+export interface CodigoLinea1376 {
+  codigo: string
+  concepto: string
+}
+
+export interface OpcionCodigoPadi {
+  id: string
+  codigoPadi: string
+  label: string
+}
+
+/**
+ * Combina el catálogo de códigos PADI del 2181 (`CODIGOS_PADI_IVA`, fijo) con
+ * el catálogo de líneas del 1376 (`codigo_linea_1376`, config-driven). Algunos
+ * códigos existen en ambos catálogos con conceptos distintos (ej. 502) — el
+ * `id` sintético (`2181-<codigo>` / `1376-<codigo>`) evita que un <select>
+ * controlado reciba dos <option> con el mismo `value`; `codigoPadi` sigue
+ * siendo el código real que se manda a `crear_empresa_con_plan_cuentas`.
+ */
+export function buildOpcionesCodigoPadi(codigos1376: CodigoLinea1376[]): OpcionCodigoPadi[] {
+  return [
+    ...CODIGOS_PADI_IVA.map(opt => ({ id: `2181-${opt.value}`, codigoPadi: opt.value, label: opt.label })),
+    ...codigos1376.map(c => ({ id: `1376-${c.codigo}`, codigoPadi: c.codigo, label: `${c.codigo} — ${c.concepto}` })),
+  ];
+}
+
 export const DUPLICATE_RUT_ERROR_CODE = '23505';
 
 // `plan_cuentas` also carries UNIQUE(empresa_id, codigo_iva) and
