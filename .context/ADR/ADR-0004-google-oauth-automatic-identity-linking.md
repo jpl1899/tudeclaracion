@@ -1,6 +1,6 @@
 # ADR-0004 — Login con Google vía Supabase Auth, con linking automático por email
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-31
 - **Deciders:** Usuario (product owner de tuDeclaracion.com)
 - **Tags:** authentication, identity, cross-cutting-invariant

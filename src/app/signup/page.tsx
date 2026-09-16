@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -142,6 +143,14 @@ export default function SignupPage() {
               Ocurrió un error al procesar tu solicitud. Intenta nuevamente en unos minutos.
             </div>
           )}
+
+          <GoogleSignInButton />
+
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            o
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
           <div className="grid gap-2">
             <Label htmlFor="email">Correo electrónico</Label>
