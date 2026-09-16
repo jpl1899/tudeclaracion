@@ -1,5 +1,6 @@
 'use client';
 
+import type { CodigoLinea1376 } from '@/modules/empresa/plan-cuentas';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
-import { CODIGO_PADI_EXENTA, CODIGOS_PADI_IVA, DUPLICATE_RUT_ERROR_CODE } from '@/modules/empresa/plan-cuentas';
+import { buildOpcionesCodigoPadi, CODIGO_PADI_EXENTA, DUPLICATE_RUT_ERROR_CODE } from '@/modules/empresa/plan-cuentas';
 
 /**
  * Agregar nueva empresa — .context/design/master-design-plan.md §4.7,
@@ -31,6 +32,7 @@ interface IvaRow {
   key: string
   codigoIva: string
   cuentaContable: string
+  /** Id sintético de la opción elegida en el <select> — ver buildOpcionesCodigoPadi. */
   codigoPadi: string
 }
 
@@ -39,21 +41,23 @@ interface ExentaRow {
   cuentaContable: string
 }
 
-function emptyIvaRow(key: string): IvaRow {
-  return { key, codigoIva: '', cuentaContable: '', codigoPadi: CODIGOS_PADI_IVA[0].value };
+function emptyIvaRow(key: string, primeraOpcionId: string): IvaRow {
+  return { key, codigoIva: '', cuentaContable: '', codigoPadi: primeraOpcionId };
 }
 
 function emptyExentaRow(key: string): ExentaRow {
   return { key, cuentaContable: '' };
 }
 
-export function NuevaEmpresaClient() {
+export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea1376[] }) {
   const router = useRouter();
   const nextKey = useRef(2);
+  const opciones = buildOpcionesCodigoPadi(codigos1376);
+  const primeraOpcionId = opciones[0].id;
 
   const [rut, setRut] = useState('');
   const [nombre, setNombre] = useState('');
-  const [ivaRows, setIvaRows] = useState<IvaRow[]>([emptyIvaRow('iva-0')]);
+  const [ivaRows, setIvaRows] = useState<IvaRow[]>([emptyIvaRow('iva-0', primeraOpcionId)]);
   const [exentaRows, setExentaRows] = useState<ExentaRow[]>([emptyExentaRow('exenta-0')]);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateRutError, setDuplicateRutError] = useState(false);
@@ -66,7 +70,7 @@ export function NuevaEmpresaClient() {
   }
 
   function addIvaRow() {
-    setIvaRows(prev => [...prev, emptyIvaRow(`iva-${nextKey.current++}`)]);
+    setIvaRows(prev => [...prev, emptyIvaRow(`iva-${nextKey.current++}`, primeraOpcionId)]);
   }
 
   function removeIvaRow(key: string) {
@@ -112,11 +116,17 @@ export function NuevaEmpresaClient() {
       p_rut: trimmedRut,
       p_nombre: trimmedNombre,
       p_cuentas: [
-        ...ivaRows.map(r => ({
-          cuenta_contable: r.cuentaContable.trim(),
-          codigo_padi: r.codigoPadi,
-          codigo_iva: Number(r.codigoIva),
-        })),
+        ...ivaRows.map((r) => {
+          const opcion = opciones.find(o => o.id === r.codigoPadi);
+          if (!opcion) {
+            throw new Error(`Código PADI seleccionado inválido: ${r.codigoPadi}`);
+          }
+          return {
+            cuenta_contable: r.cuentaContable.trim(),
+            codigo_padi: opcion.codigoPadi,
+            codigo_iva: Number(r.codigoIva),
+          };
+        }),
         ...exentaRows.map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
@@ -140,7 +150,7 @@ export function NuevaEmpresaClient() {
   function handleAddAnother() {
     setRut('');
     setNombre('');
-    setIvaRows([emptyIvaRow(`iva-${nextKey.current++}`)]);
+    setIvaRows([emptyIvaRow(`iva-${nextKey.current++}`, primeraOpcionId)]);
     setExentaRows([emptyExentaRow(`exenta-${nextKey.current++}`)]);
     setSubmitted(false);
     setDuplicateRutError(false);
@@ -278,8 +288,8 @@ export function NuevaEmpresaClient() {
                       value={row.codigoPadi}
                       onChange={e => updateIvaRow(row.key, { codigoPadi: e.target.value })}
                     >
-                      {CODIGOS_PADI_IVA.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      {opciones.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.label}</option>
                       ))}
                     </select>
                   </div>
