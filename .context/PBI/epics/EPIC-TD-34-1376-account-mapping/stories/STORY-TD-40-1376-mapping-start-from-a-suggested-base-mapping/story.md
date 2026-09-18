@@ -50,8 +50,8 @@ This story is created so the backbone is traceable. It is NOT ready for developm
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 9/18/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** blocked, form-1376, mvp2
