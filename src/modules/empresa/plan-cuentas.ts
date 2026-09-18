@@ -32,11 +32,27 @@ export interface OpcionCodigoPadi {
  * `id` sintético (`2181-<codigo>` / `1376-<codigo>`) evita que un <select>
  * controlado reciba dos <option> con el mismo `value`; `codigoPadi` sigue
  * siendo el código real que se manda a `crear_empresa_con_plan_cuentas`.
+ *
+ * Para un código que colisiona entre catálogos, el label antepone el número
+ * de declaración jurada (`2181-502` / `1376-502`) para que el contador no
+ * confunda cuál está eligiendo — los códigos que no colisionan se muestran
+ * igual que siempre, sin prefijo.
  */
 export function buildOpcionesCodigoPadi(codigos1376: CodigoLinea1376[]): OpcionCodigoPadi[] {
+  const codigos1376Set = new Set(codigos1376.map(c => c.codigo));
+  const codigos2181Set = new Set<string>(CODIGOS_PADI_IVA.map(opt => opt.value));
+
   return [
-    ...CODIGOS_PADI_IVA.map(opt => ({ id: `2181-${opt.value}`, codigoPadi: opt.value, label: opt.label })),
-    ...codigos1376.map(c => ({ id: `1376-${c.codigo}`, codigoPadi: c.codigo, label: `${c.codigo} — ${c.concepto}` })),
+    ...CODIGOS_PADI_IVA.map(opt => ({
+      id: `2181-${opt.value}`,
+      codigoPadi: opt.value,
+      label: codigos1376Set.has(opt.value) ? `2181-${opt.label}` : opt.label,
+    })),
+    ...codigos1376.map(c => ({
+      id: `1376-${c.codigo}`,
+      codigoPadi: c.codigo,
+      label: codigos2181Set.has(c.codigo) ? `1376-${c.codigo} — ${c.concepto}` : `${c.codigo} — ${c.concepto}`,
+    })),
   ];
 }
 
