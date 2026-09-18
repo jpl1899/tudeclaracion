@@ -38,6 +38,50 @@ describe('combinarCatalogoConAsignaciones', () => {
       columnaImporte: 'iva',
     });
   });
+
+  it('td-40: precarga la cuenta sugerida del plan de cuentas cuando no hay asignación guardada', () => {
+    const filas = combinarCatalogoConAsignaciones(CATALOGO, [], [
+      { codigoPadi: '101', cuentaContable: '41001' },
+    ]);
+
+    expect(filas.find(f => f.codigoLinea === '101')).toEqual({
+      codigoLinea: '101',
+      concepto: 'Ventas gravadas tasa básica (22%)',
+      cuentaContable: '41001',
+      lado: '',
+      columnaImporte: '',
+    });
+  });
+
+  it('td-40: una asignación guardada gana sobre la sugerencia del plan de cuentas', () => {
+    const filas = combinarCatalogoConAsignaciones(
+      CATALOGO,
+      [{ codigoLinea: '101', cuentaContable: '41005', lado: 'debe', columnaImporte: 'total' }],
+      [{ codigoPadi: '101', cuentaContable: '41001' }],
+    );
+
+    expect(filas.find(f => f.codigoLinea === '101')).toEqual({
+      codigoLinea: '101',
+      concepto: 'Ventas gravadas tasa básica (22%)',
+      cuentaContable: '41005',
+      lado: 'debe',
+      columnaImporte: 'total',
+    });
+  });
+
+  it('td-40: sin sugerencia que matchee, la fila queda vacía como antes', () => {
+    const filas = combinarCatalogoConAsignaciones(CATALOGO, [], [
+      { codigoPadi: '999', cuentaContable: '41001' },
+    ]);
+
+    expect(filas.find(f => f.codigoLinea === '101')).toEqual({
+      codigoLinea: '101',
+      concepto: 'Ventas gravadas tasa básica (22%)',
+      cuentaContable: '',
+      lado: '',
+      columnaImporte: '',
+    });
+  });
 });
 
 describe('filaIncompleta', () => {

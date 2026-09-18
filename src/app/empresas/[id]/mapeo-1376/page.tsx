@@ -9,9 +9,10 @@ import { Mapeo1376Client } from './mapeo-1376-client';
  * `.context/design/master-design-plan.md` §5 D10 (build spec-only: reutiliza el
  * patrón de tabla editable de `/empresas/[id]`, sin mockup propio).
  *
- * Server Component: resuelve la empresa (RLS), el catálogo `codigo_linea_1376` y
- * las asignaciones ya guardadas de esta empresa, los combina en una fila por
- * código y los pasa precargados al client component — mismo patrón que
+ * Server Component: resuelve la empresa (RLS), el catálogo `codigo_linea_1376`,
+ * las asignaciones ya guardadas de esta empresa y su plan de cuentas (TD-40:
+ * fuente de la sugerencia de mapeo base), los combina en una fila por código y
+ * los pasa precargados al client component — mismo patrón que
  * `/empresas/[id]/page.tsx`.
  */
 export default async function Mapeo1376Page({ params }: { params: Promise<{ id: string }> }) {
@@ -62,6 +63,15 @@ export default async function Mapeo1376Page({ params }: { params: Promise<{ id: 
     throw new Error(`No se pudo cargar el mapeo del 1376: ${asignacionesError.message}`);
   }
 
+  const { data: planCuentas, error: planCuentasError } = await supabase
+    .from('plan_cuentas')
+    .select('cuenta_contable, codigo_padi')
+    .eq('empresa_id', id);
+
+  if (planCuentasError) {
+    throw new Error(`No se pudo cargar el plan de cuentas: ${planCuentasError.message}`);
+  }
+
   const filasIniciales = combinarCatalogoConAsignaciones(
     catalogo ?? [],
     (asignaciones ?? []).map(a => ({
@@ -69,6 +79,10 @@ export default async function Mapeo1376Page({ params }: { params: Promise<{ id: 
       cuentaContable: a.cuenta_contable,
       lado: a.lado as LadoMapeo,
       columnaImporte: a.columna_importe as ColumnaImporte,
+    })),
+    (planCuentas ?? []).map(p => ({
+      codigoPadi: p.codigo_padi,
+      cuentaContable: p.cuenta_contable,
     })),
   );
 
