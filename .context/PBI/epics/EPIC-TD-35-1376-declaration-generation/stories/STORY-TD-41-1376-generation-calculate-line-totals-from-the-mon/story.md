@@ -55,7 +55,7 @@ This story is created so the backbone is traceable. It is NOT ready for developm
 
 ### Historias (4)
 
-- [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38): 1376 Mapping | Define the account-to-line matrix for a company _(Tareas por hacer)_
+- [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38): 1376 Mapping | Define the account-to-line matrix for a company _(Deployed)_
 - [TD-43](https://lk-tudeclaracion.atlassian.net/browse/TD-43): 1376 Generation | Review the calculated totals before downloading _(Tareas por hacer)_
 - [TD-44](https://lk-tudeclaracion.atlassian.net/browse/TD-44): 1376 Generation | Download the code-and-amount file for PADI _(Tareas por hacer)_
 - [TD-47](https://lk-tudeclaracion.atlassian.net/browse/TD-47): 1376 Validations | Warn about accounts with movement not mapped to a line code _(Tareas por hacer)_
@@ -64,8 +64,8 @@ This story is created so the backbone is traceable. It is NOT ready for developm
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 8/30/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** blocked, form-1376, mvp2, tax-engine

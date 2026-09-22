@@ -4,7 +4,7 @@
 
 ---
 
-### mathias Kantor - 1/9/2026, 6:52:57
+### mathias Kantor - 9/1/2026, 6:52:57 AM
 
 Estos son los codigos de PADI que deben aparecer sugeridos en el combox , a diferencia de lo que dice “(their own value from the form design) - it is not picked from a system catalog, so this story does not depend on the DGI line catalog.” que no es correcto, va a existir un combox al igual que la configuracion de la 2181 donde indique cada codigo de padi y su nombre para seleccionar, ahora van los codigos con sus nombres respectivos :    
 
@@ -19,7 +19,7 @@ Estos son los codigos de PADI que deben aparecer sugeridos en el combox , a dife
 
 ---
 
-### Juan Leites - 1/9/2026, 7:30:57
+### Juan Leites - 9/1/2026, 7:30:57 AM
 
 ## Spec Implementation Plan (Dev)
 
@@ -103,6 +103,76 @@ Estimated: ~560 additions + ~15 deletions = ~575 total lines
 400-line budget risk: High
 Chain strategy: single feature branch `feat/TD-38-1376-mapping` -> PR to `staging`; size-exception justified (2 migrations + module + 2 UI files + tests form one cohesive story). Split option on the table: PR-A schema+module+tests, PR-B UI+nav.
 Decision needed before apply: Yes - confirm single-branch vs split.
+
+---
+
+### Juan Leites - 9/1/2026, 11:06:56 AM
+
+## PR opened → staging
+
+https://github.com/jpl1899/tudeclaracion/pull/33 — `feat/TD-38-1376-mapping`
+
+***Stage 3 review***: no BLOCKER/MAJOR. One MINOR fixed in-branch (stale side/column selects after a save that cleared a row's account). Spec Compliance Matrix: all 7 AC scenarios covered (unit + live-UI + review-approved), 0 uncovered.
+
+***Verification***: `types:check` + `lint:check` clean · `test` 127/127 · migrations applied to the shared local+staging Supabase project (`supabase db push --linked`) · live-UI validated against the running app (empty state, save + persistence, bijection block, incomplete-row block, "separate from 2181" callout, nav link).
+
+Note: this Jira workflow has no **In Review** / **Ready for QA** transition — ticket stays in **En curso** through review; move to the QA/Deployed status after the PR merges to staging.
+
+---
+
+### Juan Leites - 9/1/2026, 6:48:19 PM
+
+## Ready for QA — deployed to staging
+
+PR #33 merged to `staging` (merge commit `9858437`). Vercel staging deploy: Ready.
+Staging: https://tudeclaracion-git-staging-juans-projects-99c488dc.vercel.app (deployment-protected — use the dashboard Sharable Link for external access).
+
+***Where***: empresa → detalle de empresa → link "Configurar el mapeo del 1376", or directly `/empresas/<id>/mapeo-1376`.
+
+***What to check*** (AC):
+
+- Empty state: the 10 line-code rows render with no account assigned.
+- Assign a row (cuenta contable + lado + columna de importe) → Guardar → confirmation → the assignment survives a page reload.
+- Bijection: assign the same cuenta contable to two codes → Guardar is blocked, message names both codes.
+- Incomplete row: cuenta with no lado or no columna → Guardar blocked, message names the code.
+- "Volver sin guardar" discards unsaved changes.
+- The screen clearly states it is separate from the plan de cuentas del 2181.
+
+***Data note***: `codigo*linea*1376` catalog is seeded with 10 provisional codes (101/102/103/201/301/302/501/502/510/601) — not yet DGI-confirmed.
+
+---
+
+### mathias Kantor - 9/2/2026, 5:55:17 AM
+
+a partir de este momento te dirigiras al analista funcional que no es contador que se llama Mathurolongo y no a la contadora Rosana
+
+---
+
+### Juan Leites - 9/16/2026, 7:17:13 AM
+
+## Spec Implementation Plan (Dev)
+
+***Goal******:*** Extend the PADI code dropdown on the company-creation screen to also offer the 10 real 1376 line codes from `codigo*linea*1376`, alongside the 4 existing 2181 IVA codes, resolving the code-502 naming collision between both catalogs with a synthetic option id.
+
+### Files
+
+- `src/modules/empresa/plan-cuentas.ts` — add `buildOpcionesCodigoPadi(codigos1376)`, a pure function composing the 2181 + 1376 catalogs into `{ id, codigoPadi, label }[]`. Companion unit test.
+- `src/app/empresas/nueva/page.tsx` — fetch `codigo*linea*1376` (codigo, concepto, orden) server-side, same pattern as `mapeo-1376/page.tsx`; pass as prop.
+- `src/app/empresas/nueva/nueva-empresa-client.tsx` — accept the prop, build dropdown options via `buildOpcionesCodigoPadi`, store the synthetic option id in `IvaRow.codigoPadi`, resolve back to the real PADI code only when building the RPC payload.
+
+### Out of scope
+
+`empresa-detalle-client.tsx` (TD-30 edit screen) — not requested, different flow.
+
+### Technical decision
+
+The React `<select>` cannot disambiguate two `<option>` elements sharing the same `value` (code `502` exists in both catalogs with different labels: 2181 "IVA ventas tasa básica" vs 1376 "Débito fiscal IVA ventas"). Each option gets a synthetic id (`2181-502` / `1376-502`) used as the controlled value; the real PADI code is resolved from the catalog only at submit time.
+
+---
+
+### Juan Leites - 9/16/2026, 7:49:02 AM
+
+PR opened: https://github.com/jpl1899/tudeclaracion/pull/34 (base: staging). Extends the PADI-code dropdown on company creation with the real 1376 line codes. Awaiting merge — no 'In Review' status exists in this workflow, ticket stays at En curso until merged.
 
 ---
 

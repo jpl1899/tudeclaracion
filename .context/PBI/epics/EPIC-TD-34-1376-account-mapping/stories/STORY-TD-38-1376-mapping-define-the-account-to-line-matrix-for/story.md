@@ -3,7 +3,7 @@
 **Jira Key:** [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38)
 **Epic:** [TD-34](https://lk-tudeclaracion.atlassian.net/browse/TD-34) (1376 Account Mapping)
 **Type:** Historia
-**Status:** En curso
+**Status:** Deployed
 **Priority:** Medium
 **Story Points:** -
 
@@ -124,8 +124,8 @@ Scenario: Distinct from the 2181 plan de cuentas
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 1/9/2026
+- **Created:** 8/30/2026
+- **Updated:** 9/16/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** form-1376, mvp2

@@ -31,7 +31,7 @@ PRD/mvp-scope.md "MVP 2 - Track A", SRS/13-forms-1376.md, ADR-0006.
 
 | Key | Story | Points | Priority | Status |
 | --- | ----- | ------ | -------- | ------ |
-| [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38) | 1376 Mapping | Define the account-to-line matrix for a company | - | Medium | Tareas por hacer |
+| [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38) | 1376 Mapping | Define the account-to-line matrix for a company | - | Medium | Deployed |
 | [TD-39](https://lk-tudeclaracion.atlassian.net/browse/TD-39) | 1376 Mapping | Edit the mapping when the chart of accounts changes | - | Medium | Tareas por hacer |
 | [TD-40](https://lk-tudeclaracion.atlassian.net/browse/TD-40) | 1376 Mapping | Start from a suggested base mapping | - | Medium | Tareas por hacer |
 
@@ -46,8 +46,8 @@ PRD/mvp-scope.md "MVP 2 - Track A", SRS/13-forms-1376.md, ADR-0006.
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 8/30/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 

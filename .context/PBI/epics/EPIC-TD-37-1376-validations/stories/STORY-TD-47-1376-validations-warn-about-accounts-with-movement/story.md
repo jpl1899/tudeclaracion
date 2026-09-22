@@ -84,8 +84,8 @@ Scenario: Fixing and reprocessing clears it
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 8/30/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** form-1376, mvp2

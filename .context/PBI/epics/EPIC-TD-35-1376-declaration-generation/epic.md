@@ -43,8 +43,8 @@ PRD/mvp-scope.md "MVP 2 - Track A", SRS/13-forms-1376.md, ADR-0006.
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 8/30/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 

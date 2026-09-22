@@ -51,6 +51,17 @@ export interface MapeoAsignacionInicial {
 }
 
 /**
+ * Fila de `plan_cuentas` cuyo `codigo_padi` coincide con un código de línea del
+ * 1376 — TD-40. Solo aporta la cuenta contable: lado y columna de importe no
+ * se capturan en `plan_cuentas`, así que quedan para que el contador los
+ * complete.
+ */
+export interface SugerenciaPlanCuentas {
+  codigoPadi: string
+  cuentaContable: string
+}
+
+/**
  * Elemento del array `p_filas` que consume el RPC `guardar_mapeo_1376`. La
  * index signature `string` lo hace asignable a `Json` (el tipo del parámetro
  * RPC generado) — todos los valores son texto.
@@ -66,18 +77,27 @@ export interface FilaGuardado {
 /**
  * Une el catálogo con las asignaciones ya guardadas — una fila por código del
  * catálogo, vacía cuando ese código todavía no tiene cuenta.
+ *
+ * Cuando no hay asignación guardada, TD-40's `sugerencias` (derivadas del plan
+ * de cuentas de la empresa) precargan la cuenta contable como punto de
+ * partida — el contador completa lado y columna de importe, o la descarta
+ * vaciando el campo. Una asignación ya guardada siempre gana sobre la
+ * sugerencia.
  */
 export function combinarCatalogoConAsignaciones(
   catalogo: CatalogoLinea[],
   asignaciones: MapeoAsignacionInicial[],
+  sugerencias: SugerenciaPlanCuentas[] = [],
 ): MapeoFila[] {
   const porCodigo = new Map(asignaciones.map(a => [a.codigoLinea, a]));
+  const sugeridaPorCodigo = new Map(sugerencias.map(s => [s.codigoPadi, s]));
   return catalogo.map((linea) => {
     const asignada = porCodigo.get(linea.codigo);
+    const sugerida = sugeridaPorCodigo.get(linea.codigo);
     return {
       codigoLinea: linea.codigo,
       concepto: linea.concepto,
-      cuentaContable: asignada?.cuentaContable ?? '',
+      cuentaContable: asignada?.cuentaContable ?? sugerida?.cuentaContable ?? '',
       lado: asignada?.lado ?? '',
       columnaImporte: asignada?.columnaImporte ?? '',
     };

@@ -3,7 +3,7 @@
 **Jira Key:** [TD-39](https://lk-tudeclaracion.atlassian.net/browse/TD-39)
 **Epic:** [TD-34](https://lk-tudeclaracion.atlassian.net/browse/TD-34) (1376 Account Mapping)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** Finalizada
 **Priority:** Medium
 **Story Points:** -
 
@@ -81,8 +81,8 @@ Scenario: Make a row incomplete and save
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 9/17/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** form-1376, mvp2
