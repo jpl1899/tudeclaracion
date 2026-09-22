@@ -3,7 +3,7 @@
 **Jira Key:** [TD-41](https://lk-tudeclaracion.atlassian.net/browse/TD-41)
 **Epic:** [TD-35](https://lk-tudeclaracion.atlassian.net/browse/TD-35) (1376 Declaration Generation)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
