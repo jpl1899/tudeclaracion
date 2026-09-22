@@ -80,8 +80,8 @@ Scenario: Download gated by an unmapped-accounts warning
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 8/30/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** exporter, form-1376, mvp2

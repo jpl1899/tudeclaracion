@@ -52,14 +52,14 @@ This story is created so the backbone is traceable. It is NOT ready for developm
 
 ### Historia (1)
 
-- [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38): 1376 Mapping | Define the account-to-line matrix for a company _(Tareas por hacer)_
+- [TD-38](https://lk-tudeclaracion.atlassian.net/browse/TD-38): 1376 Mapping | Define the account-to-line matrix for a company _(Deployed)_
 
 ---
 
 ## Metadata
 
-- **Created:** 30/8/2026
-- **Updated:** 30/8/2026
+- **Created:** 8/30/2026
+- **Updated:** 8/30/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** blocked, form-1376, mvp2, tax-engine
