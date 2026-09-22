@@ -89,6 +89,6 @@ environments:
     api_url: http://localhost:3000/api
     db_project_ref: kqrleobwemscldkfissh
   staging:
-    web_url: https://tudeclaracion-git-staging-juans-projects-99c488dc.vercel.app
-    api_url: https://tudeclaracion-git-staging-juans-projects-99c488dc.vercel.app/api
+    web_url: https://tudeclaracion-staging.onrender.com
+    api_url: https://tudeclaracion-staging.onrender.com/api
     db_project_ref: kqrleobwemscldkfissh
