@@ -3,7 +3,7 @@
 **Jira Key:** [TD-41](https://lk-tudeclaracion.atlassian.net/browse/TD-41)
 **Epic:** [TD-35](https://lk-tudeclaracion.atlassian.net/browse/TD-35) (1376 Declaration Generation)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** En curso
 **Priority:** Medium
 **Story Points:** -
 
@@ -65,7 +65,7 @@ This story is created so the backbone is traceable. It is NOT ready for developm
 ## Metadata
 
 - **Created:** 8/30/2026
-- **Updated:** 8/30/2026
+- **Updated:** 9/22/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** blocked, form-1376, mvp2, tax-engine

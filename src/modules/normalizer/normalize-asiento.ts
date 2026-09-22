@@ -31,13 +31,17 @@ function noResuelto(
  * ej. 4115.50792 -> 4116; 4115.50 -> 4115) -- distinto del redondeo estándar
  * de JS (`Math.round`), que redondea 0.50 hacia arriba.
  */
-function redondearMitadAbajo(valor: number): number {
+export function redondearMitadAbajo(valor: number): number {
   const piso = Math.floor(valor);
   return valor - piso > 0.5 ? piso + 1 : piso;
 }
 
-/** Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx), redondeando el producto final a un entero. */
-function convertirImporte(importe: number, asiento: AsientoLine): number {
+/**
+ * Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx), redondeando el producto final a un entero.
+ *
+ * Exportada (además del 2181) para el motor del 1376 (TD-41) — misma conversión por cotización, confirmado en `.context/Tax-rules/1376/formulas.md`.
+ */
+export function convertirImporte(importe: number, asiento: AsientoLine): number {
   return asiento.moneda === 1 ? redondearMitadAbajo(importe * asiento.cotizacion) : importe;
 }
 
