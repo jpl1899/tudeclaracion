@@ -3,7 +3,7 @@
 **Jira Key:** [TD-43](https://lk-tudeclaracion.atlassian.net/browse/TD-43)
 **Epic:** [TD-35](https://lk-tudeclaracion.atlassian.net/browse/TD-35) (1376 Declaration Generation)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** En curso
 **Priority:** Medium
 **Story Points:** -
 
@@ -84,14 +84,14 @@ Scenario: Aggregation is stated
 
 ### Historia (1)
 
-- [TD-41](https://lk-tudeclaracion.atlassian.net/browse/TD-41): 1376 Generation | Calculate line totals from the monthly TXT _(Tareas por hacer)_
+- [TD-41](https://lk-tudeclaracion.atlassian.net/browse/TD-41): 1376 Generation | Calculate line totals from the monthly TXT _(Ready for QA-on QA)_
 
 ---
 
 ## Metadata
 
 - **Created:** 8/30/2026
-- **Updated:** 8/30/2026
+- **Updated:** 9/22/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** form-1376, mvp2
