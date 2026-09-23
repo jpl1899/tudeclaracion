@@ -333,6 +333,12 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
                     <Link href={`/dashboard/declaraciones/${fila.periodo}`} className="text-primary hover:underline">
                       {fila.periodo}
                     </Link>
+                    <Link
+                      href={`/dashboard/declaraciones-1376/${fila.periodo}`}
+                      className="ml-3 font-sans text-sm text-primary hover:underline"
+                    >
+                      Ver 1376
+                    </Link>
                   </td>
                   <td className="border-b border-border p-3">
                     <Badge variant={badgeVariant[fila.estado] ?? 'warning'}>{estadoLabel[fila.estado] ?? fila.estado}</Badge>
