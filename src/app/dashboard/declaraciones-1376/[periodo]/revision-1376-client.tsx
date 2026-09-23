@@ -1,0 +1,231 @@
+'use client';
+
+import type { CuentaSinMapear } from '@/modules/validaciones-1376/detectar-cuentas-sin-mapear';
+import Link from 'next/link';
+import { useState } from 'react';
+import { Logo } from '@/components/brand/logo';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+
+export interface TotalRevision1376 {
+  codigoLinea: string
+  concepto: string
+  importe: number
+}
+
+/**
+ * Resultado que arma el Server Component. No hay estado "procesando" real
+ * que observar: el cálculo (TD-41) es síncrono, igual que en el 2181.
+ */
+export type Revision1376
+  = | { tipo: 'sin-datos' }
+    | { tipo: 'error' }
+    | { tipo: 'resultado', estado: string, totales: TotalRevision1376[], cuentasSinMapear: CuentaSinMapear[] };
+
+interface Revision1376ClientProps {
+  empresaNombre: string
+  periodo: string
+  revision: Revision1376
+}
+
+function formatearImporte(importe: number) {
+  return importe.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Client Component: TD-43. Pantalla de revisión de totales del 1376 —
+ * build spec-only sobre la plantilla del detalle 2181
+ * (`declaracion-detalle-client.tsx`): mismo shell, mismas cards/badges.
+ *
+ * La descarga real del archivo es TD-44: acá el botón solo refleja la regla
+ * del AC (habilitado con resultado limpio o advertencia reconocida,
+ * bloqueado mientras la advertencia de cuentas sin mapear no se reconozca).
+ */
+export function Revision1376Client({ empresaNombre, periodo, revision }: Revision1376ClientProps) {
+  const [advertenciaReconocida, setAdvertenciaReconocida] = useState(false);
+  const [avisoDescarga, setAvisoDescarga] = useState(false);
+
+  const conAdvertencia = revision.tipo === 'resultado' && revision.cuentasSinMapear.length > 0;
+  const puedeDescargar = revision.tipo === 'resultado' && (!conAdvertencia || advertenciaReconocida);
+
+  return (
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
+      <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
+        <div className="flex items-center gap-3 font-semibold">
+          <Logo variant="mark" className="h-10 w-10" priority alt="" />
+          <div>tuDeclaracion</div>
+        </div>
+
+        <nav className="grid gap-2">
+          <Link
+            href="/dashboard"
+            className="min-h-12 rounded-md border border-transparent px-3.5 py-3 text-left font-semibold text-muted-foreground hover:bg-accent/60"
+          >
+            Inicio
+          </Link>
+          <button
+            type="button"
+            className="min-h-12 rounded-md border border-primary/15 bg-accent px-3.5 text-left font-semibold text-primary"
+          >
+            Declaraciones generadas
+          </button>
+        </nav>
+
+        <div className="mt-2 grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm">
+          <span className="text-muted-foreground">Empresa activa</span>
+          <span className="font-semibold text-foreground">{empresaNombre}</span>
+        </div>
+      </aside>
+
+      <main className="grid content-start gap-5 p-6">
+        <div>
+          <Link href="/dashboard" className="text-sm text-primary">
+            ← Volver a declaraciones
+          </Link>
+          <h1 className="mt-2 font-heading text-3xl font-semibold leading-tight tracking-tight">
+            Declaración 1376 —
+            {' '}
+            {periodo}
+          </h1>
+        </div>
+
+        {revision.tipo === 'sin-datos' && (
+          <Card data-testid="revision_1376_sin_datos" className="grid gap-3 p-6">
+            <strong>Todavía no hay datos para este período</strong>
+            <p className="text-muted-foreground">
+              El 1376 se calcula a partir del TXT mensual de asientos. Importá el TXT de este período desde el inicio
+              y volvé a esta pantalla para revisar los totales.
+            </p>
+            <div>
+              <Button asChild variant="outline">
+                <Link href="/dashboard">Ir a importar el TXT</Link>
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {revision.tipo === 'error' && (
+          <Card
+            data-testid="revision_1376_error"
+            className="grid gap-3 border-error/25 bg-error-bg p-6 text-error-text"
+          >
+            <strong>No pudimos calcular el 1376 de este período</strong>
+            <p>
+              Hubo un problema al leer los asientos o el mapeo del 1376. No se muestran totales para evitar que
+              presentes un número incompleto. Recargá la página en unos minutos; si el problema sigue, revisá que el
+              mapeo del 1376 de la empresa esté guardado.
+            </p>
+          </Card>
+        )}
+
+        {revision.tipo === 'resultado' && (
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <Card className="grid content-start gap-3.5 p-6">
+              <div className="flex items-center justify-between gap-3">
+                <strong>Totales por código de línea</strong>
+                {conAdvertencia
+                  ? <Badge variant="warning">Con advertencias</Badge>
+                  : revision.estado === 'generada'
+                    ? <Badge variant="success">Generada</Badge>
+                    : <Badge variant="warning">Pendiente de generar</Badge>}
+              </div>
+
+              <p data-testid="revision_1376_agregacion" className="text-sm text-muted-foreground">
+                Estos totales están agregados por cuenta contable, sin apertura por RUT (a diferencia del 2181).
+              </p>
+
+              {conAdvertencia && (
+                <div
+                  data-testid="revision_1376_cuentas_sin_mapear"
+                  className="grid gap-2 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-warning-text"
+                >
+                  <p className="font-semibold">
+                    {revision.cuentasSinMapear.length === 1
+                      ? 'Hay 1 cuenta con movimiento que no está mapeada a ningún código del 1376.'
+                      : `Hay ${revision.cuentasSinMapear.length} cuentas con movimiento que no están mapeadas a ningún código del 1376.`}
+                  </p>
+                  <p className="text-sm">
+                    Su importe no está incluido en los totales. Si corresponde, asignala en el mapeo del 1376 de la empresa.
+                  </p>
+                  <ul className="grid gap-1 pl-4 text-sm">
+                    {revision.cuentasSinMapear.map(cuenta => (
+                      <li key={cuenta.cuentaContable} className="list-disc">
+                        {`Cuenta ${cuenta.cuentaContable} (código PADI ${cuenta.codigoLinea} en el plan de cuentas)`}
+                      </li>
+                    ))}
+                  </ul>
+                  <label className="mt-1 flex items-center gap-2 text-sm font-semibold">
+                    <Checkbox
+                      data-testid="revision_1376_reconocer_advertencia"
+                      checked={advertenciaReconocida}
+                      onCheckedChange={checked => setAdvertenciaReconocida(checked === true)}
+                    />
+                    Revisé estas cuentas y quiero continuar igual
+                  </label>
+                </div>
+              )}
+
+              {revision.totales.length === 0
+                ? (
+                    <p className="text-muted-foreground">
+                      Ningún código de línea recibió movimiento en este período.
+                    </p>
+                  )
+                : (
+                    <table data-testid="revision_1376_totales" className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Código</th>
+                          <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Concepto</th>
+                          <th className="border-b border-border p-3 text-right text-xs uppercase tracking-wide text-muted-foreground">Importe</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {revision.totales.map(total => (
+                          <tr key={total.codigoLinea}>
+                            <td className="border-b border-border p-3 font-mono">{total.codigoLinea}</td>
+                            <td className="border-b border-border p-3">{total.concepto}</td>
+                            <td className="border-b border-border p-3 text-right font-mono">{formatearImporte(total.importe)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+            </Card>
+
+            <Card className="grid content-start gap-3 p-6">
+              <strong>Archivo PADI</strong>
+              <p className="text-sm text-muted-foreground">
+                Revisá los totales antes de descargar el archivo del 1376.
+              </p>
+              <Button
+                size="lg"
+                className="h-[52px]"
+                data-testid="revision_1376_descargar"
+                disabled={!puedeDescargar}
+                onClick={() => setAvisoDescarga(true)}
+              >
+                Descargar archivo PADI
+              </Button>
+              {conAdvertencia && !advertenciaReconocida && (
+                <p className="text-sm text-muted-foreground">
+                  Reconocé la advertencia de cuentas sin mapear para habilitar la descarga.
+                </p>
+              )}
+              {avisoDescarga && (
+                <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm">
+                  La descarga del archivo del 1376 estará disponible en una próxima entrega.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                La presentación ante DGI se hace fuera de tuDeclaracion, con este archivo.
+              </p>
+            </Card>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
