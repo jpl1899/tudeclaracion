@@ -220,6 +220,41 @@ export type Database = {
           },
         ]
       }
+      declaracion_1376: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          estado: string
+          id: string
+          periodo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          estado?: string
+          id?: string
+          periodo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          estado?: string
+          id?: string
+          periodo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "declaracion_1376_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       declaration_required_fields: {
         Row: {
           created_at: string
