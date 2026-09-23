@@ -3,7 +3,7 @@
 **Jira Key:** [TD-43](https://lk-tudeclaracion.atlassian.net/browse/TD-43)
 **Epic:** [TD-35](https://lk-tudeclaracion.atlassian.net/browse/TD-35) (1376 Declaration Generation)
 **Type:** Historia
-**Status:** En curso
+**Status:** Ready for QA-on QA
 **Priority:** Medium
 **Story Points:** -
 
@@ -91,7 +91,7 @@ Scenario: Aggregation is stated
 ## Metadata
 
 - **Created:** 8/30/2026
-- **Updated:** 9/22/2026
+- **Updated:** 9/23/2026
 - **Reporter:** Juan Leites
 - **Assignee:** Juan Leites
 - **Labels:** form-1376, mvp2

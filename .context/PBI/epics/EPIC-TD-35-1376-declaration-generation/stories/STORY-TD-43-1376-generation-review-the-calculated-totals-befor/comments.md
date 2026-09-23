@@ -44,5 +44,33 @@ Decision needed before apply: No
 
 ---
 
+### Juan Leites - 9/23/2026, 7:35:47 AM
+
+## Ready for QA
+
+Deployed to staging (Render, commit `7bc7503`): https://tudeclaracion-staging.onrender.com
+
+- PR: https://github.com/jpl1899/tudeclaracion/pull/38
+- Branch: `feat/TD-43-revision-totales-1376`
+- Entry point: dashboard → "Ver 1376" next to each period → `/dashboard/declaraciones-1376/<periodo>`
+
+***Suggested data on staging***
+
+| Scenario | Empresa / period |
+| --- | --- |
+| Result with unmapped accounts | Recoba / 202603 (cuenta 21332) |
+| Result without warning | CAMBIO FENIX / 202509 |
+| No data yet | any period without an imported TXT |
+
+***Known limits***
+
+- No empresa has a 1376 mapping saved yet, so the totals table shows its empty message. Save a mapping in the empresa's "Mapeo 1376" screen to see totals per line code.
+- The download button is a placeholder until TD-44.
+- The "Calculation error" scenario was marked exempt: it needs a forced database failure.
+
+Compliance matrix and evidence: PR #38 comment and the story's `evidence/` folder.
+
+---
+
 
 _Synced from Jira by sync-jira-issues_
