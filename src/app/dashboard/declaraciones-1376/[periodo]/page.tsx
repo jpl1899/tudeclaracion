@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
 import { calcularTotalesLinea1376 } from '@/modules/generacion-1376/calcular-totales-1376';
+import { UNIQUE_VIOLATION_CODE } from '@/modules/mapeo-1376/mapeo-1376';
 import { detectarCuentasSinMapear } from '@/modules/validaciones-1376/detectar-cuentas-sin-mapear';
 import { Revision1376Client } from './revision-1376-client';
 
@@ -17,6 +18,13 @@ interface CargarRevisionInput {
   supabase: Awaited<ReturnType<typeof createClient>>
   empresaId: string
   periodo: string
+}
+
+// La pantalla muestra un estado de error guiado en vez de tirar la página, así
+// que la causa real solo queda en el log del servidor.
+function fallo(contexto: string, error: { message: string } | null): Revision1376 {
+  console.error(`[revision-1376] ${contexto}:`, error?.message);
+  return { tipo: 'error' };
 }
 
 /**
@@ -39,7 +47,7 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
     .maybeSingle();
 
   if (declaracionError) {
-    return { tipo: 'error' };
+    return fallo('declaracion', declaracionError);
   }
   if (!declaracion) {
     return { tipo: 'sin-datos' };
@@ -65,7 +73,10 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
   ]);
 
   if (asientosRes.error || mapeoRes.error || planCuentasRes.error || catalogoRes.error) {
-    return { tipo: 'error' };
+    return fallo(
+      'carga de asientos/mapeo/plan de cuentas/catálogo',
+      asientosRes.error ?? mapeoRes.error ?? planCuentasRes.error ?? catalogoRes.error,
+    );
   }
 
   const asientos: AsientoLine[] = asientosRes.data.map(asiento => ({
@@ -108,31 +119,40 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
     cuentasMapeadas: mapeo.map(fila => fila.cuentaContable),
   });
 
-  const { data: existente, error: existenteError } = await supabase
+  const buscarEstado = () => supabase
     .from('declaracion_1376')
     .select('estado')
     .eq('empresa_id', empresaId)
     .eq('periodo', periodo)
     .maybeSingle();
 
+  const { data: existente, error: existenteError } = await buscarEstado();
   if (existenteError) {
-    return { tipo: 'error' };
+    return fallo('declaracion_1376', existenteError);
+  }
+  if (existente) {
+    return { tipo: 'resultado', estado: existente.estado, totales, cuentasSinMapear };
   }
 
-  let estado = existente?.estado;
-  if (!estado) {
-    const { data: creada, error: creadaError } = await supabase
-      .from('declaracion_1376')
-      .insert({ empresa_id: empresaId, periodo })
-      .select('estado')
-      .single();
-    if (creadaError) {
-      return { tipo: 'error' };
+  const { data: creada, error: creadaError } = await supabase
+    .from('declaracion_1376')
+    .insert({ empresa_id: empresaId, periodo })
+    .select('estado')
+    .single();
+
+  if (creadaError?.code === UNIQUE_VIOLATION_CODE) {
+    // Otra pestaña/request la creó entre el select y el insert: se relee.
+    const { data: concurrente, error: concurrenteError } = await buscarEstado();
+    if (concurrenteError || !concurrente) {
+      return fallo('declaracion_1376 (relectura)', concurrenteError);
     }
-    estado = creada.estado;
+    return { tipo: 'resultado', estado: concurrente.estado, totales, cuentasSinMapear };
+  }
+  if (creadaError) {
+    return fallo('alta de declaracion_1376', creadaError);
   }
 
-  return { tipo: 'resultado', estado, totales, cuentasSinMapear };
+  return { tipo: 'resultado', estado: creada.estado, totales, cuentasSinMapear };
 }
 
 export default async function Revision1376Page({ params }: Revision1376PageProps) {
