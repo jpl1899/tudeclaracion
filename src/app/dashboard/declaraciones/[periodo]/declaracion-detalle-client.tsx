@@ -4,7 +4,7 @@ import type { NormalizedAsiento } from '@/modules/normalizer/normalize-asiento';
 import type { LineaDeclaracion } from '@/modules/tax-engine/consolidate-lines';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Logo } from '@/components/brand/logo';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -101,33 +101,7 @@ export function DeclaracionDetalleClient({
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
-      <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
-        <div className="flex items-center gap-3 font-semibold">
-          <Logo variant="mark" className="h-10 w-10" priority alt="" />
-          <div>tuDeclaracion</div>
-        </div>
-
-        <nav className="grid gap-2">
-          <Link
-            href="/dashboard"
-            className="min-h-12 rounded-md border border-transparent px-3.5 py-3 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Inicio
-          </Link>
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-primary/15 bg-accent px-3.5 text-left font-semibold text-primary"
-          >
-            Declaraciones generadas
-          </button>
-        </nav>
-
-        <div className="mt-2 grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm">
-          <span className="text-muted-foreground">Empresa activa</span>
-          <span className="font-semibold text-foreground">{empresaNombre}</span>
-        </div>
-      </aside>
+    <DashboardShell activeNav="declaraciones" empresaNombre={empresaNombre}>
 
       <main className="grid content-start gap-5 p-6">
         <div>
@@ -222,6 +196,6 @@ export function DeclaracionDetalleClient({
           </Card>
         </section>
       </main>
-    </div>
+    </DashboardShell>
   );
 }
