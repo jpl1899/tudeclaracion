@@ -7,7 +7,7 @@ import type { Json } from '@/types/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { Logo } from '@/components/brand/logo';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -167,52 +167,10 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
-      <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
-        <div className="flex items-center gap-3 font-semibold">
-          <Logo variant="mark" className="h-10 w-10" priority alt="" />
-          <div>tuDeclaracion</div>
-        </div>
-
-        <nav className="grid gap-2">
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-primary/15 bg-accent px-3.5 text-left font-semibold text-primary"
-          >
-            Inicio
-          </button>
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Declaraciones generadas
-          </button>
-          <Link
-            href="/dashboard/cotizaciones"
-            className="min-h-12 content-center rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Cotizaciones
-          </Link>
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Ayuda
-          </button>
-        </nav>
-
-        <Link
-          href="/empresas"
-          className="mt-2 grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm transition-colors hover:border-primary/30"
-        >
-          <span className="text-muted-foreground">Empresa activa</span>
-          <span className="font-semibold text-foreground">
-            {empresaNombre}
-            {' '}
-            <span className="font-normal text-primary">(cambiar)</span>
-          </span>
-        </Link>
-
+    <DashboardShell
+      activeNav="inicio"
+      empresaNombre={empresaNombre}
+      sidebarExtra={(
         <article
           className={
             cotizacionBcu.estado === 'error'
@@ -258,7 +216,8 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
             Ver tabla completa
           </Link>
         </article>
-      </aside>
+      )}
+    >
 
       <main className="grid content-start gap-5 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -367,6 +326,6 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
         onCheckPeriodo={handleCheckPeriodo}
         onImportar={handleImportar}
       />
-    </div>
+    </DashboardShell>
   );
 }
