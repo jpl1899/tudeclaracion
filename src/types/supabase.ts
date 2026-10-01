@@ -416,6 +416,7 @@ export type Database = {
           codigo_padi: string
           created_at: string
           cuenta_contable: string
+          declaracion: string
           empresa_id: string
           id: string
         }
@@ -424,6 +425,7 @@ export type Database = {
           codigo_padi: string
           created_at?: string
           cuenta_contable: string
+          declaracion?: string
           empresa_id: string
           id?: string
         }
@@ -432,6 +434,7 @@ export type Database = {
           codigo_padi?: string
           created_at?: string
           cuenta_contable?: string
+          declaracion?: string
           empresa_id?: string
           id?: string
         }

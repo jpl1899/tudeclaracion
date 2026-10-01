@@ -147,7 +147,8 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     const { data: planCuentasRaw } = await supabase
       .from('plan_cuentas')
       .select('cuenta_contable, codigo_padi, codigo_iva')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId)
+      .eq('declaracion', '2181');
     const planCuentas: PlanCuentaRow[] = (planCuentasRaw ?? []).map(row => ({
       cuentaContable: row.cuenta_contable,
       codigoPadi: row.codigo_padi,

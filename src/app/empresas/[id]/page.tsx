@@ -45,7 +45,7 @@ export default async function EmpresaDetallePage({ params }: { params: Promise<{
 
   const { data: planCuentas, error: planCuentasError } = await supabase
     .from('plan_cuentas')
-    .select('id, cuenta_contable, codigo_padi, codigo_iva')
+    .select('id, cuenta_contable, codigo_padi, codigo_iva, declaracion')
     .eq('empresa_id', id);
 
   if (planCuentasError) {
@@ -62,16 +62,18 @@ export default async function EmpresaDetallePage({ params }: { params: Promise<{
   }
 
   const rows = planCuentas ?? [];
+  const esExenta = (row: (typeof rows)[number]) => row.codigo_padi === CODIGO_PADI_EXENTA && row.declaracion === '2181';
   const ivaRows = rows
-    .filter(row => row.codigo_padi !== CODIGO_PADI_EXENTA)
+    .filter(row => !esExenta(row))
     .map(row => ({
       id: row.id,
       codigoIva: row.codigo_iva !== null ? String(row.codigo_iva) : '',
       cuentaContable: row.cuenta_contable,
       codigoPadi: row.codigo_padi,
+      declaracion: row.declaracion,
     }));
   const exentaRows = rows
-    .filter(row => row.codigo_padi === CODIGO_PADI_EXENTA)
+    .filter(esExenta)
     .map(row => ({
       id: row.id,
       cuentaContable: row.cuenta_contable,

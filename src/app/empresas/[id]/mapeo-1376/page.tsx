@@ -66,7 +66,8 @@ export default async function Mapeo1376Page({ params }: { params: Promise<{ id: 
   const { data: planCuentas, error: planCuentasError } = await supabase
     .from('plan_cuentas')
     .select('cuenta_contable, codigo_padi')
-    .eq('empresa_id', id);
+    .eq('empresa_id', id)
+    .eq('declaracion', '1376');
 
   if (planCuentasError) {
     throw new Error(`No se pudo cargar el plan de cuentas: ${planCuentasError.message}`);
