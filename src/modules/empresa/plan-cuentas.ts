@@ -56,6 +56,18 @@ export function buildOpcionesCodigoPadi(codigos1376: CodigoLinea1376[]): OpcionC
   ];
 }
 
+/**
+ * Inversa de `buildOpcionesCodigoPadi` para filas ya guardadas, que solo
+ * persisten el código real. Si el código existe en ambos catálogos (ej. 502)
+ * se elige la opción del 2181: hasta TD-49 la edición solo ofrecía códigos
+ * del 2181, así que una fila guardada con un código compartido viene de ahí.
+ */
+export function opcionIdDeCodigoPadi(opciones: OpcionCodigoPadi[], codigoPadi: string): string {
+  return opciones.find(o => o.id === `2181-${codigoPadi}`)?.id
+    ?? opciones.find(o => o.codigoPadi === codigoPadi)?.id
+    ?? codigoPadi;
+}
+
 export const DUPLICATE_RUT_ERROR_CODE = '23505';
 
 // `plan_cuentas` also carries UNIQUE(empresa_id, codigo_iva) and

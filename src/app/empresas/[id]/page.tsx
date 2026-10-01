@@ -52,6 +52,15 @@ export default async function EmpresaDetallePage({ params }: { params: Promise<{
     throw new Error(`No se pudo cargar el plan de cuentas: ${planCuentasError.message}`);
   }
 
+  const { data: codigos1376, error: codigos1376Error } = await supabase
+    .from('codigo_linea_1376')
+    .select('codigo, concepto')
+    .order('orden');
+
+  if (codigos1376Error) {
+    throw new Error(`No se pudo cargar el catálogo de códigos del 1376: ${codigos1376Error.message}`);
+  }
+
   const rows = planCuentas ?? [];
   const ivaRows = rows
     .filter(row => row.codigo_padi !== CODIGO_PADI_EXENTA)
@@ -68,5 +77,12 @@ export default async function EmpresaDetallePage({ params }: { params: Promise<{
       cuentaContable: row.cuenta_contable,
     }));
 
-  return <EmpresaDetalleClient empresa={empresa} ivaRowsIniciales={ivaRows} exentaRowsIniciales={exentaRows} />;
+  return (
+    <EmpresaDetalleClient
+      empresa={empresa}
+      ivaRowsIniciales={ivaRows}
+      exentaRowsIniciales={exentaRows}
+      codigos1376={codigos1376 ?? []}
+    />
+  );
 }

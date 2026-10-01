@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildOpcionesCodigoPadi, CODIGOS_PADI_IVA } from './plan-cuentas';
+import { buildOpcionesCodigoPadi, CODIGOS_PADI_IVA, opcionIdDeCodigoPadi } from './plan-cuentas';
 
 describe('buildOpcionesCodigoPadi', () => {
   it('includes every non-colliding 2181 code with a 2181-prefixed id and its plain label', () => {
@@ -31,5 +31,28 @@ describe('buildOpcionesCodigoPadi', () => {
 
     expect(opciones).toContainEqual({ id: '2181-502', codigoPadi: '502', label: '2181-502 — IVA ventas tasa básica' });
     expect(opciones).toContainEqual({ id: '1376-502', codigoPadi: '502', label: '1376-502 — Débito fiscal IVA ventas' });
+  });
+});
+
+describe('opcionIdDeCodigoPadi', () => {
+  const opciones = buildOpcionesCodigoPadi([
+    { codigo: '101', concepto: 'Ventas gravadas tasa básica (22%)' },
+    { codigo: '502', concepto: 'Débito fiscal IVA ventas' },
+  ]);
+
+  it('maps a 2181-only code to its 2181 option', () => {
+    expect(opcionIdDeCodigoPadi(opciones, '505')).toBe('2181-505');
+  });
+
+  it('maps a 1376-only code to its 1376 option', () => {
+    expect(opcionIdDeCodigoPadi(opciones, '101')).toBe('1376-101');
+  });
+
+  it('prefers the 2181 option for a code present in both catalogs', () => {
+    expect(opcionIdDeCodigoPadi(opciones, '502')).toBe('2181-502');
+  });
+
+  it('falls back to the raw code when no option matches', () => {
+    expect(opcionIdDeCodigoPadi(opciones, '999')).toBe('999');
   });
 });
