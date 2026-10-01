@@ -153,7 +153,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
   const invalidRutLength = submitted && rut.trim() !== '' && rut.trim().length !== 12;
   const missingNombre = submitted && nombre.trim() === '';
   const ivaRowsIncomplete = ivaRows.some(r => r.codigoIva.trim() === '' || r.cuentaContable.trim() === '');
-  const exentaRowsIncomplete = exentaRows.some(r => r.cuentaContable.trim() === '');
 
   async function handleSubmit() {
     setSubmitted(true);
@@ -161,7 +160,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
 
-    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
+    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete) {
       setSaveState('validation-error');
       return;
     }
@@ -178,7 +177,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
           codigo_padi: r.codigoPadi,
           codigo_iva: Number(r.codigoIva),
         })),
-        ...exentaRows.map(r => ({
+        ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
         })),
@@ -236,7 +235,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
         <section className="grid gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Datos generales</h2>
-            <Badge variant="outline">Empresa existente</Badge>
+            <Badge variant="outline">{nombre.trim() || 'Empresa existente'}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
             Nombre y RUT identifican la empresa sobre la que ya estás trabajando. Si cancelas, vuelves
@@ -284,6 +283,14 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className="justify-self-start text-sm font-medium text-primary underline underline-offset-4"
+            onClick={() => router.push(`/empresas/${empresa.id}/mapeo-1376`)}
+          >
+            Configurar el mapeo del 1376
+          </button>
         </section>
 
         <section className="grid gap-4">
@@ -389,7 +396,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
             : (
                 <div className="grid gap-3">
                   {exentaRows.map((row) => {
-                    const rowIncomplete = submitted && row.cuentaContable.trim() === '';
                     return (
                       <div key={row.key} className="grid grid-cols-[1fr_auto] items-end gap-3 rounded-md border border-border bg-muted/40 p-4">
                         <div className="grid gap-1.5">
@@ -413,9 +419,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
                         >
                           ×
                         </Button>
-                        {rowIncomplete && (
-                          <span className="col-span-full text-sm text-error-text">Completá la cuenta contable.</span>
-                        )}
                       </div>
                     );
                   })}
@@ -435,20 +438,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
             Volver sin guardar
           </Button>
         </div>
-
-        <p className="text-sm text-muted-foreground">
-          ¿Esta empresa presenta el Formulario 1376?
-          {' '}
-          <button
-            type="button"
-            className="font-medium text-primary underline underline-offset-4"
-            onClick={() => router.push(`/empresas/${empresa.id}/mapeo-1376`)}
-          >
-            Configurar el mapeo del 1376
-          </button>
-          {' '}
-          — es una parametrización aparte del plan de cuentas del 2181.
-        </p>
       </div>
     </main>
   );

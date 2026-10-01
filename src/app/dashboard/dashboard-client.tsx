@@ -58,6 +58,20 @@ interface DashboardClientProps {
   cotizacionBcuInicial: EstadoCotizacionBcu
 }
 
+/**
+ * 1376 no tiene carga propia: se calcula sobre los mismos asientos que el
+ * 2181, así que ambos botones abren la misma importación. 2183 y 1050 todavía
+ * no existen y se muestran deshabilitados.
+ */
+type TipoDeclaracion = '2181' | '1376' | '2183' | '1050';
+
+const TIPOS_DECLARACION: { tipo: TipoDeclaracion, disponible: boolean }[] = [
+  { tipo: '2181', disponible: true },
+  { tipo: '1376', disponible: true },
+  { tipo: '2183', disponible: false },
+  { tipo: '1050', disponible: false },
+];
+
 function formatearValorCotizacion(valor: number): string {
   return `$ ${valor.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -69,8 +83,31 @@ function formatearFechaCotizacion(fecha: string): string {
 export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
   const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
+  const [tipoImportacion, setTipoImportacion] = useState<TipoDeclaracion>('2181');
+  const [periodoImportado, setPeriodoImportado] = useState<string | null>(null);
   const [cotizacionBcu, setCotizacionBcu] = useState(cotizacionBcuInicial);
   const [reintentando, startReintentar] = useTransition();
+
+  const pendientesDeGenerar = declaraciones.filter(d => d.estado === 'abierta').length;
+  const generadas = declaraciones.filter(d => d.estado === 'generada').length;
+  const ultimaActualizacion = declaraciones.reduce<string | null>(
+    (max, d) => (max === null || d.updated_at > max ? d.updated_at : max),
+    null,
+  );
+
+  function handleAbrirImportacion(tipo: TipoDeclaracion): void {
+    setTipoImportacion(tipo);
+    setPeriodoImportado(null);
+    setImportarAbierto(true);
+  }
+
+  /** Al cerrar tras una carga exitosa del 1376, lleva a su revisión del período importado. */
+  function handleImportarOpenChange(open: boolean): void {
+    setImportarAbierto(open);
+    if (!open && tipoImportacion === '1376' && periodoImportado) {
+      router.push(`/dashboard/declaraciones-1376/${periodoImportado}`);
+    }
+  }
 
   function handleReintentarCotizacion(): void {
     startReintentar(async () => {
@@ -162,6 +199,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     }
 
     router.refresh();
+    setPeriodoImportado(periodo);
     const tieneAsientosNegativos = lineas.some(linea => linea.total < 0 || linea.iva < 0);
     return { kind: 'ok', tieneAsientosNegativos };
   }
@@ -235,35 +273,45 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <article className="grid gap-3.5 rounded-md border border-border bg-gradient-to-b from-primary/5 to-white p-6 shadow-sm">
             <Badge variant="success">Acción principal</Badge>
-            <h2 className="text-2xl font-semibold tracking-tight">Crear declaración 2181</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Crear declaración</h2>
             <p className="text-muted-foreground">
-              Cargá el TXT del proveedor contable, revisá validaciones y generá el archivo PADI en
-              un mismo flujo.
+              Elegí el formulario, cargá el TXT del proveedor contable, revisá validaciones y
+              generá el archivo PADI en un mismo flujo.
             </p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Button size="lg" className="h-[52px]" onClick={() => setImportarAbierto(true)}>
-                Iniciar nueva declaración
-              </Button>
-              <Button variant="outline" size="lg" className="h-[52px]">
-                Ver instructivo
-              </Button>
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {TIPOS_DECLARACION.map(({ tipo, disponible }) => (
+                <Button
+                  key={tipo}
+                  size="lg"
+                  variant={disponible ? 'default' : 'outline'}
+                  className="h-auto min-h-[52px] flex-col gap-0.5 py-2"
+                  disabled={!disponible}
+                  onClick={() => handleAbrirImportacion(tipo)}
+                >
+                  <span className="font-mono text-base">{tipo}</span>
+                  {!disponible && <span className="text-xs font-normal">Próximamente</span>}
+                </Button>
+              ))}
             </div>
+            <Button variant="outline" size="lg" className="h-[52px] justify-self-start">
+              Ver instructivo
+            </Button>
           </article>
 
           <Card className="grid content-start gap-3 p-6">
             <strong>Resumen rápido</strong>
             <div className="grid gap-3">
               <div className="flex items-center justify-between border-t border-border pt-3 first:border-t-0 first:pt-0">
-                <span className="text-muted-foreground">Declaraciones en curso</span>
-                <strong>3</strong>
+                <span className="text-muted-foreground">Pendientes de generar</span>
+                <strong>{pendientesDeGenerar}</strong>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-muted-foreground">Pendientes de revisión</span>
-                <strong>1</strong>
+                <span className="text-muted-foreground">Generadas</span>
+                <strong>{generadas}</strong>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-muted-foreground">Última generación PADI</span>
-                <strong>Hace 12 min</strong>
+                <span className="text-muted-foreground">Última actualización</span>
+                <strong>{ultimaActualizacion ? new Date(ultimaActualizacion).toLocaleDateString('es-UY') : '—'}</strong>
               </div>
             </div>
           </Card>
@@ -321,7 +369,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
 
       <ImportarAsientoDialog
         open={importarAbierto}
-        onOpenChange={setImportarAbierto}
+        onOpenChange={handleImportarOpenChange}
         empresaActiva={empresaNombre}
         onCheckPeriodo={handleCheckPeriodo}
         onImportar={handleImportar}

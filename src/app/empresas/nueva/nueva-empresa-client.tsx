@@ -97,7 +97,6 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
   const invalidRutLength = submitted && rut.trim() !== '' && rut.trim().length !== 12;
   const missingNombre = submitted && nombre.trim() === '';
   const ivaRowsIncomplete = ivaRows.some(r => r.codigoIva.trim() === '' || r.cuentaContable.trim() === '');
-  const exentaRowsIncomplete = exentaRows.some(r => r.cuentaContable.trim() === '');
 
   async function handleSubmit() {
     setSubmitted(true);
@@ -106,7 +105,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
 
-    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
+    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete) {
       return;
     }
 
@@ -127,7 +126,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
             codigo_iva: Number(r.codigoIva),
           };
         }),
-        ...exentaRows.map(r => ({
+        ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
         })),
@@ -330,7 +329,6 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
 
           <div className="grid gap-3">
             {exentaRows.map((row) => {
-              const rowIncomplete = submitted && row.cuentaContable.trim() === '';
               return (
                 <div key={row.key} className="grid grid-cols-[1fr_auto] items-end gap-3 rounded-md border border-border bg-muted/40 p-4">
                   <div className="grid gap-1.5">
@@ -355,9 +353,6 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
                   >
                     ×
                   </Button>
-                  {rowIncomplete && (
-                    <span className="col-span-full text-sm text-error-text">Completá la cuenta contable.</span>
-                  )}
                 </div>
               );
             })}

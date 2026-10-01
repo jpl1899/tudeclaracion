@@ -8,7 +8,7 @@ import { Logo } from '@/components/brand/logo';
  * Screens pass their own sidebar extras (e.g. the BCU quote card) and render
  * their <main> as children.
  */
-type DashboardNavItem = 'inicio' | 'declaraciones';
+type DashboardNavItem = 'inicio' | 'declaraciones' | 'ayuda';
 
 interface DashboardShellProps {
   activeNav: DashboardNavItem
@@ -55,9 +55,13 @@ export function DashboardShell({ activeNav, empresaNombre, sidebarExtra, childre
           >
             Cotizaciones
           </Link>
-          <button type="button" className={navClassName(false)}>
+          <Link
+            href="/dashboard/ayuda"
+            aria-current={activeNav === 'ayuda' ? 'page' : undefined}
+            className={navClassName(activeNav === 'ayuda', 'content-center')}
+          >
             Ayuda
-          </button>
+          </Link>
         </nav>
 
         <Link
