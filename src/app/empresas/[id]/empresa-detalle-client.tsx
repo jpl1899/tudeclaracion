@@ -1,5 +1,6 @@
 'use client';
 
+import type { CodigoLinea1376 } from '@/modules/empresa/plan-cuentas';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -9,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
 import {
+  buildOpcionesCodigoPadi,
   CODIGO_PADI_EXENTA,
-  CODIGOS_PADI_IVA,
   DUPLICATE_RUT_ERROR_CODE,
+  opcionIdDeCodigoPadi,
   RUT_UNIQUE_CONSTRAINT,
 } from '@/modules/empresa/plan-cuentas';
 
@@ -64,6 +66,7 @@ interface IvaRow {
   id: string | null
   codigoIva: string
   cuentaContable: string
+  /** Id sintético de la opción elegida en el <select> — ver buildOpcionesCodigoPadi. */
   codigoPadi: string
 }
 
@@ -75,26 +78,35 @@ interface ExentaRow {
 
 type SaveState = 'idle' | 'success' | 'validation-error' | 'save-error';
 
-function emptyIvaRow(key: string): IvaRow {
-  return { key, id: null, codigoIva: '', cuentaContable: '', codigoPadi: CODIGOS_PADI_IVA[0].value };
+function emptyIvaRow(key: string, primeraOpcionId: string): IvaRow {
+  return { key, id: null, codigoIva: '', cuentaContable: '', codigoPadi: primeraOpcionId };
 }
 
 function emptyExentaRow(key: string): ExentaRow {
   return { key, id: null, cuentaContable: '' };
 }
 
-export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsIniciales }: {
+export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsIniciales, codigos1376 }: {
   empresa: EmpresaDetalle
   ivaRowsIniciales: IvaRowInicial[]
   exentaRowsIniciales: ExentaRowInicial[]
+  codigos1376: CodigoLinea1376[]
 }) {
   const router = useRouter();
   const nextKey = useRef(0);
+  const opciones = buildOpcionesCodigoPadi(codigos1376);
+  const primeraOpcionId = opciones[0].id;
 
   const [rut, setRut] = useState(empresa.rut);
   const [nombre, setNombre] = useState(empresa.nombre);
   const [ivaRows, setIvaRows] = useState<IvaRow[]>(
-    () => ivaRowsIniciales.map(r => ({ key: r.id, id: r.id, codigoIva: r.codigoIva, cuentaContable: r.cuentaContable, codigoPadi: r.codigoPadi })),
+    () => ivaRowsIniciales.map(r => ({
+      key: r.id,
+      id: r.id,
+      codigoIva: r.codigoIva,
+      cuentaContable: r.cuentaContable,
+      codigoPadi: opcionIdDeCodigoPadi(opciones, r.codigoPadi),
+    })),
   );
   const [exentaRows, setExentaRows] = useState<ExentaRow[]>(
     () => exentaRowsIniciales.map(r => ({ key: r.id, id: r.id, cuentaContable: r.cuentaContable })),
@@ -120,7 +132,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
   }
 
   function addIvaRow() {
-    setIvaRows(prev => [...prev, emptyIvaRow(`nueva-iva-${nextKey.current++}`)]);
+    setIvaRows(prev => [...prev, emptyIvaRow(`nueva-iva-${nextKey.current++}`, primeraOpcionId)]);
     clearBanners();
   }
 
@@ -174,7 +186,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
       p_cuentas: [
         ...ivaRows.map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
-          codigo_padi: r.codigoPadi,
+          codigo_padi: opciones.find(o => o.id === r.codigoPadi)?.codigoPadi ?? r.codigoPadi,
           codigo_iva: Number(r.codigoIva),
         })),
         ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
@@ -347,8 +359,8 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
                             value={row.codigoPadi}
                             onChange={e => updateIvaRow(row.key, { codigoPadi: e.target.value })}
                           >
-                            {CODIGOS_PADI_IVA.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            {opciones.map(opt => (
+                              <option key={opt.id} value={opt.id}>{opt.label}</option>
                             ))}
                           </select>
                         </div>
