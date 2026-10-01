@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { createClient } from '@/infrastructure/supabase/client';
+import { generarArchivoPadi1376 } from '@/modules/exporter/generate-padi-file-1376';
 
 export interface TotalRevision1376 {
   codigoLinea: string
@@ -25,9 +27,14 @@ export type Revision1376
     | { tipo: 'resultado', estado: string, totales: TotalRevision1376[], cuentasSinMapear: CuentaSinMapear[] };
 
 interface Revision1376ClientProps {
+  empresaId: string
   empresaNombre: string
   periodo: string
   revision: Revision1376
+}
+
+function nombreArchivo(periodo: string) {
+  return `1376_${periodo}.txt`;
 }
 
 function formatearImporte(importe: number) {
@@ -39,16 +46,53 @@ function formatearImporte(importe: number) {
  * build spec-only sobre la plantilla del detalle 2181
  * (`declaracion-detalle-client.tsx`): mismo shell, mismas cards/badges.
  *
- * La descarga real del archivo es TD-44: acá el botón solo refleja la regla
- * del AC (habilitado con resultado limpio o advertencia reconocida,
- * bloqueado mientras la advertencia de cuentas sin mapear no se reconozca).
+ * TD-44: el botón descarga el archivo PADI (mismo patrón Blob que el 2181)
+ * y deja el 1376 en `generada`. Habilitado con resultado limpio o advertencia
+ * reconocida; bloqueado mientras la advertencia de cuentas sin mapear no se
+ * reconozca.
  */
-export function Revision1376Client({ empresaNombre, periodo, revision }: Revision1376ClientProps) {
+export function Revision1376Client({ empresaId, empresaNombre, periodo, revision }: Revision1376ClientProps) {
   const [advertenciaReconocida, setAdvertenciaReconocida] = useState(false);
-  const [avisoDescarga, setAvisoDescarga] = useState(false);
+  const [descargando, setDescargando] = useState(false);
+  const [estadoActual, setEstadoActual] = useState(revision.tipo === 'resultado' ? revision.estado : '');
+  const [errorEstado, setErrorEstado] = useState(false);
 
   const conAdvertencia = revision.tipo === 'resultado' && revision.cuentasSinMapear.length > 0;
-  const puedeDescargar = revision.tipo === 'resultado' && (!conAdvertencia || advertenciaReconocida);
+  const puedeDescargar = revision.tipo === 'resultado' && (!conAdvertencia || advertenciaReconocida) && !descargando;
+
+  async function handleDescargar() {
+    if (revision.tipo !== 'resultado' || !puedeDescargar) {
+      return;
+    }
+    setDescargando(true);
+    setErrorEstado(false);
+
+    const contenido = generarArchivoPadi1376(revision.totales);
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombreArchivo(periodo);
+    enlace.click();
+    URL.revokeObjectURL(url);
+
+    if (estadoActual !== 'generada') {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('declaracion_1376')
+        .update({ estado: 'generada' })
+        .eq('empresa_id', empresaId)
+        .eq('periodo', periodo);
+      if (error) {
+        setErrorEstado(true);
+      }
+      else {
+        setEstadoActual('generada');
+      }
+    }
+
+    setDescargando(false);
+  }
 
   return (
     <DashboardShell activeNav="declaraciones" empresaNombre={empresaNombre}>
@@ -101,7 +145,7 @@ export function Revision1376Client({ empresaNombre, periodo, revision }: Revisio
                 <strong>Totales por código de línea</strong>
                 {conAdvertencia
                   ? <Badge variant="warning">Con advertencias</Badge>
-                  : revision.estado === 'generada'
+                  : estadoActual === 'generada'
                     ? <Badge variant="success">Generada</Badge>
                     : <Badge variant="warning">Pendiente de generar</Badge>}
               </div>
@@ -179,18 +223,21 @@ export function Revision1376Client({ empresaNombre, periodo, revision }: Revisio
                 className="h-[52px]"
                 data-testid="revision_1376_descargar"
                 disabled={!puedeDescargar}
-                onClick={() => setAvisoDescarga(true)}
+                onClick={() => void handleDescargar()}
               >
-                Descargar archivo PADI
+                {descargando ? 'Descargando…' : 'Descargar archivo PADI'}
               </Button>
               {conAdvertencia && !advertenciaReconocida && (
                 <p className="text-sm text-muted-foreground">
                   Reconocé la advertencia de cuentas sin mapear para habilitar la descarga.
                 </p>
               )}
-              {avisoDescarga && (
-                <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm">
-                  La descarga del archivo del 1376 estará disponible en una próxima entrega.
+              {errorEstado && (
+                <p
+                  data-testid="revision_1376_error_estado"
+                  className="rounded-md border border-error/25 bg-error-bg px-3 py-2 text-sm text-error-text"
+                >
+                  El archivo se descargó, pero no pudimos marcar el 1376 como generado. Volvé a descargarlo para reintentar.
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
