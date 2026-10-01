@@ -13,7 +13,7 @@ export interface DatosDeclarante {
  * decimales -- se comparan esos 2 decimales completos contra 0,50: ≤0,50
  * redondea para abajo, ≥0,51 para arriba. Ej: 180,50 -> 180; 180,51 -> 181.
  */
-function redondearImporte(valor: number): number {
+export function redondearImporte(valor: number): number {
   const parteEntera = Math.floor(valor);
   const decimales = Math.round((valor - parteEntera) * 100) / 100;
   return decimales <= 0.5 ? parteEntera : parteEntera + 1;
