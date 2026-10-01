@@ -19,9 +19,13 @@ export interface CodigoLinea1376 {
   concepto: string
 }
 
+/** Declaración a la que pertenece una fila de `plan_cuentas` — ADR-0007. */
+export type DeclaracionPlanCuentas = '2181' | '1376';
+
 export interface OpcionCodigoPadi {
   id: string
   codigoPadi: string
+  declaracion: DeclaracionPlanCuentas
   label: string
 }
 
@@ -31,7 +35,9 @@ export interface OpcionCodigoPadi {
  * códigos existen en ambos catálogos con conceptos distintos (ej. 502) — el
  * `id` sintético (`2181-<codigo>` / `1376-<codigo>`) evita que un <select>
  * controlado reciba dos <option> con el mismo `value`; `codigoPadi` sigue
- * siendo el código real que se manda a `crear_empresa_con_plan_cuentas`.
+ * siendo el código real que se manda a `crear_empresa_con_plan_cuentas`, y
+ * `declaracion` se guarda junto a él (ADR-0007) para que cada motor lea solo
+ * sus cuentas.
  *
  * Para un código que colisiona entre catálogos, el label antepone el número
  * de declaración jurada (`2181-502` / `1376-502`) para que el contador no
@@ -46,26 +52,30 @@ export function buildOpcionesCodigoPadi(codigos1376: CodigoLinea1376[]): OpcionC
     ...CODIGOS_PADI_IVA.map(opt => ({
       id: `2181-${opt.value}`,
       codigoPadi: opt.value,
+      declaracion: '2181' as const,
       label: codigos1376Set.has(opt.value) ? `2181-${opt.label}` : opt.label,
     })),
     ...codigos1376.map(c => ({
       id: `1376-${c.codigo}`,
       codigoPadi: c.codigo,
+      declaracion: '1376' as const,
       label: codigos2181Set.has(c.codigo) ? `1376-${c.codigo} — ${c.concepto}` : `${c.codigo} — ${c.concepto}`,
     })),
   ];
 }
 
 /**
- * Inversa de `buildOpcionesCodigoPadi` para filas ya guardadas, que solo
- * persisten el código real. Si el código existe en ambos catálogos (ej. 502)
- * se elige la opción del 2181: hasta TD-49 la edición solo ofrecía códigos
- * del 2181, así que una fila guardada con un código compartido viene de ahí.
+ * Inversa de `buildOpcionesCodigoPadi` para una fila ya guardada: código y
+ * declaración identifican la opción exacta (ADR-0007). Si el par no está en
+ * las opciones (catálogo cambiado), cae en cualquier opción con ese código.
  */
-export function opcionIdDeCodigoPadi(opciones: OpcionCodigoPadi[], codigoPadi: string): string {
-  return opciones.find(o => o.id === `2181-${codigoPadi}`)?.id
-    ?? opciones.find(o => o.codigoPadi === codigoPadi)?.id
-    ?? codigoPadi;
+export function opcionIdDeCodigoPadi(
+  opciones: OpcionCodigoPadi[],
+  fila: { codigoPadi: string, declaracion: string },
+): string {
+  return opciones.find(o => o.id === `${fila.declaracion}-${fila.codigoPadi}`)?.id
+    ?? opciones.find(o => o.codigoPadi === fila.codigoPadi)?.id
+    ?? fila.codigoPadi;
 }
 
 export const DUPLICATE_RUT_ERROR_CODE = '23505';

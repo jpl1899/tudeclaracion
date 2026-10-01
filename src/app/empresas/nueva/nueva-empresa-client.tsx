@@ -124,11 +124,13 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
             cuenta_contable: r.cuentaContable.trim(),
             codigo_padi: opcion.codigoPadi,
             codigo_iva: Number(r.codigoIva),
+            declaracion: opcion.declaracion,
           };
         }),
         ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
+          declaracion: '2181',
         })),
       ],
     });

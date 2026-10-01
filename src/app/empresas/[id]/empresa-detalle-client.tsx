@@ -54,6 +54,7 @@ interface IvaRowInicial {
   codigoIva: string
   cuentaContable: string
   codigoPadi: string
+  declaracion: string
 }
 
 interface ExentaRowInicial {
@@ -105,7 +106,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
       id: r.id,
       codigoIva: r.codigoIva,
       cuentaContable: r.cuentaContable,
-      codigoPadi: opcionIdDeCodigoPadi(opciones, r.codigoPadi),
+      codigoPadi: opcionIdDeCodigoPadi(opciones, r),
     })),
   );
   const [exentaRows, setExentaRows] = useState<ExentaRow[]>(
@@ -184,14 +185,21 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
       p_rut: trimmedRut,
       p_nombre: trimmedNombre,
       p_cuentas: [
-        ...ivaRows.map(r => ({
-          cuenta_contable: r.cuentaContable.trim(),
-          codigo_padi: opciones.find(o => o.id === r.codigoPadi)?.codigoPadi ?? r.codigoPadi,
-          codigo_iva: Number(r.codigoIva),
-        })),
+        ...ivaRows.map((r) => {
+          // Sin opción: código que ya no está en el catálogo -- se conserva
+          // tal cual, como fila del 2181 (el default de la columna).
+          const opcion = opciones.find(o => o.id === r.codigoPadi);
+          return {
+            cuenta_contable: r.cuentaContable.trim(),
+            codigo_padi: opcion?.codigoPadi ?? r.codigoPadi,
+            codigo_iva: Number(r.codigoIva),
+            declaracion: opcion?.declaracion ?? '2181',
+          };
+        }),
         ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
+          declaracion: '2181',
         })),
       ],
     });
