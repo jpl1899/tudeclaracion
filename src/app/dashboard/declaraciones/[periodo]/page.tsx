@@ -57,7 +57,8 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
     supabase
       .from('plan_cuentas')
       .select('cuenta_contable, codigo_padi, codigo_iva')
-      .eq('empresa_id', empresaActiva.id),
+      .eq('empresa_id', empresaActiva.id)
+      .eq('declaracion', '2181'),
   ]);
 
   if (asientosError) {

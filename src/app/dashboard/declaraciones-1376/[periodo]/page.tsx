@@ -65,7 +65,8 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
     supabase
       .from('plan_cuentas')
       .select('cuenta_contable, codigo_padi')
-      .eq('empresa_id', empresaId),
+      .eq('empresa_id', empresaId)
+      .eq('declaracion', '1376'),
     supabase
       .from('codigo_linea_1376')
       .select('codigo, concepto')
