@@ -1,6 +1,6 @@
 # ADR-0007 — Each plan_cuentas row belongs to one declaration (2181 or 1376)
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-01
 - **Deciders:** Juan Leites (product owner), accountant
 - **Tags:** data-model, plan-cuentas, 2181, 1376, cross-cutting-invariant
