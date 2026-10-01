@@ -58,7 +58,8 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
   const [errorEstado, setErrorEstado] = useState(false);
 
   const conAdvertencia = revision.tipo === 'resultado' && revision.cuentasSinMapear.length > 0;
-  const puedeDescargar = revision.tipo === 'resultado' && (!conAdvertencia || advertenciaReconocida) && !descargando;
+  const sinTotales = revision.tipo === 'resultado' && revision.totales.length === 0;
+  const puedeDescargar = revision.tipo === 'resultado' && !sinTotales && (!conAdvertencia || advertenciaReconocida) && !descargando;
 
   async function handleDescargar() {
     if (revision.tipo !== 'resultado' || !puedeDescargar) {
@@ -227,7 +228,12 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
               >
                 {descargando ? 'Descargando…' : 'Descargar archivo PADI'}
               </Button>
-              {conAdvertencia && !advertenciaReconocida && (
+              {sinTotales && (
+                <p data-testid="revision_1376_sin_totales_descarga" className="text-sm text-muted-foreground">
+                  No hay totales para descargar en este período.
+                </p>
+              )}
+              {!sinTotales && conAdvertencia && !advertenciaReconocida && (
                 <p className="text-sm text-muted-foreground">
                   Reconocé la advertencia de cuentas sin mapear para habilitar la descarga.
                 </p>
