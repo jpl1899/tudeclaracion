@@ -174,6 +174,7 @@ export default async function Revision1376Page({ params }: Revision1376PageProps
 
   return (
     <Revision1376Client
+      empresaId={empresaActiva.id}
       empresaNombre={empresaActiva.nombre}
       periodo={periodo}
       revision={revision}
