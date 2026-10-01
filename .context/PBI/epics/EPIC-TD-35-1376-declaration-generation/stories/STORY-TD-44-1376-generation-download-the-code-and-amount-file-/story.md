@@ -73,7 +73,7 @@ Scenario: Download gated by an unmapped-accounts warning
 
 ### Historias (2)
 
-- [TD-41](https://lk-tudeclaracion.atlassian.net/browse/TD-41): 1376 Generation | Calculate line totals from the monthly TXT _(Tareas por hacer)_
+- [TD-41](https://lk-tudeclaracion.atlassian.net/browse/TD-41): 1376 Generation | Calculate line totals from the monthly TXT _(Ready for QA-on QA)_
 - [TD-45](https://lk-tudeclaracion.atlassian.net/browse/TD-45): Monthly Package | Generate the 2181 and 1376 for a period as a linked pair _(Tareas por hacer)_
 
 ---
