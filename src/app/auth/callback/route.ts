@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
+import { safeInternalPath } from '@/lib/validation/safe-redirect';
 
 /**
  * Exchanges the OAuth PKCE code from Supabase Auth's Google provider for a
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const providerError = searchParams.get('error');
-  const next = searchParams.get('next') ?? '/empresas';
+  const next = safeInternalPath(searchParams.get('next'), '/empresas');
 
   if (code && !providerError) {
     const supabase = await createClient();
