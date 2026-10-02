@@ -48,6 +48,8 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: en local/staging, iniciar sesión con un link manualmente armado `/auth/confirm?token_hash=<válido>&type=email&next=https://example.com` (o el equivalente de callback con un `code` válido) y confirmar que redirige fuera del dominio. Repetir después del fix y confirmar que rechaza o normaliza el destino.
 
+**✅ Resuelto 2026-10-02**: las dos rutas pasan `next` por `safeInternalPath()` (`src/lib/validation/safe-redirect.ts`), que resuelve el valor contra un origen fijo y solo acepta rutas del mismo origen; si no, cae a `/empresas`. Cubre `https://…`, `//host`, `/\host`, `\\host`, caracteres de control que los navegadores eliminan (`/\t/host`), `javascript:` y rutas no absolutas. Hay 12 casos en `safe-redirect.test.ts`. Los `next` legítimos que usa la app (`/empresas`, `/reset-password`) se mantienen.
+
 ---
 
 ## 3. Ausencia total de headers de seguridad HTTP
@@ -193,7 +195,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 ## Próximos pasos sugeridos (orden de prioridad)
 
 1. Actualizar Next.js + deps críticas (ítem 1) — es lo único con exploit público conocido.
-2. Fix del open redirect (ítem 2) — bajo esfuerzo, alto impacto de credibilidad.
+2. ~~Fix del open redirect (ítem 2)~~ — ✅ 2026-10-02.
 3. ~~Verificar RLS de `empresa` contra la DB viva (ítem 8)~~ — ✅ verificado y versionado 2026-10-02.
 4. Headers de seguridad básicos (ítem 3) — bajo riesgo de romper algo, cierra una categoría entera de ataques de un saque.
 5. El resto (4, 5, 6, 7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
