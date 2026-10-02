@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { createAdminClient } from '@/infrastructure/supabase/admin';
 import { createClient } from '@/infrastructure/supabase/server';
 import { resolverCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
 import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
     throw new Error(`No se pudieron cargar las declaraciones: ${declaracionesError.message}`);
   }
 
-  const cotizacionBcuInicial = await resolverCotizacionBcu(supabase);
+  const cotizacionBcuInicial = await resolverCotizacionBcu(createAdminClient());
 
   return (
     <DashboardClient

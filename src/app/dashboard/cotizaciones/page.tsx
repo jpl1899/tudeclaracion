@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Card } from '@/components/ui/card';
+import { createAdminClient } from '@/infrastructure/supabase/admin';
 import { createClient } from '@/infrastructure/supabase/server';
 import { CODIGO_DOLAR_INTERBANCARIO_FONDO } from '@/modules/cotizacion/fetch-cotizacion-bcu';
 import { asegurarCotizacionesBcuCacheadas } from '@/modules/cotizacion/resolve-cotizacion-por-dia';
@@ -54,7 +55,7 @@ export default async function CotizacionesPage({ searchParams }: CotizacionesPag
   const { periodo: periodoParam } = await searchParams;
   const periodo = periodoParam && /^\d{6}$/.test(periodoParam) ? periodoParam : periodoActual();
 
-  await asegurarCotizacionesBcuCacheadas(supabase, periodo);
+  await asegurarCotizacionesBcuCacheadas(createAdminClient(), periodo);
 
   const anio = Number(periodo.slice(0, 4));
   const mes = Number(periodo.slice(4, 6));
