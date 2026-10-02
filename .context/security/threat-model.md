@@ -132,6 +132,17 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: el chequeo de arriba es directamente la prueba — no requiere reproducir un ataque, solo leer el catálogo de Postgres.
 
+**✅ Verificado 2026-10-02 contra la DB viva** (proyecto `tudeclaracion`, catálogo `pg_class` + `pg_policies`, solo lectura):
+
+- `empresa`: `relrowsecurity = true`, 4 políticas (`empresa_select_own`, `empresa_insert_own`, `empresa_update_own`, `empresa_delete_own`), todas `cuenta_id = (select auth.uid())`; el UPDATE tiene `USING` + `WITH CHECK` (no se puede reasignar una empresa a otra cuenta). `cuenta_id` es `NOT NULL`. Severidad → **Info**: la medida (1) queda cerrada.
+- Hallazgos colaterales del mismo chequeo:
+  - `cuenta` tampoco está en ninguna migración trackeada. RLS ok (`select`/`update` solo sobre `id = auth.uid()`, sin INSERT/DELETE para usuarios).
+  - Existe 1 función `security definer`: `public.handle_new_user()` (trigger que inserta en `cuenta` al registrarse un usuario), fuera de migraciones. Riesgo bajo: es función de trigger (no invocable vía RPC), cuerpo fijo, `search_path = public` fijado. Mejora opcional: `search_path = ''` para alinearla con el resto. Corrige lo afirmado en el ítem 11.
+  - `data_fields`, `declaration_required_fields`, `declarations`: tablas legacy fuera de migraciones, RLS habilitada sin políticas (deny-all para `anon`/`authenticated`), 0 filas. Sin riesgo; candidatas a borrarse.
+  - `cotizacion_bcu_cache` confirmado tal como describe el ítem 5 (INSERT/UPDATE abiertos a cualquier `authenticated`).
+
+**✅ Medida (2) cerrada 2026-10-02**: `supabase/migrations/20260712000000_baseline_cuenta_empresa.sql` versiona `cuenta`, `empresa`, `set_updated_at`, `handle_new_user` y sus triggers tal como existen en la DB viva. Cada sentencia está protegida (no-op en la DB viva, validado con `begin … rollback`). La versión se registró en `supabase_migrations.schema_migrations` sin ejecutar el SQL. Las 3 tablas legacy quedan fuera.
+
 ---
 
 ## 9. Cookies de sesión de Supabase sin configuración explícita
@@ -167,7 +178,7 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar" por error:
 
 - **RLS habilitada en las 8 tablas trackeadas**, sin gaps — patrón `USING/WITH CHECK` vía join a `cuenta_id = auth.uid()` consistente en todas.
-- **Cero funciones `security definer`** — todos los RPCs (`crear_empresa_con_plan_cuentas`, `insertar_asientos`, `editar_empresa_con_plan_cuentas`, `guardar_mapeo_1376`) son `security invoker` con `set search_path = ''` — RLS nunca se bypasea vía RPC, y no hay superficie de search-path hijacking.
+- **Cero RPCs `security definer`** (la única función definer es el trigger `handle_new_user`, ver ítem 8) — todos los RPCs (`crear_empresa_con_plan_cuentas`, `insertar_asientos`, `editar_empresa_con_plan_cuentas`, `guardar_mapeo_1376`) son `security invoker` con `set search_path = ''` — RLS nunca se bypasea vía RPC, y no hay superficie de search-path hijacking.
 - **Cero uso de la service-role key en código de aplicación** (`grep -r "service_role|SUPABASE_SECRET_KEY" src/` → 0 resultados) — todo el acceso a datos pasa por el cliente RLS-scoped.
 - **Cero secrets filtrados vía `NEXT_PUBLIC_`** — solo URL y publishable key son públicas, confirmado y documentado en el propio código (`src/infrastructure/supabase/env.ts`).
 - **Sin XSS vía HTML crudo** — cero `dangerouslySetInnerHTML`, `eval`, o `new Function` en todo `src/`.
@@ -181,7 +192,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 
 1. Actualizar Next.js + deps críticas (ítem 1) — es lo único con exploit público conocido.
 2. Fix del open redirect (ítem 2) — bajo esfuerzo, alto impacto de credibilidad.
-3. Verificar RLS de `empresa` contra la DB viva apenas vuelva el token de Supabase (ítem 8).
+3. ~~Verificar RLS de `empresa` contra la DB viva (ítem 8)~~ — ✅ verificado y versionado 2026-10-02.
 4. Headers de seguridad básicos (ítem 3) — bajo riesgo de romper algo, cierra una categoría entera de ataques de un saque.
 5. El resto (4, 5, 6, 7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
 
