@@ -66,6 +66,9 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: `curl -I https://<staging-url>` y verificar los headers presentes, o un scan en securityheaders.com contra staging (no contra producción con datos reales sin avisar).
 
+**✅ Resuelto (base) 2026-10-02**: `next.config.ts` → `headers()` en `/:path*` con `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security: max-age=63072000` (sin `includeSubDomains`/`preload`: los subdominios del dominio productivo están en Namecheap y preload es difícil de revertir) y `Permissions-Policy` que niega cámara, micrófono, geolocalización y pago. También `poweredByHeader: false` (antes se exponía `x-powered-by: Next.js`). Verificado con `next start` local: los headers salen en 200 y en los redirects del middleware, y `/login` renderiza sin errores de consola.
+- **Pendiente**: un CSP completo (`script-src`/`style-src`/`connect-src`). Requiere mapear Supabase, Google OAuth y las fuentes; conviene arrancar en modo `Content-Security-Policy-Report-Only`.
+
 ---
 
 ## 4. RPCs sin límite de tamaño de payload (DoS)
@@ -199,7 +202,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 1. ~~Actualizar Next.js + deps críticas (ítem 1)~~ — ✅ 2026-10-02 (queda `sharp` como riesgo residual aceptado).
 2. Fix del open redirect (ítem 2) — bajo esfuerzo, alto impacto de credibilidad.
 3. ~~Verificar RLS de `empresa` contra la DB viva (ítem 8)~~ — ✅ verificado y versionado 2026-10-02.
-4. Headers de seguridad básicos (ítem 3) — bajo riesgo de romper algo, cierra una categoría entera de ataques de un saque.
+4. ~~Headers de seguridad básicos (ítem 3)~~ — ✅ 2026-10-02 (queda el CSP completo).
 5. El resto (4, 5, 6, 7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
 
 Este documento se actualiza in-place a medida que se cierran ítems (marcarlos como resueltos con fecha, no borrarlos — sirve como historial de qué se atendió y cuándo).
