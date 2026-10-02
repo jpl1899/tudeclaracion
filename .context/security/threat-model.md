@@ -30,6 +30,10 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: `bun audit --prod` después de actualizar — confirmar que baja a 0 critical/high en deps de producción. No se recomienda intentar reproducir el RCE (exploit público, contra sistema propio no aporta nada que el CVE no confirme ya); la prueba es la versión instalada, no la explotación.
 
+**✅ Resuelto 2026-10-02**: `next` 15.5.20 → 15.5.27, `postcss` → 8.5.28, `yaml` → 2.9.1, y `overrides` en `package.json` para `nanoid` (^3.3.16) y `postcss` (^8.5.28), que fuerzan también las copias anidadas (incluida la que fija Next). `bun audit --prod`: 20 vulnerabilidades (2 critical) → 3 (0 critical), todas de `sharp` 0.34.5.
+- **`sharp` aceptado como riesgo residual**: Next 15 depende de `^0.34` y el fix está en 0.35. No es alcanzable: `next/image` solo se usa para el logo local y `next.config.ts` no define `remotePatterns`, así que el optimizador no procesa imágenes externas. Revisar cuando Next publique una versión con `sharp` ≥0.35.
+- **Pendiente**: el repo no tiene CI (`.github/workflows` no existe). Correr `bun audit --prod --audit-level=critical` en el pipeline cuando se cree uno.
+
 ---
 
 ## 2. Open redirect post-autenticación en `/auth/callback` y `/auth/confirm`
@@ -192,7 +196,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 
 ## Próximos pasos sugeridos (orden de prioridad)
 
-1. Actualizar Next.js + deps críticas (ítem 1) — es lo único con exploit público conocido.
+1. ~~Actualizar Next.js + deps críticas (ítem 1)~~ — ✅ 2026-10-02 (queda `sharp` como riesgo residual aceptado).
 2. Fix del open redirect (ítem 2) — bajo esfuerzo, alto impacto de credibilidad.
 3. ~~Verificar RLS de `empresa` contra la DB viva (ítem 8)~~ — ✅ verificado y versionado 2026-10-02.
 4. Headers de seguridad básicos (ítem 3) — bajo riesgo de romper algo, cierra una categoría entera de ataques de un saque.
