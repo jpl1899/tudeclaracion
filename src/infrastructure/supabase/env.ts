@@ -6,8 +6,8 @@
  * (`process.env[name]`) silently resolves to `undefined` client-side.
  *
  * Only the browser-safe values live here (URL + publishable key). The
- * secret key is never read by application runtime code in this project —
- * it is only used out-of-band by the Supabase MCP server (see .mcp.json).
+ * secret key is read only by the server-side admin client (./admin.ts),
+ * scoped to the shared BCU cache.
  */
 
 function requireEnv(name: string, value: string | undefined): string {

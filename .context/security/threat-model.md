@@ -90,6 +90,8 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: con dos cuentas de prueba distintas, desde la cuenta A hacer `supabase.from('cotizacion_bcu_cache').update(...)` sobre una fila existente, y confirmar desde la cuenta B que el valor cambiado se refleja en sus cálculos.
 
+**✅ Resuelto 2026-10-02** (opción "solo escribe el servidor"): la migración `20261002120000_restringir_escritura_cotizacion_bcu_cache.sql` elimina las políticas de INSERT/UPDATE y los usuarios quedan solo con SELECT. La app escribe el caché con `createAdminClient()` (`src/infrastructure/supabase/admin.ts`, clave secreta, solo en servidor), que únicamente usan los 4 call sites del caché BCU. Las Server Actions de `src/modules/cotizacion/actions.ts` ahora chequean la sesión por su cuenta, porque RLS ya no frena a un llamador anónimo. Orden de despliegue: primero `SUPABASE_SECRET_KEY` en Render y el deploy de la app, recién después la migración.
+
 ---
 
 ## 6. Disclosure de errores crudos de Postgres/Supabase al cliente
@@ -137,7 +139,7 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 - `empresa`: `relrowsecurity = true`, 4 políticas (`empresa_select_own`, `empresa_insert_own`, `empresa_update_own`, `empresa_delete_own`), todas `cuenta_id = (select auth.uid())`; el UPDATE tiene `USING` + `WITH CHECK` (no se puede reasignar una empresa a otra cuenta). `cuenta_id` es `NOT NULL`. Severidad → **Info**: la medida (1) queda cerrada.
 - Hallazgos colaterales del mismo chequeo:
   - `cuenta` tampoco está en ninguna migración trackeada. RLS ok (`select`/`update` solo sobre `id = auth.uid()`, sin INSERT/DELETE para usuarios).
-  - Existe 1 función `security definer`: `public.handle_new_user()` (trigger que inserta en `cuenta` al registrarse un usuario), fuera de migraciones. Riesgo bajo: es función de trigger (no invocable vía RPC), cuerpo fijo, `search_path = public` fijado. Mejora opcional: `search_path = ''` para alinearla con el resto. Corrige lo afirmado en el ítem 11.
+  - Existe 1 función `security definer`: `public.handle_new_user()` (trigger que inserta en `cuenta` al registrarse un usuario), fuera de migraciones. Riesgo bajo: es función de trigger (no invocable vía RPC), cuerpo fijo, `search_path = public` fijado. Mejora opcional: `search_path = ''` para alinearla con el resto (✅ aplicada en `20261002120200_handle_new_user_search_path_vacio.sql`). Corrige lo afirmado en el ítem 11.
   - `data_fields`, `declaration_required_fields`, `declarations`: tablas legacy fuera de migraciones, RLS habilitada sin políticas (deny-all para `anon`/`authenticated`), 0 filas. Sin riesgo; candidatas a borrarse.
   - `cotizacion_bcu_cache` confirmado tal como describe el ítem 5 (INSERT/UPDATE abiertos a cualquier `authenticated`).
 
@@ -179,7 +181,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 
 - **RLS habilitada en las 8 tablas trackeadas**, sin gaps — patrón `USING/WITH CHECK` vía join a `cuenta_id = auth.uid()` consistente en todas.
 - **Cero RPCs `security definer`** (la única función definer es el trigger `handle_new_user`, ver ítem 8) — todos los RPCs (`crear_empresa_con_plan_cuentas`, `insertar_asientos`, `editar_empresa_con_plan_cuentas`, `guardar_mapeo_1376`) son `security invoker` con `set search_path = ''` — RLS nunca se bypasea vía RPC, y no hay superficie de search-path hijacking.
-- **Cero uso de la service-role key en código de aplicación** (`grep -r "service_role|SUPABASE_SECRET_KEY" src/` → 0 resultados) — todo el acceso a datos pasa por el cliente RLS-scoped.
+- **Clave secreta acotada a un solo uso**: desde 2026-10-02 (ítem 5) `SUPABASE_SECRET_KEY` se lee únicamente en `src/infrastructure/supabase/admin.ts`, y solo se usa para el caché público de cotizaciones BCU. Todo acceso a datos de tenants sigue pasando por el cliente RLS-scoped. Nuevo uso de `createAdminClient()` = revisión de seguridad.
 - **Cero secrets filtrados vía `NEXT_PUBLIC_`** — solo URL y publishable key son públicas, confirmado y documentado en el propio código (`src/infrastructure/supabase/env.ts`).
 - **Sin XSS vía HTML crudo** — cero `dangerouslySetInnerHTML`, `eval`, o `new Function` en todo `src/`.
 - **Sin SSRF ni inyección en el fetch de cotización BCU** — endpoint hardcodeado, sin input de usuario en la URL ni en el XML/SOAP.
