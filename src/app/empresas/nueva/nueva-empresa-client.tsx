@@ -62,7 +62,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
   const [submitted, setSubmitted] = useState(false);
   const [duplicateRutError, setDuplicateRutError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ nombre: string, rut: string } | null>(null);
+  const [success, setSuccess] = useState<{ id: string, nombre: string, rut: string } | null>(null);
 
   function handleRutChange(value: string) {
     setRut(value.replace(/\D/g, ''));
@@ -111,7 +111,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
 
     setIsSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.rpc('crear_empresa_con_plan_cuentas', {
+    const { data: empresaId, error } = await supabase.rpc('crear_empresa_con_plan_cuentas', {
       p_rut: trimmedRut,
       p_nombre: trimmedNombre,
       p_cuentas: [
@@ -145,7 +145,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
       throw new Error(`No se pudo crear la empresa: ${error.message}`);
     }
 
-    setSuccess({ nombre: trimmedNombre, rut: trimmedRut });
+    setSuccess({ id: empresaId, nombre: trimmedNombre, rut: trimmedRut });
   }
 
   function handleAddAnother() {
@@ -166,6 +166,13 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
             <strong className="mb-1 block">Empresa creada correctamente.</strong>
             {`${success.nombre} (RUT ${success.rut}) ya está disponible en tu listado, con el mapeo inicial completo para empezar la carga del Formulario 2181.`}
           </div>
+          <button
+            type="button"
+            className="justify-self-start text-sm font-medium text-primary underline underline-offset-4"
+            onClick={() => router.push(`/empresas/${success.id}/mapeo-1376`)}
+          >
+            Configurar el mapeo del 1376
+          </button>
           <div className="flex flex-wrap gap-3">
             <Button size="lg" className="h-[52px]" onClick={() => router.push('/empresas')}>
               Volver a empresas
