@@ -85,8 +85,34 @@ describe('parseAsientosTxt', () => {
     });
   });
 
-  it('rejects a RUT that is not exactly 12 digits', () => {
+  it('rejects a RUT that is not exactly 12 digits when the line resolves to the 2181 via Camino 2', () => {
+    const planCuentas = [{ cuentaContable: '5215', codigoPadi: '504', codigoIva: null }];
     const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'RUT', message: expect.any(String) }],
+    });
+  });
+
+  it('rejects a non-RUT value when the line resolves to the 2181 via a mapped Código IVA (formato rápido)', () => {
+    const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: 3 }];
+    const content = '10,"5215","11111","Factura compra A 123","FAC 1234",0,1000,3,180.33,0,"C",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'RUT', message: expect.stringContaining('FAC 1234') }],
+    });
+  });
+
+  it('rejects a non-RUT value on a Tipo 504 line -- 504 always reaches the 2181, regardless of the plan de cuentas', () => {
+    const content = '15,"2000","3000","Ajuste por 504","FAC 1234",0,500,0,0,0,"P",504';
 
     const result = parseAsientosTxt(content, []);
 
@@ -97,10 +123,33 @@ describe('parseAsientosTxt', () => {
     });
   });
 
-  it('reports every invalid field of the same line at once, not just the first one found', () => {
-    const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",9,1000,0,0,-5,"E",';
+  it('accepts any RUT value on a line the 2181 does not resolve -- ej. pago de anticipo de IRAE (13122 contra caja 11111), only used by the 1376 (ADR-0008)', () => {
+    const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: 3 }];
+    const content = '5,"13122","11111","Anticipo IRAE","FAC 1234",0,1500,0,0,0,"C",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ debe: '13122', haber: '11111', rut: 'FAC 1234', total: 1500 });
+  });
+
+  it('accepts any RUT value on a line with an unmapped Código IVA or an out-of-scope Tipo', () => {
+    const content = [
+      '5,"5215","11111","Formato rápido sin mapear","FAC 1234",0,1000,7,220,0,"C",',
+      '6,"2000","3000","Cierre de ejercicio","",0,500,0,0,0,"P",CIE',
+    ].join('\n');
 
     const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('reports every invalid field of the same line at once, not just the first one found', () => {
+    const planCuentas = [{ cuentaContable: '5215', codigoPadi: '504', codigoIva: null }];
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",9,1000,0,0,-5,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
 
     expect(result).toEqual({
       ok: false,
@@ -143,6 +192,16 @@ describe('parseAsientosTxt', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
     expect(result.lines[0].cotizacion).toBe(39.60396039);
+  });
+
+  it('accepts a zero cotización written with decimals (ej. 0.0000) as pesos', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0.0000,"E",';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].cotizacion).toBe(0);
   });
 
   it('accepts a cotización with no decimals at all', () => {

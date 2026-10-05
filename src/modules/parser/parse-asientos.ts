@@ -13,6 +13,8 @@ const RUT_RE = /^\d{12}$/;
  * resultado final, no acá.
  */
 const COTIZACION_RE = /^\d{2}(?:\.\d+)?$/;
+/** Cotización 0 (pesos) también puede venir con decimales, ej. `0.0000`. */
+const COTIZACION_CERO_RE = /^0(?:\.0+)?$/;
 const LIBRO_VALUES = ['C', 'V', 'E', 'I', 'P'] as const;
 const TIPO_VALUES = ['504', 'CIE', 'RES', 'DIF', 'APE'] as const;
 
@@ -136,6 +138,28 @@ function splitFields(rawLine: string): string[] {
   return fields;
 }
 
+/**
+ * El RUT solo importa para el 2181, que declara el detalle por RUT. El 1376
+ * declara totales por código de línea y no lo usa (ADR-0008), así que una
+ * línea que el 2181 no va a resolver -- ej. pago de anticipo de IRAE, 13122
+ * contra 11111 -- puede traer cualquier valor en esa columna. Espeja las
+ * ramas de `resolveAsientoFiscal` (`normalize-asiento.ts`): Tipo 504 entra
+ * siempre; el resto de los Tipo quedan fuera de alcance; Código IVA > 0
+ * entra si está mapeado; Código IVA = 0 entra si Debe/Haber toca una cuenta
+ * del plan de cuentas.
+ */
+function requiereRut2181(
+  linea: { tipo: string, codigoIva: number, debe: string, haber: string, libro: string, total: number },
+  planCuentas: PlanCuentaRow[],
+): boolean {
+  if (linea.tipo === '504') { return true; }
+  if (linea.tipo.length > 0) { return false; }
+  if (linea.codigoIva > 0) {
+    return planCuentas.some(row => row.codigoIva === linea.codigoIva);
+  }
+  return resolverCuentaCamino2(linea.debe, linea.haber, linea.libro, linea.total, planCuentas).candidatos.length > 0;
+}
+
 function fail(line: number, errors: CampoInvalido[]): ParseFailure {
   return { ok: false, line, errors };
 }
@@ -227,7 +251,11 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
     errors.push({ field: 'Concepto', message: 'El concepto no puede estar vacío' });
   }
 
-  if (!RUT_RE.test(rut)) {
+  const total = Number(totalRaw);
+  const codigoIva = Number(codigoIvaRaw);
+  const libro = libroRaw.toUpperCase();
+
+  if (requiereRut2181({ tipo: tipoRaw, codigoIva, debe, haber, libro, total }, planCuentas) && !RUT_RE.test(rut)) {
     errors.push({ field: 'RUT', message: `"${rut}" no tiene el formato de 12 dígitos` });
   }
 
@@ -235,12 +263,10 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
     errors.push({ field: 'Moneda', message: `"${monedaRaw}" debe ser 0 (pesos) o 1 (dólares)` });
   }
 
-  const total = Number(totalRaw);
   if (totalRaw.length === 0 || Number.isNaN(total)) {
     errors.push({ field: 'Total', message: `"${totalRaw}" no es un importe numérico válido` });
   }
 
-  const codigoIva = Number(codigoIvaRaw);
   if (!NUMERIC_FIELD_RE.test(codigoIvaRaw) || codigoIva < 0 || codigoIva > 9) {
     errors.push({ field: 'Código IVA', message: `"${codigoIvaRaw}" debe ser un dígito entre 0 y 9` });
   }
@@ -251,11 +277,10 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
   }
 
   const cotizacion = Number(cotizacionRaw);
-  if (cotizacionRaw !== '0' && !COTIZACION_RE.test(cotizacionRaw)) {
-    errors.push({ field: 'Cotización', message: `"${cotizacionRaw}" debe ser 0 o un valor con dos dígitos enteros y dos decimales (ej. 38.45)` });
+  if (!COTIZACION_CERO_RE.test(cotizacionRaw) && !COTIZACION_RE.test(cotizacionRaw)) {
+    errors.push({ field: 'Cotización', message: `"${cotizacionRaw}" debe ser 0 o un valor con dos dígitos enteros (ej. 38.45)` });
   }
 
-  const libro = libroRaw.toUpperCase();
   if (!LIBRO_VALUES.includes(libro as Libro)) {
     errors.push({ field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
   }
