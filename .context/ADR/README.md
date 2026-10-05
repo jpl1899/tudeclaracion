@@ -68,6 +68,7 @@ Who authors: a human architect directly, **or** an AI workflow that detected an 
 | [ADR-0005](./ADR-0005-configurable-txt-field-layout-2181.md) | Configuración manual de layout de campos para variantes del TXT de asientos (2181) | Accepted | — | — |
 | [ADR-0006](./ADR-0006-1376-aggregation-by-account-pipeline.md) | La DJ 1376 corre un modo de agregación por cuenta contable, distinto del pipeline por-RUT del 2181 | Accepted | — | — |
 | [ADR-0007](./ADR-0007-plan-cuentas-declaration-per-account.md) | Cada fila de plan_cuentas pertenece a una sola declaración (2181 o 1376); cada motor lee solo las suyas | Accepted | — | — |
+| [ADR-0008](./ADR-0008-rut-required-only-for-2181-lines.md) | El RUT se exige solo en los asientos que resuelve el 2181; el 1376 no lo usa | Accepted | — | — |
 
 > Keep this table in sync whenever an ADR is added or its status changes. It is the fast index every session reads first.
 
