@@ -6,6 +6,7 @@ export type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camin
 
 const TIPO_504 = '504';
 const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
+const RUT_RE = /^\d{12}$/;
 
 /**
  * TD-18: la rama `resolved: false` lleva `rut` + `dia` (identifica la línea)
@@ -15,7 +16,7 @@ const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
  */
 export type NormalizedAsiento
   = | { resolved: true, codigoPadi: string, importe: number, rut: string }
-    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' | 'importe-invalido' | 'libro-inconsistente', rut: string, dia: number, valor: string };
+    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' | 'importe-invalido' | 'libro-inconsistente' | 'rut-invalido', rut: string, dia: number, valor: string };
 
 function noResuelto(
   asiento: AsientoLine,
@@ -101,6 +102,17 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
    */
   if (resolucion.importe === 0) {
     return noResuelto(asiento, 'importe-invalido', resolucion.importe.toString());
+  }
+
+  /**
+   * ADR-0008: el RUT ya no se exige en la tabla `asiento` -- el 1376 no lo
+   * usa y el parser solo lo valida en las líneas que el 2181 resuelve. Esta
+   * es la segunda barrera: una línea que resuelve al 2181 con un RUT
+   * inválido (ej. el plan de cuentas cambió después de importar) se excluye
+   * en vez de llegar al archivo PADI.
+   */
+  if (!RUT_RE.test(asiento.rut)) {
+    return noResuelto(asiento, 'rut-invalido', asiento.rut);
   }
 
   return { resolved: true, codigoPadi: resolucion.codigoPadi, importe: resolucion.importe, rut: asiento.rut };

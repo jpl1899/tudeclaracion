@@ -19,6 +19,7 @@ const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
   'tipo-fuera-de-alcance': 'tiene un tipo fuera del alcance de esta declaración',
   'importe-invalido': 'tiene un importe inválido (no puede ser cero)',
   'libro-inconsistente': 'tiene un Libro que no coincide con el tipo de cuenta resuelta (revisar el TXT de origen)',
+  'rut-invalido': 'tiene un RUT que no es de 12 dígitos (revisar el TXT de origen)',
 };
 
 /**

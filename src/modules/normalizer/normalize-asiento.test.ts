@@ -297,6 +297,22 @@ describe('resolveAsientoFiscal', () => {
     expect(result).toEqual({ resolved: false, reason: 'importe-invalido', rut: '233669988774', dia: 5, valor: '0' });
   });
 
+  it('excludes a line that resolves to the 2181 but carries a RUT that is not 12 digits (ADR-0008, second barrier after the parser)', () => {
+    const planCuentas: PlanCuentaRow[] = [
+      { cuentaContable: '5215', codigoPadi: '502', codigoIva: 3 },
+    ];
+
+    const result = resolveAsientoFiscal(asiento({ codigoIva: 3, iva: 180.33, rut: 'FAC 1234' }), planCuentas);
+
+    expect(result).toEqual({ resolved: false, reason: 'rut-invalido', rut: 'FAC 1234', dia: 5, valor: 'FAC 1234' });
+  });
+
+  it('reports sin-mapeo, not rut-invalido, for a line outside the 2181 with a non-RUT value (ej. anticipo de IRAE 13122 contra caja 11111)', () => {
+    const result = resolveAsientoFiscal(asiento({ debe: '13122', haber: '11111', rut: 'FAC 1234' }), []);
+
+    expect(result).toMatchObject({ resolved: false, reason: 'sin-mapeo' });
+  });
+
   it('resolves a negative importe via Camino 2 -- represents a nota de crédito to be neteada downstream (corregido 2026-07-27)', () => {
     const planCuentas: PlanCuentaRow[] = [
       { cuentaContable: '21332', codigoPadi: '504', codigoIva: null },
