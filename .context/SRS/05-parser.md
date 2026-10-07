@@ -53,6 +53,8 @@ Algunos proveedores contables (ej. FMSSRL, archivo `FMSSRL Asientos Abril 2026.T
 
 El TXT puede venir con o sin una primera fila de encabezado (`DIA,DEBE,HABER,CONCEPTO,RUT,...`) describiendo los campos — depende de cómo lo exporte el proveedor contable en cada caso. El parser la detecta (campo Día no numérico, valor `DIA`) y la descarta antes de interpretar datos; no se trata como una línea inválida y no corre el conteo de línea de los asientos reales.
 
+**Actualizado 2026-10-07 (ADR-0009):** en la importación del 1376, si el archivo trae encabezado, cada columna se lee por su título (sin distinguir mayúsculas, tildes ni separadores; `RUC` = `RUT`; las columnas especiales se ignoran). Un título desconocido, repetido o un campo obligatorio ausente rechaza el archivo en la línea 1, y cada línea debe traer exactamente tantos campos como columnas tiene el encabezado. El 2181 no cambia: sigue leyendo por posición.
+
 ## Aceptado 2026-08-07 — layout configurable de campos (reemplaza el caso FMSSRL puntual)
 
 **Ver `ADR-0005-configurable-txt-field-layout-2181.md` para el detalle completo de contexto, decisión y alternativas descartadas.** Implementado en `parse-asientos.ts` (TD-31, 2026-08-08) — el fix ad-hoc del 13er campo (FMSSRL) queda cubierto como el caso particular de `numeroAsiento` habilitado. La configuración de columnas especiales es efímera (estado de `ImportarAsientoDialog`, se descarta al cerrar el diálogo) — no hay tabla nueva en Supabase.

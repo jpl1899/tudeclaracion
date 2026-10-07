@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/card';
 import { createClient } from '@/infrastructure/supabase/client';
 import { poblarCotizacionesBcuParaPeriodo, reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
 import { resolverCotizacionParaDia } from '@/modules/cotizacion/resolve-cotizacion-por-dia';
-import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
+import { parseAsientosTxt, parseAsientosTxt1376 } from '@/modules/parser/parse-asientos';
 
 /**
  * Dashboard / Panel principal — .context/design/master-design-plan.md §4.3,
@@ -156,7 +156,9 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     }));
 
     const contenido = await file.text();
-    const resultado = parseAsientosTxt(contenido, planCuentas, opciones.camposEspecialesHabilitados);
+    // ADR-0009: solo el 1376 lee las columnas por el título del encabezado; el 2181 sigue leyendo por posición.
+    const parsear = tipoImportacion === '1376' ? parseAsientosTxt1376 : parseAsientosTxt;
+    const resultado = parsear(contenido, planCuentas, opciones.camposEspecialesHabilitados);
 
     if (!resultado.ok) {
       return { kind: 'parse', line: resultado.line, errors: resultado.errors };
@@ -372,6 +374,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
         open={importarAbierto}
         onOpenChange={handleImportarOpenChange}
         empresaActiva={empresaNombre}
+        leerEncabezado={tipoImportacion === '1376'}
         onCheckPeriodo={handleCheckPeriodo}
         onImportar={handleImportar}
       />

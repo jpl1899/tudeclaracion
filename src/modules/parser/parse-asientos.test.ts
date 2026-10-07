@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contarCamposPrimeraLineaDeDatos, derivarLayout, parseAsientosTxt } from './parse-asientos';
+import { contarCamposPrimeraLineaDeDatos, derivarLayout, parseAsientosTxt, parseAsientosTxt1376, tieneEncabezado } from './parse-asientos';
 
 describe('parseAsientosTxt', () => {
   it('interprets a compra exenta line resolved by cuenta contable (Código IVA = 0)', () => {
@@ -551,5 +551,117 @@ describe('parseAsientosTxt', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
     expect(result.lines).toHaveLength(1);
+  });
+});
+
+describe('parseAsientosTxt1376', () => {
+  const encabezadoRucAntesDeConcepto = 'DIA,DEBE,HABER,RUC,CONCEPTO,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
+
+  it('reads each column by its header title, so RUC before CONCEPTO does not swap the values', () => {
+    const content = `${encabezadoRucAntesDeConcepto}\r\n1,11411,11111,211111111111,FAC 1234,0,1000,0,0,0.0000,E\r\n2,13122,11111,,BOLETO PAGO IRAE,0,5000,0,0,0.0000,E`;
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines.map(linea => ({ concepto: linea.concepto, rut: linea.rut }))).toEqual([
+      { concepto: 'FAC 1234', rut: '211111111111' },
+      { concepto: 'BOLETO PAGO IRAE', rut: '' },
+    ]);
+    expect(result.lines[1]).toMatchObject({ debe: '13122', haber: '11111', total: 5000, libro: 'E', tipo: null });
+  });
+
+  it('matches titles regardless of case, accents and separators', () => {
+    const content = 'Día,Debe,Haber,Concepto,R.U.T.,Moneda,Total,Código IVA,IVA,Cotización,Libro,Tipo\n5,5215,11111,Ancap,233669988774,0,1000,0,0,0,E,';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: 'Ancap', rut: '233669988774', codigoIva: 0, tipo: null });
+  });
+
+  it('ignores the known special columns named in the header', () => {
+    const content = 'DIA,DEBE,HABER,COMPROBANTE,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO\n5,5215,11111,A-123,Ancap,233669988774,0,1000,0,0,0,E';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: 'Ancap', rut: '233669988774' });
+  });
+
+  it('rejects a line with more fields than header columns instead of shifting them', () => {
+    const content = `${encabezadoRucAntesDeConcepto}\n2,13122,11111,,BOLETO PAGO IRAE,0,5000,0,0,0,0.0000,E`;
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 2,
+      errors: [{ field: 'línea', message: 'El encabezado tiene 11 columnas, pero la línea trae 12 campos' }],
+    });
+  });
+
+  it('rejects an unknown header title', () => {
+    const content = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO,OBSERVACION\n5,5215,11111,Ancap,233669988774,0,1000,0,0,0,E,x';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Encabezado', message: '"OBSERVACION" no es un título de campo conocido' }],
+    });
+  });
+
+  it('rejects a header that is missing a required column', () => {
+    const content = 'DIA,DEBE,HABER,CONCEPTO,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO\n5,5215,11111,Ancap,0,1000,0,0,0,E';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Encabezado', message: 'Falta la columna: rut' }],
+    });
+  });
+
+  it('rejects a repeated header title (RUC and RUT are the same field)', () => {
+    const content = 'DIA,DEBE,HABER,CONCEPTO,RUT,RUC,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO\n5,5215,11111,Ancap,233669988774,233669988774,0,1000,0,0,0,E';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Encabezado', message: '"RUC" está repetido' }],
+    });
+  });
+
+  it('falls back to the positional layout when the file has no header', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+
+    expect(parseAsientosTxt1376(content, [])).toEqual(parseAsientosTxt(content, []));
+  });
+
+  it('leaves the 2181 parser reading by position even when the header has another order', () => {
+    const content = `${encabezadoRucAntesDeConcepto}\n1,11411,11111,211111111111,FAC 1234,0,1000,0,0,0.0000,E`;
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: '211111111111', rut: 'FAC 1234' });
+  });
+});
+
+describe('tieneEncabezado', () => {
+  it('detects a leading header row', () => {
+    expect(tieneEncabezado('DIA,DEBE,HABER\n1,2,3')).toBe(true);
+  });
+
+  it('returns false for a file that starts with data', () => {
+    expect(tieneEncabezado('1,11411,11111')).toBe(false);
   });
 });
