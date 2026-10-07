@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { CAMPOS_ESPECIALES, contarCamposPrimeraLineaDeDatos } from '@/modules/parser/parse-asientos';
+import { CAMPOS_ESPECIALES, contarCamposPrimeraLineaDeDatos, tieneEncabezado } from '@/modules/parser/parse-asientos';
 
 const ACCEPTED_EXTENSION = '.txt';
 
@@ -73,6 +73,8 @@ interface ImportarAsientoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   empresaActiva: string
+  /** 1376 (ADR-0009): con encabezado, las columnas se leen por título y no hace falta declarar las especiales. */
+  leerEncabezado?: boolean
   onCheckPeriodo: (periodo: string) => Promise<boolean>
   onImportar: (file: File, periodo: string, opciones: ImportarAsientoOpciones) => Promise<ImportarAsientoResultado>
 }
@@ -85,6 +87,7 @@ export function ImportarAsientoDialog({
   open,
   onOpenChange,
   empresaActiva,
+  leerEncabezado = false,
   onCheckPeriodo,
   onImportar,
 }: ImportarAsientoDialogProps) {
@@ -97,15 +100,16 @@ export function ImportarAsientoDialog({
   const [confirmarReemplazo, setConfirmarReemplazo] = useState(false);
   const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date, tieneAsientosNegativos: boolean } | null>(null);
   const [camposDetectados, setCamposDetectados] = useState<number | null>(null);
+  const [porEncabezado, setPorEncabezado] = useState(false);
   const [camposEspecialesSeleccionados, setCamposEspecialesSeleccionados] = useState<Set<CampoEspecial>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const listoButtonRef = useRef<HTMLButtonElement>(null);
   const reemplazarButtonRef = useRef<HTMLButtonElement>(null);
 
   /** ADR-0005 (TD-31): 11/12 campos es el modelo clásico, sin configuración adicional. */
-  const esNoEstandar = camposDetectados !== null && camposDetectados > 12;
+  const esNoEstandar = !porEncabezado && camposDetectados !== null && camposDetectados > 12;
   /** SRS/05-parser.md §"Confirmado 2026-08-17": al archivo le falta alguno de los 11 campos obligatorios -- nunca hay forma de completarlo desde la UI, el usuario debe conseguir una versión completa del archivo. */
-  const esFaltante = camposDetectados !== null && camposDetectados < 11;
+  const esFaltante = !porEncabezado && camposDetectados !== null && camposDetectados < 11;
   const anchoDeclarado = 12 + camposEspecialesSeleccionados.size;
   const configEspecialCompleta = anchoDeclarado === camposDetectados;
 
@@ -158,6 +162,7 @@ export function ImportarAsientoDialog({
     setCamposEspecialesSeleccionados(new Set());
     const contenido = await file.text();
     setCamposDetectados(contarCamposPrimeraLineaDeDatos(contenido));
+    setPorEncabezado(leerEncabezado && tieneEncabezado(contenido));
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -175,6 +180,7 @@ export function ImportarAsientoDialog({
     setPeriodo('');
     setConfirmarReemplazo(false);
     setConfirmacion(null);
+    setPorEncabezado(false);
     setCamposDetectados(null);
     setCamposEspecialesSeleccionados(new Set());
   }

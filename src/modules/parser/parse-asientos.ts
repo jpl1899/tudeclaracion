@@ -188,14 +188,107 @@ export function contarCamposPrimeraLineaDeDatos(content: string): number {
   return primeraLinea === undefined ? 0 : splitFields(primeraLinea).length;
 }
 
+/** Archivo con o sin fila de encabezado -- usado por la UI para saber si el 1376 va a leer las columnas por su título (ADR-0009). */
+export function tieneEncabezado(content: string): boolean {
+  const [primeraLinea] = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+  return esEncabezado1376(primeraLinea);
+}
+
+/**
+ * Títulos aceptados en la fila de encabezado (ADR-0009), normalizados: en
+ * mayúsculas, sin tildes ni separadores. RUC y RUT son el mismo campo. Las
+ * columnas especiales de ADR-0005 se aceptan y se ignoran, igual que en el
+ * layout por posición.
+ */
+const CAMPO_POR_TITULO: Record<string, string> = {
+  DIA: 'dia',
+  DEBE: 'debe',
+  HABER: 'haber',
+  CONCEPTO: 'concepto',
+  RUT: 'rut',
+  RUC: 'rut',
+  MONEDA: 'moneda',
+  TOTAL: 'total',
+  CODIGOIVA: 'codigoIva',
+  IVA: 'iva',
+  COTIZACION: 'cotizacion',
+  LIBRO: 'libro',
+  TIPO: 'tipo',
+  CCOSTOS: 'costos',
+  COSTOS: 'costos',
+  COMPROBANTE: 'comprobante',
+  NUMERO: 'numero',
+  EMISION: 'emision',
+  VENCIMIENTO: 'vencimiento',
+  NUMERODOCUMENTO: 'numeroDocumento',
+  SERIEDOCUMENTO: 'serieDocumento',
+  SERIE: 'serie',
+  NUMEROASIENTO: 'numeroAsiento',
+};
+
+/** Tipo es opcional también con encabezado: el modelo clásico de 11 campos no lo trae. */
+const CAMPOS_OBLIGATORIOS_ENCABEZADO = ['dia', 'debe', 'haber', 'concepto', 'rut', 'moneda', 'total', 'codigoIva', 'iva', 'cotizacion', 'libro'];
+
+function normalizarTitulo(titulo: string): string {
+  return titulo.normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/** Como `isHeaderLine`, pero tolera tildes y mayúsculas en el título Día (ADR-0009). Solo la usa el 1376. */
+function esEncabezado1376(rawLine: string | undefined): boolean {
+  return rawLine !== undefined && normalizarTitulo(splitFields(rawLine)[0]) === 'DIA';
+}
+
+/**
+ * Deriva el layout de la fila de encabezado: cada columna se lee por su
+ * título, no por su posición (ADR-0009). Rechaza títulos desconocidos,
+ * repetidos o un campo obligatorio ausente -- nunca mapea a ciegas.
+ */
+function derivarLayoutDesdeEncabezado(rawHeader: string): { ok: true, layout: string[] } | ParseFailure {
+  const titulos = splitFields(rawHeader).map(titulo => titulo.trim());
+  const layout: string[] = [];
+  const errors: CampoInvalido[] = [];
+
+  for (const titulo of titulos) {
+    const key = CAMPO_POR_TITULO[normalizarTitulo(titulo)];
+    if (key === undefined) {
+      errors.push({ field: 'Encabezado', message: `"${titulo}" no es un título de campo conocido` });
+      continue;
+    }
+    if (layout.includes(key)) {
+      errors.push({ field: 'Encabezado', message: `"${titulo}" está repetido` });
+      continue;
+    }
+    layout.push(key);
+  }
+
+  const faltantes = CAMPOS_OBLIGATORIOS_ENCABEZADO.filter(key => !layout.includes(key));
+  if (faltantes.length > 0) {
+    errors.push({ field: 'Encabezado', message: `Falta la columna: ${faltantes.join(', ')}` });
+  }
+
+  return errors.length > 0 ? fail(1, errors) : { ok: true, layout };
+}
+
+interface ContextoLinea {
+  lineNumber: number
+  planCuentas: PlanCuentaRow[]
+  layout: string[]
+  /** Layout leído del encabezado (ADR-0009): cada línea trae exactamente una columna por título. */
+  anchoExacto: boolean
+}
+
 /**
  * Valida todos los campos de la línea y acumula cada campo inválido -- no
  * frena en el primero (confirmado con el contador: si una línea trae varios
  * campos inválidos a la vez, ej. RUT y Moneda, Rosana necesita ver ambos de
  * una sola pasada, no uno por reintento).
  */
-function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaRow[], layout: string[]): AsientoLine | ParseFailure {
+function parseLine(rawLine: string, { lineNumber, planCuentas, layout, anchoExacto }: ContextoLinea): AsientoLine | ParseFailure {
   const fields = splitFields(rawLine);
+
+  if (anchoExacto && fields.length !== layout.length) {
+    return fail(lineNumber, [{ field: 'línea', message: `El encabezado tiene ${layout.length} columnas, pero la línea trae ${fields.length} campos` }]);
+  }
 
   /**
    * El ancho esperado se deriva del layout (12 + especiales habilitados,
@@ -205,7 +298,7 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
    * clásico; esa leniencia NO se generaliza a layouts con especiales, donde
    * el ancho debe matchear exacto.
    */
-  const esModeloClasico = layout.length === 12;
+  const esModeloClasico = !anchoExacto && layout.length === 12;
   const anchoValido = fields.length === layout.length || (esModeloClasico && fields.length === layout.length - 1);
   if (!anchoValido) {
     const anchosEsperados = esModeloClasico ? `${layout.length - 1} o ${layout.length}` : `${layout.length}`;
@@ -228,7 +321,8 @@ function parseLine(rawLine: string, lineNumber: number, planCuentas: PlanCuentaR
   const ivaRaw = valorPorCampo.iva;
   const cotizacionRaw = valorPorCampo.cotizacion;
   const libroRaw = valorPorCampo.libro;
-  const tipoRaw = valorPorCampo.tipo;
+  // Un encabezado sin TIPO no trae esa columna (ADR-0009).
+  const tipoRaw = valorPorCampo.tipo ?? '';
   const errors: CampoInvalido[] = [];
 
   if (!NUMERIC_FIELD_RE.test(diaRaw) || Number(diaRaw) < 1 || Number(diaRaw) > 31) {
@@ -372,7 +466,40 @@ export function parseAsientosTxt(
   const startIndex = isHeaderLine(rawLines[0]) ? 1 : 0;
 
   for (let i = startIndex; i < rawLines.length; i++) {
-    const result = parseLine(rawLines[i], i + 1, planCuentas, layout);
+    const result = parseLine(rawLines[i], { lineNumber: i + 1, planCuentas, layout, anchoExacto: false });
+    if ('ok' in result) {
+      return result;
+    }
+    lines.push(result);
+  }
+
+  return { ok: true, lines };
+}
+
+/**
+ * Variante del 1376 (ADR-0009): si el archivo trae fila de encabezado, cada
+ * columna se lee por su título y no por su posición, así un archivo con las
+ * columnas en otro orden (ej. RUC antes de CONCEPTO) no corre los datos. Sin
+ * encabezado se comporta igual que `parseAsientosTxt`. El 2181 no la usa.
+ */
+export function parseAsientosTxt1376(
+  content: string,
+  planCuentas: PlanCuentaRow[],
+  camposEspecialesHabilitados: Set<CampoEspecial> = new Set(),
+): ParseResult {
+  const rawLines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (!esEncabezado1376(rawLines[0])) {
+    return parseAsientosTxt(content, planCuentas, camposEspecialesHabilitados);
+  }
+
+  const encabezado = derivarLayoutDesdeEncabezado(rawLines[0]);
+  if (!encabezado.ok) {
+    return encabezado;
+  }
+
+  const lines: AsientoLine[] = [];
+  for (let i = 1; i < rawLines.length; i++) {
+    const result = parseLine(rawLines[i], { lineNumber: i + 1, planCuentas, layout: encabezado.layout, anchoExacto: true });
     if ('ok' in result) {
       return result;
     }
