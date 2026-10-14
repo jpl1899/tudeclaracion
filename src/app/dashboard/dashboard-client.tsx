@@ -4,6 +4,7 @@ import type { ImportarAsientoOpciones, ImportarAsientoResultado } from '@/compon
 import type { EstadoCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 import type { Json } from '@/types/supabase';
+import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -12,6 +13,14 @@ import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { createClient } from '@/infrastructure/supabase/client';
 import { poblarCotizacionesBcuParaPeriodo, reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
 import { resolverCotizacionParaDia } from '@/modules/cotizacion/resolve-cotizacion-por-dia';
@@ -80,6 +89,11 @@ function formatearFechaCotizacion(fecha: string): string {
   return new Date(`${fecha}T00:00:00`).toLocaleDateString('es-UY');
 }
 
+/** `202610` → `10/2026`. */
+function formatearPeriodo(periodo: string): string {
+  return `${periodo.slice(4)}/${periodo.slice(0, 4)}`;
+}
+
 export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
   const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
@@ -87,6 +101,9 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
   const [periodoImportado, setPeriodoImportado] = useState<string | null>(null);
   const [cotizacionBcu, setCotizacionBcu] = useState(cotizacionBcuInicial);
   const [reintentando, startReintentar] = useTransition();
+  const [periodoABorrar, setPeriodoABorrar] = useState<string | null>(null);
+  const [errorBorrado, setErrorBorrado] = useState<string | null>(null);
+  const [borrando, startBorrar] = useTransition();
 
   const pendientesDeGenerar = declaraciones.filter(d => d.estado === 'abierta').length;
   const generadas = declaraciones.filter(d => d.estado === 'generada').length;
@@ -112,6 +129,31 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
   function handleReintentarCotizacion(): void {
     startReintentar(async () => {
       setCotizacionBcu(await reintentarCotizacionBcu());
+    });
+  }
+
+  function handleBorrarOpenChange(open: boolean): void {
+    // No se cierra mientras el borrado está en vuelo.
+    if (!open && borrando) { return; }
+    if (!open) {
+      setPeriodoABorrar(null);
+      setErrorBorrado(null);
+    }
+  }
+
+  /** v1.0: borra el período entero -- 2181, 1376 y sus asientos -- en una sola transacción (`borrar_periodo`). */
+  function handleConfirmarBorrado(): void {
+    if (!periodoABorrar) { return; }
+    const periodo = periodoABorrar;
+    startBorrar(async () => {
+      const { error } = await createClient().rpc('borrar_periodo', { p_empresa_id: empresaId, p_periodo: periodo });
+      if (error) {
+        setErrorBorrado('No se pudo borrar el período. Intentá nuevamente en unos minutos.');
+        return;
+      }
+      setPeriodoABorrar(null);
+      setErrorBorrado(null);
+      router.refresh();
     });
   }
 
@@ -333,6 +375,9 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
                 <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Período</th>
                 <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Estado</th>
                 <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Última actualización</th>
+                <th className="border-b border-border p-3">
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -356,11 +401,25 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
                   <td className="border-b border-border p-3 text-muted-foreground">
                     {new Date(fila.updated_at).toLocaleDateString('es-UY')}
                   </td>
+                  <td className="border-b border-border p-3 text-right">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      data-testid={`borrar_periodo_${fila.periodo}`}
+                      aria-label={`Borrar período ${formatearPeriodo(fila.periodo)}`}
+                      title="Borrar período"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => setPeriodoABorrar(fila.periodo)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
               {declaraciones.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="border-b border-border p-3 text-center text-muted-foreground">
+                  <td colSpan={5} className="border-b border-border p-3 text-center text-muted-foreground">
                     Todavía no hay declaraciones para esta empresa.
                   </td>
                 </tr>
@@ -378,6 +437,49 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
         onCheckPeriodo={handleCheckPeriodo}
         onImportar={handleImportar}
       />
+
+      <Dialog open={periodoABorrar !== null} onOpenChange={handleBorrarOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Borrar período
+              {' '}
+              {periodoABorrar ? formatearPeriodo(periodoABorrar) : ''}
+            </DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div
+            data-testid="borrar_periodo_advertencia"
+            className="grid gap-1.5 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+          >
+            <p className="font-medium">También se borra la declaración vinculada.</p>
+            <p>
+              El 2181 y el 1376 de este período se calculan sobre los mismos asientos, así que se borran juntos: las dos declaraciones y todos los asientos importados. Para recuperarlos vas a tener que volver a importar el TXT.
+            </p>
+          </div>
+
+          {errorBorrado && (
+            <div
+              data-testid="borrar_periodo_error"
+              className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-sm text-error-text"
+            >
+              {errorBorrado}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={borrando} onClick={() => handleBorrarOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="destructive" disabled={borrando} onClick={handleConfirmarBorrado}>
+              {borrando ? 'Borrando…' : 'Sí, borrar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   );
 }

@@ -453,6 +453,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      borrar_periodo: {
+        Args: { p_empresa_id: string; p_periodo: string }
+        Returns: undefined
+      }
       crear_empresa_con_plan_cuentas: {
         Args: { p_cuentas: Json; p_nombre: string; p_rut: string }
         Returns: string
