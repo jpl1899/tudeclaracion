@@ -1,6 +1,7 @@
 'use client';
 
 import type { CampoEspecial, CampoInvalido } from '@/modules/parser/parse-asientos';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -101,6 +102,7 @@ export function ImportarAsientoDialog({
   const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date, tieneAsientosNegativos: boolean } | null>(null);
   const [camposDetectados, setCamposDetectados] = useState<number | null>(null);
   const [porEncabezado, setPorEncabezado] = useState(false);
+  const [sinEncabezado, setSinEncabezado] = useState(false);
   const [camposEspecialesSeleccionados, setCamposEspecialesSeleccionados] = useState<Set<CampoEspecial>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const listoButtonRef = useRef<HTMLButtonElement>(null);
@@ -153,6 +155,7 @@ export function ImportarAsientoDialog({
     if (!isArchivoValido(file)) {
       setArchivo(null);
       setArchivoInvalido(true);
+      setSinEncabezado(false);
       setCamposDetectados(null);
       setCamposEspecialesSeleccionados(new Set());
       return;
@@ -162,7 +165,9 @@ export function ImportarAsientoDialog({
     setCamposEspecialesSeleccionados(new Set());
     const contenido = await file.text();
     setCamposDetectados(contarCamposPrimeraLineaDeDatos(contenido));
-    setPorEncabezado(leerEncabezado && tieneEncabezado(contenido));
+    const conEncabezado = tieneEncabezado(contenido);
+    setPorEncabezado(leerEncabezado && conEncabezado);
+    setSinEncabezado(leerEncabezado && !conEncabezado);
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -181,6 +186,7 @@ export function ImportarAsientoDialog({
     setConfirmarReemplazo(false);
     setConfirmacion(null);
     setPorEncabezado(false);
+    setSinEncabezado(false);
     setCamposDetectados(null);
     setCamposEspecialesSeleccionados(new Set());
   }
@@ -336,6 +342,22 @@ export function ImportarAsientoDialog({
                       </p>
                     )}
                   </div>
+
+                  {/* 1376: sin encabezado, las columnas se leen en el orden canónico y un archivo con otro orden (ej. RUC antes de CONCEPTO) se corre -- se avisa, sin bloquear. */}
+                  {sinEncabezado && (
+                    <div
+                      data-testid="importar_asiento_sin_encabezado"
+                      className="grid gap-1.5 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+                    >
+                      <p className="font-medium">El archivo no trae la fila de encabezados.</p>
+                      <p>
+                        Sin encabezados, las columnas se leen en el orden estándar. Si tu archivo trae otro orden, los datos pueden quedar corridos.
+                      </p>
+                      <Link href="/dashboard/ayuda?formulario=1376" className="w-fit font-medium text-primary hover:underline">
+                        Ver cómo agregar los encabezados
+                      </Link>
+                    </div>
+                  )}
 
                   {esFaltante && (() => {
                     const columnasFaltantes = 11 - (camposDetectados ?? 0);
