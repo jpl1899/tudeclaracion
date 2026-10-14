@@ -13,6 +13,9 @@ interface AyudaPageProps {
 const FORMULARIOS = ['2181', '1376', '2183', '1050'] as const;
 type Formulario = typeof FORMULARIOS[number];
 
+/** Orden canónico de los títulos que acepta el 1376 (ADR-0009). */
+const ENCABEZADO_EJEMPLO_1376 = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO,TIPO';
+
 function esFormulario(valor: string | undefined): valor is Formulario {
   return FORMULARIOS.includes(valor as Formulario);
 }
@@ -76,7 +79,23 @@ export default async function AyudaPage({ searchParams }: AyudaPageProps) {
               {' '}
               {formulario}
             </strong>
-            <p className="text-muted-foreground">Contenido en preparación.</p>
+            {formulario === '1376'
+              ? (
+                  <div data-testid="ayuda_1376_encabezados" className="grid gap-2">
+                    <p className="font-medium">Encabezados del archivo TXT</p>
+                    <p className="text-muted-foreground">
+                      La primera línea del archivo debe traer el título de cada columna. Así cada dato se lee por su título y no por su posición, aunque las columnas vengan en otro orden.
+                    </p>
+                    <p className="text-muted-foreground">Si tu archivo no la trae, agregá esta línea al principio:</p>
+                    <code className="w-fit break-all rounded-md bg-muted px-3 py-2 font-mono text-sm">
+                      {ENCABEZADO_EJEMPLO_1376}
+                    </code>
+                    <p className="text-muted-foreground">
+                      Ordená los títulos igual que las columnas de tu archivo. RUC y RUT son el mismo campo.
+                    </p>
+                  </div>
+                )
+              : <p className="text-muted-foreground">Contenido en preparación.</p>}
           </Card>
         </div>
       </main>
