@@ -1,6 +1,6 @@
 'use client';
 
-import type { ColumnaImporte, LadoMapeo, MapeoFila } from '@/modules/mapeo-1376/mapeo-1376';
+import type { LadoMapeo, MapeoFila } from '@/modules/mapeo-1376/mapeo-1376';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,9 @@ import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
 import {
-  COLUMNA_IMPORTE_OPCIONES,
   construirFilasParaGuardar,
   filaIncompleta,
-  filaTieneCuenta,
+  filaTieneDatos,
   LADO_OPCIONES,
   UNIQUE_VIOLATION_CODE,
   validarMapeo,
@@ -82,7 +81,7 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
     if (error?.code === UNIQUE_VIOLATION_CODE) {
       setSaveState('save-error');
       setSaveErrorMessage(
-        'Una cuenta contable quedó asignada a más de un código de línea. Revisá el mapeo: cada cuenta va a un solo código.',
+        'Una cuenta contable o un código de IVA quedó asignado a más de un código de línea. Revisá el mapeo: cada uno va a un solo código.',
       );
       return;
     }
@@ -90,9 +89,9 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
       throw new Error(`No se pudo guardar el mapeo: ${error.message}`);
     }
 
-    // Alinea el estado con lo que quedó persistido: una fila sin cuenta no
-    // guarda lado ni columna, así que se limpian también en pantalla.
-    setFilas(prev => prev.map(f => (filaTieneCuenta(f) ? f : { ...f, lado: '', columnaImporte: '' })));
+    // Alinea el estado con lo que quedó persistido: una fila sin datos no
+    // guarda el lado, así que se limpia también en pantalla.
+    setFilas(prev => prev.map(f => (filaTieneDatos(f) ? f : { ...f, lado: '' })));
     setSaveState('success');
   }
 
@@ -105,14 +104,27 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
           </span>
           <h1 className="text-lg font-semibold">{empresa.nombre}</h1>
           <p className="mt-2 text-muted-foreground">
-            Asigná una cuenta contable a cada código de línea del 1376. El motor suma los movimientos
-            de esa cuenta en el TXT del período y los lleva al código.
+            Asigná a cada código de línea del 1376 su código de IVA y su cuenta contable. El motor
+            junta los movimientos del TXT del período con los mismos dos criterios que el 2181:
           </p>
+          <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+            <li>
+              <strong className="text-foreground">Formato rápido</strong>
+              {' '}
+              (con código de IVA): suma la columna IVA de los movimientos con ese código.
+            </li>
+            <li>
+              <strong className="text-foreground">Asiento abierto</strong>
+              {' '}
+              (código de IVA 0): suma la columna Total de los movimientos donde la cuenta aparece del lado elegido.
+            </li>
+          </ul>
           <p className="mt-3 rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
             <strong className="text-foreground">Esto no es el plan de cuentas del 2181.</strong>
             {' '}
             Aquel mapea cada cuenta a un código PADI de IVA; este mapea cada código de línea del 1376
-            a una única cuenta contable, con su lado y su columna de importe.
+            a un código de IVA y una única cuenta contable, con su lado. El código de IVA es opcional:
+            sin él, la línea solo junta asientos abiertos.
           </p>
         </div>
 
@@ -141,8 +153,20 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
             return (
               <div
                 key={fila.codigoLinea}
-                className="grid grid-cols-[72px_1fr_1fr_140px_200px] items-end gap-3 rounded-md border border-border bg-muted/40 p-4"
+                className="grid grid-cols-[96px_72px_1fr_1fr_140px] items-end gap-3 rounded-md border border-border bg-muted/40 p-4"
               >
+                <div className="grid gap-1.5">
+                  <Label htmlFor={`codigo-iva-${fila.codigoLinea}`}>Código IVA</Label>
+                  <Input
+                    id={`codigo-iva-${fila.codigoLinea}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    className="h-[52px]"
+                    value={fila.codigoIva}
+                    onChange={e => updateFila(fila.codigoLinea, { codigoIva: e.target.value.replace(/\D/g, '') })}
+                  />
+                </div>
                 <div className="grid gap-1.5">
                   <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Código</span>
                   <span className="font-mono text-base">{fila.codigoLinea}</span>
@@ -176,23 +200,9 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
                     ))}
                   </select>
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={`columna-${fila.codigoLinea}`}>Columna de importe</Label>
-                  <select
-                    id={`columna-${fila.codigoLinea}`}
-                    className={cn(selectClassName, 'h-[52px]')}
-                    value={fila.columnaImporte}
-                    onChange={e => updateFila(fila.codigoLinea, { columnaImporte: e.target.value as ColumnaImporte | '' })}
-                  >
-                    <option value="">—</option>
-                    {COLUMNA_IMPORTE_OPCIONES.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
                 {incompleta && (
                   <span className="col-span-full text-sm text-error-text">
-                    Esta cuenta necesita también el lado y la columna de importe.
+                    Esta fila necesita también la cuenta contable y el lado.
                   </span>
                 )}
               </div>

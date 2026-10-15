@@ -14,7 +14,7 @@ const CATALOGO = [
 ];
 
 function fila(over: Partial<MapeoFila>): MapeoFila {
-  return { codigoLinea: '101', concepto: 'x', cuentaContable: '', lado: '', columnaImporte: '', ...over };
+  return { codigoIva: '', codigoLinea: '101', concepto: 'x', cuentaContable: '', lado: '', ...over };
 }
 
 describe('combinarCatalogoConAsignaciones', () => {
@@ -22,64 +22,72 @@ describe('combinarCatalogoConAsignaciones', () => {
     const filas = combinarCatalogoConAsignaciones(CATALOGO, []);
 
     expect(filas).toHaveLength(3);
-    expect(filas.every(f => f.cuentaContable === '' && f.lado === '' && f.columnaImporte === '')).toBe(true);
+    expect(filas.every(f => f.codigoIva === '' && f.cuentaContable === '' && f.lado === '')).toBe(true);
   });
 
-  it('precarga la cuenta, el lado y la columna de una asignación existente', () => {
+  it('precarga el código de IVA, la cuenta y el lado de una asignación existente', () => {
     const filas = combinarCatalogoConAsignaciones(CATALOGO, [
-      { codigoLinea: '502', cuentaContable: '21301', lado: 'haber', columnaImporte: 'iva' },
+      { codigoIva: 3, codigoLinea: '502', cuentaContable: '21301', lado: 'haber' },
     ]);
 
     expect(filas.find(f => f.codigoLinea === '502')).toEqual({
+      codigoIva: '3',
       codigoLinea: '502',
       concepto: 'Débito fiscal IVA ventas',
       cuentaContable: '21301',
       lado: 'haber',
-      columnaImporte: 'iva',
     });
   });
 
-  it('td-40: precarga la cuenta sugerida del plan de cuentas cuando no hay asignación guardada', () => {
+  it('deja el código de IVA vacío en una asignación guardada sin código', () => {
+    const filas = combinarCatalogoConAsignaciones(CATALOGO, [
+      { codigoIva: null, codigoLinea: '502', cuentaContable: '21301', lado: 'haber' },
+    ]);
+
+    expect(filas.find(f => f.codigoLinea === '502')?.codigoIva).toBe('');
+  });
+
+  it('td-40: precarga la cuenta y el código de IVA sugeridos del plan de cuentas cuando no hay asignación guardada', () => {
     const filas = combinarCatalogoConAsignaciones(CATALOGO, [], [
-      { codigoPadi: '101', cuentaContable: '41001' },
+      { codigoPadi: '101', cuentaContable: '41001', codigoIva: 2 },
     ]);
 
     expect(filas.find(f => f.codigoLinea === '101')).toEqual({
+      codigoIva: '2',
       codigoLinea: '101',
       concepto: 'Ventas gravadas tasa básica (22%)',
       cuentaContable: '41001',
       lado: '',
-      columnaImporte: '',
     });
   });
 
-  it('td-40: una asignación guardada gana sobre la sugerencia del plan de cuentas', () => {
+  it('td-40: una asignación guardada gana sobre la sugerencia del plan de cuentas, también en el código de IVA', () => {
     const filas = combinarCatalogoConAsignaciones(
       CATALOGO,
-      [{ codigoLinea: '101', cuentaContable: '41005', lado: 'debe', columnaImporte: 'total' }],
-      [{ codigoPadi: '101', cuentaContable: '41001' }],
+      [{ codigoIva: null, codigoLinea: '101', cuentaContable: '41005', lado: 'debe' }],
+      [{ codigoPadi: '101', cuentaContable: '41001', codigoIva: 2 }],
     );
 
     expect(filas.find(f => f.codigoLinea === '101')).toEqual({
+      codigoIva: '',
       codigoLinea: '101',
       concepto: 'Ventas gravadas tasa básica (22%)',
       cuentaContable: '41005',
       lado: 'debe',
-      columnaImporte: 'total',
     });
   });
 
   it('td-40: sin sugerencia que matchee, la fila queda vacía como antes', () => {
     const filas = combinarCatalogoConAsignaciones(CATALOGO, [], [
-      { codigoPadi: '999', cuentaContable: '41001' },
+      { codigoPadi: '999', cuentaContable: '41001', codigoIva: 2 },
     ]);
 
     expect(filas.find(f => f.codigoLinea === '101')).toEqual({
+      codigoIva: '',
       codigoLinea: '101',
       concepto: 'Ventas gravadas tasa básica (22%)',
       cuentaContable: '',
       lado: '',
-      columnaImporte: '',
     });
   });
 });
@@ -90,15 +98,19 @@ describe('filaIncompleta', () => {
   });
 
   it('es verdadera cuando hay cuenta pero falta el lado', () => {
-    expect(filaIncompleta(fila({ cuentaContable: '51001', columnaImporte: 'total' }))).toBe(true);
+    expect(filaIncompleta(fila({ cuentaContable: '51001' }))).toBe(true);
   });
 
-  it('es verdadera cuando hay cuenta pero falta la columna de importe', () => {
-    expect(filaIncompleta(fila({ cuentaContable: '51001', lado: 'haber' }))).toBe(true);
+  it('es verdadera cuando hay código de IVA pero falta la cuenta', () => {
+    expect(filaIncompleta(fila({ codigoIva: '2', lado: 'haber' }))).toBe(true);
   });
 
-  it('es falsa cuando la fila está completa', () => {
-    expect(filaIncompleta(fila({ cuentaContable: '51001', lado: 'haber', columnaImporte: 'total' }))).toBe(false);
+  it('es falsa con cuenta y lado, sin código de IVA (solo asientos abiertos)', () => {
+    expect(filaIncompleta(fila({ cuentaContable: '51001', lado: 'haber' }))).toBe(false);
+  });
+
+  it('es falsa cuando la fila está completa con código de IVA', () => {
+    expect(filaIncompleta(fila({ codigoIva: '2', cuentaContable: '51001', lado: 'haber' }))).toBe(false);
   });
 });
 
@@ -108,15 +120,23 @@ describe('validarMapeo', () => {
   });
 
   it('rechaza una fila con cuenta pero incompleta y nombra el código', () => {
-    const filas = [fila({ codigoLinea: '101', cuentaContable: '51001', lado: 'haber' })];
+    const filas = [fila({ codigoLinea: '101', cuentaContable: '51001' })];
 
     expect(validarMapeo(filas)).toContain('101');
   });
 
+  it.each(['0', '10', 'a', '2.5'])('rechaza el código de IVA inválido %s y nombra el código de línea', (codigoIva) => {
+    const filas = [fila({ codigoLinea: '101', codigoIva, cuentaContable: '51001', lado: 'haber' })];
+
+    const msg = validarMapeo(filas);
+    expect(msg).toContain('101');
+    expect(msg).toContain('código de IVA inválido');
+  });
+
   it('rechaza la misma cuenta en dos códigos (biyección) y nombra ambos', () => {
     const filas = [
-      fila({ codigoLinea: '501', cuentaContable: '21301', lado: 'debe', columnaImporte: 'iva' }),
-      fila({ codigoLinea: '502', cuentaContable: '21301', lado: 'haber', columnaImporte: 'iva' }),
+      fila({ codigoLinea: '501', cuentaContable: '21301', lado: 'debe' }),
+      fila({ codigoLinea: '502', cuentaContable: '21301', lado: 'haber' }),
     ];
 
     const msg = validarMapeo(filas);
@@ -125,10 +145,23 @@ describe('validarMapeo', () => {
     expect(msg).toContain('21301');
   });
 
-  it('acepta un mapeo válido con varias cuentas distintas', () => {
+  it('rechaza el mismo código de IVA en dos códigos y nombra ambos', () => {
     const filas = [
-      fila({ codigoLinea: '501', cuentaContable: '21301', lado: 'debe', columnaImporte: 'iva' }),
-      fila({ codigoLinea: '502', cuentaContable: '21302', lado: 'haber', columnaImporte: 'iva' }),
+      fila({ codigoLinea: '501', codigoIva: '2', cuentaContable: '21301', lado: 'debe' }),
+      fila({ codigoLinea: '502', codigoIva: '2', cuentaContable: '21302', lado: 'haber' }),
+    ];
+
+    const msg = validarMapeo(filas);
+    expect(msg).toContain('código de IVA 2');
+    expect(msg).toContain('501');
+    expect(msg).toContain('502');
+  });
+
+  it('acepta un mapeo válido con cuentas y códigos de IVA distintos, y filas sin código', () => {
+    const filas = [
+      fila({ codigoLinea: '501', codigoIva: '2', cuentaContable: '21301', lado: 'debe' }),
+      fila({ codigoLinea: '502', codigoIva: '3', cuentaContable: '21302', lado: 'haber' }),
+      fila({ codigoLinea: '101', cuentaContable: '41001', lado: 'haber' }),
     ];
 
     expect(validarMapeo(filas)).toBeNull();
@@ -136,24 +169,30 @@ describe('validarMapeo', () => {
 });
 
 describe('construirFilasParaGuardar', () => {
-  it('omite las filas sin cuenta y devuelve solo las completas en snake_case', () => {
+  it('omite las filas vacías y devuelve solo las completas en snake_case', () => {
     const filas = [
-      fila({ codigoLinea: '101', cuentaContable: '51001', lado: 'haber', columnaImporte: 'total' }),
-      fila({ codigoLinea: '201', cuentaContable: '', lado: '', columnaImporte: '' }),
+      fila({ codigoLinea: '101', codigoIva: '2', cuentaContable: '51001', lado: 'haber' }),
+      fila({ codigoLinea: '201' }),
     ];
 
     expect(construirFilasParaGuardar(filas)).toEqual([
-      { codigo_linea: '101', cuenta_contable: '51001', lado: 'haber', columna_importe: 'total' },
+      { codigo_iva: '2', codigo_linea: '101', cuenta_contable: '51001', lado: 'haber' },
     ]);
   });
 
-  it('devuelve un array vacío cuando ninguna fila tiene cuenta', () => {
+  it('manda el código de IVA en null cuando la fila no lo tiene', () => {
+    const filas = [fila({ codigoLinea: '101', cuentaContable: '51001', lado: 'haber' })];
+
+    expect(construirFilasParaGuardar(filas)[0].codigo_iva).toBeNull();
+  });
+
+  it('devuelve un array vacío cuando ninguna fila tiene datos', () => {
     expect(construirFilasParaGuardar(combinarCatalogoConAsignaciones(CATALOGO, []))).toEqual([]);
   });
 
-  it('recorta espacios de la cuenta contable', () => {
-    const filas = [fila({ codigoLinea: '101', cuentaContable: '  51001 ', lado: 'debe', columnaImporte: 'total' })];
+  it('recorta espacios de la cuenta contable y del código de IVA', () => {
+    const filas = [fila({ codigoLinea: '101', codigoIva: ' 2 ', cuentaContable: '  51001 ', lado: 'debe' })];
 
-    expect(construirFilasParaGuardar(filas)[0].cuenta_contable).toBe('51001');
+    expect(construirFilasParaGuardar(filas)[0]).toMatchObject({ codigo_iva: '2', cuenta_contable: '51001' });
   });
 });

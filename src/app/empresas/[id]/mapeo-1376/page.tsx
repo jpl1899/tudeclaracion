@@ -1,4 +1,4 @@
-import type { ColumnaImporte, LadoMapeo } from '@/modules/mapeo-1376/mapeo-1376';
+import type { LadoMapeo } from '@/modules/mapeo-1376/mapeo-1376';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 import { combinarCatalogoConAsignaciones } from '@/modules/mapeo-1376/mapeo-1376';
@@ -56,7 +56,7 @@ export default async function Mapeo1376Page({ params }: { params: Promise<{ id: 
 
   const { data: asignaciones, error: asignacionesError } = await supabase
     .from('mapeo_1376')
-    .select('codigo_linea, cuenta_contable, lado, columna_importe')
+    .select('codigo_iva, codigo_linea, cuenta_contable, lado')
     .eq('empresa_id', id);
 
   if (asignacionesError) {
@@ -65,7 +65,7 @@ export default async function Mapeo1376Page({ params }: { params: Promise<{ id: 
 
   const { data: planCuentas, error: planCuentasError } = await supabase
     .from('plan_cuentas')
-    .select('cuenta_contable, codigo_padi')
+    .select('cuenta_contable, codigo_padi, codigo_iva')
     .eq('empresa_id', id)
     .eq('declaracion', '1376');
 
@@ -76,14 +76,15 @@ export default async function Mapeo1376Page({ params }: { params: Promise<{ id: 
   const filasIniciales = combinarCatalogoConAsignaciones(
     catalogo ?? [],
     (asignaciones ?? []).map(a => ({
+      codigoIva: a.codigo_iva,
       codigoLinea: a.codigo_linea,
       cuentaContable: a.cuenta_contable,
       lado: a.lado as LadoMapeo,
-      columnaImporte: a.columna_importe as ColumnaImporte,
     })),
     (planCuentas ?? []).map(p => ({
       codigoPadi: p.codigo_padi,
       cuentaContable: p.cuenta_contable,
+      codigoIva: p.codigo_iva,
     })),
   );
 

@@ -367,8 +367,8 @@ export type Database = {
       }
       mapeo_1376: {
         Row: {
+          codigo_iva: number | null
           codigo_linea: string
-          columna_importe: string
           created_at: string
           cuenta_contable: string
           empresa_id: string
@@ -376,8 +376,8 @@ export type Database = {
           lado: string
         }
         Insert: {
+          codigo_iva?: number | null
           codigo_linea: string
-          columna_importe: string
           created_at?: string
           cuenta_contable: string
           empresa_id: string
@@ -385,8 +385,8 @@ export type Database = {
           lado: string
         }
         Update: {
+          codigo_iva?: number | null
           codigo_linea?: string
-          columna_importe?: string
           created_at?: string
           cuenta_contable?: string
           empresa_id?: string

@@ -5,13 +5,13 @@
 ## Modelo de agregación (confirmado)
 
 - El contador configura, **por empresa**, una matriz de mapeo biyectiva (TD-38): **un código de línea 1376 ↔ una única cuenta contable**. Cada fila lleva además:
+  - **código de IVA** (opcional): el código de formato rápido de Memory Conty.
   - **lado**: Debe o Haber.
-  - **columna de importe**: `Total` o `IVA` — de qué columna del TXT sale el saldo de esa cuenta.
-- Regla de la columna de importe: depende del **formato del asiento**, no del tipo de línea.
-  - Asiento **abierto** (multilínea, una cuenta por línea) → `Total`.
-  - **Formato rápido** de Memory Conty (asiento colapsado, IVA en su columna dedicada) → `IVA`.
-  - El contador elige el valor correcto por fila al armar el mapeo.
-- Por cada cuenta mapeada: se juntan sus movimientos del período en el TXT, se toma el importe de la columna configurada y se hace la **suma simple con signo** (positivos y negativos juntos — devoluciones / notas de crédito entran como importes negativos).
+- **Mismos dos criterios que el 2181, por movimiento** (ADR-0010, 2026-10-15 — reemplaza la "columna de importe por fila" del 2026-09-01):
+  - **Formato rápido** de Memory Conty (Código IVA > 0) → el movimiento entra si su Código IVA es el de la fila, y se toma la columna `IVA`.
+  - Asiento **abierto** (Código IVA = 0) → el movimiento entra si la cuenta de la fila aparece del lado configurado, y se toma la columna `Total`.
+  - Una misma línea recibe los dos formatos en el mismo período. El formato de cada movimiento decide por qué criterio entra, así que nunca se cuenta dos veces.
+- Por cada fila: se juntan los movimientos de los dos criterios y se hace la **suma simple con signo** (positivos y negativos juntos — devoluciones / notas de crédito entran como importes negativos).
 - Cada código de línea acumula el saldo de su única cuenta mapeada (biyección → no hay suma de varias cuentas por código).
 - **Conversión de moneda**: para movimientos en dólares (`Moneda = 1`), misma conversión por cotización que el 2181.
 - **Redondeo**: mismo criterio que el 2181 (2 decimales, mitad hacia abajo).

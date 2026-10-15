@@ -1,5 +1,5 @@
 import type { Revision1376 } from './revision-1376-client';
-import type { ColumnaImporte, LadoMapeo } from '@/modules/mapeo-1376/mapeo-1376';
+import type { LadoMapeo } from '@/modules/mapeo-1376/mapeo-1376';
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -60,7 +60,7 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
       .eq('declaracion_id', declaracion.id),
     supabase
       .from('mapeo_1376')
-      .select('codigo_linea, cuenta_contable, lado, columna_importe')
+      .select('codigo_iva, codigo_linea, cuenta_contable, lado')
       .eq('empresa_id', empresaId),
     supabase
       .from('plan_cuentas')
@@ -100,10 +100,10 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
   }
 
   const mapeo = mapeoRes.data.map(fila => ({
+    codigoIva: fila.codigo_iva,
     codigoLinea: fila.codigo_linea,
     cuentaContable: fila.cuenta_contable,
     lado: fila.lado as LadoMapeo,
-    columnaImporte: fila.columna_importe as ColumnaImporte,
   }));
 
   const conceptoPorCodigo = new Map(catalogoRes.data.map(linea => [linea.codigo, linea.concepto]));

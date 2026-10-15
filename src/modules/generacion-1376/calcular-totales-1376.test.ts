@@ -23,55 +23,116 @@ function asiento(overrides: Partial<AsientoLine> = {}): AsientoLine {
 
 function fila(overrides: Partial<MapeoAsignacionInicial> = {}): MapeoAsignacionInicial {
   return {
+    codigoIva: null,
     codigoLinea: '101',
     cuentaContable: '5215',
     lado: 'debe',
-    columnaImporte: 'total',
     ...overrides,
   };
 }
 
 describe('calcularTotalesLinea1376', () => {
-  it('sums the Total column for a cuenta mapped on the Debe side', () => {
-    const asientos = [asiento({ debe: '5215', total: 1000 }), asiento({ debe: '5215', total: 500 })];
-    const mapeo = [fila({ cuentaContable: '5215', lado: 'debe', columnaImporte: 'total' })];
+  describe('asiento abierto (Código IVA = 0)', () => {
+    it('sums the Total column for a cuenta mapped on the Debe side', () => {
+      const asientos = [asiento({ debe: '5215', total: 1000 }), asiento({ debe: '5215', total: 500 })];
+      const mapeo = [fila({ cuentaContable: '5215', lado: 'debe' })];
 
-    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 1500 }]);
+      expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 1500 }]);
+    });
+
+    it('sums the Total column for a cuenta mapped on the Haber side', () => {
+      const asientos = [asiento({ debe: '', haber: '2131', total: 180, iva: 99 })];
+      const mapeo = [fila({ cuentaContable: '2131', lado: 'haber' })];
+
+      expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 180 }]);
+    });
+
+    it('ignores the cuenta when it sits on the other side', () => {
+      const asientos = [asiento({ debe: '11111', haber: '5215', total: 1000 })];
+      const mapeo = [fila({ cuentaContable: '5215', lado: 'debe' })];
+
+      expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([]);
+    });
   });
 
-  it('sums the IVA column for a cuenta mapped on the Haber side', () => {
-    const asientos = [asiento({ debe: '', haber: '2131', iva: 180 })];
-    const mapeo = [fila({ cuentaContable: '2131', lado: 'haber', columnaImporte: 'iva' })];
+  describe('formato rápido (Código IVA > 0)', () => {
+    it('sums the IVA column of movements whose Código IVA matches the row', () => {
+      const asientos = [
+        asiento({ codigoIva: 2, debe: '11111', haber: '41001', total: 1220, iva: 220 }),
+        asiento({ codigoIva: 2, debe: '11111', haber: '41001', total: 610, iva: 110 }),
+      ];
+      const mapeo = [fila({ codigoIva: 2, cuentaContable: '2131', lado: 'haber' })];
 
-    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 180 }]);
+      expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 330 }]);
+    });
+
+    it('ignores a movement with another Código IVA', () => {
+      const asientos = [asiento({ codigoIva: 3, iva: 100 })];
+      const mapeo = [fila({ codigoIva: 2 })];
+
+      expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([]);
+    });
+
+    it('does not match a formato rápido movement by account, even when the cuenta is on the row side', () => {
+      const asientos = [asiento({ codigoIva: 3, debe: '5215', total: 1000, iva: 220 })];
+      const mapeo = [fila({ codigoIva: null, cuentaContable: '5215', lado: 'debe' })];
+
+      expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([]);
+    });
   });
 
-  it('converts a USD movement using the cotización, same as the 2181', () => {
-    const asientos = [asiento({ debe: '5215', total: 100, moneda: 1, cotizacion: 40 })];
-    const mapeo = [fila({ cuentaContable: '5215', lado: 'debe', columnaImporte: 'total' })];
+  it('combines both formats in the same row, counting each movement once', () => {
+    const asientos = [
+      asiento({ codigoIva: 2, debe: '11111', haber: '2131', total: 1220, iva: 220 }),
+      asiento({ codigoIva: 0, debe: '11111', haber: '2131', total: 110, iva: 0 }),
+    ];
+    const mapeo = [fila({ codigoIva: 2, cuentaContable: '2131', lado: 'haber' })];
 
-    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 4000 }]);
+    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 330 }]);
   });
 
-  it('nets a nota de crédito (negative importe) with simple sum, allowing a negative result', () => {
-    const asientos = [asiento({ debe: '5215', total: 300 }), asiento({ debe: '5215', total: -500 })];
-    const mapeo = [fila({ cuentaContable: '5215', lado: 'debe', columnaImporte: 'total' })];
+  it('nets notas de crédito in both formats with a simple signed sum', () => {
+    const asientos = [
+      asiento({ codigoIva: 2, iva: 220 }),
+      asiento({ codigoIva: 2, iva: -50 }),
+      asiento({ codigoIva: 0, debe: '5215', total: 100 }),
+      asiento({ codigoIva: 0, debe: '5215', total: -400 }),
+    ];
+    const mapeo = [fila({ codigoIva: 2, cuentaContable: '5215', lado: 'debe' })];
 
-    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: -200 }]);
+    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: -130 }]);
   });
 
-  it('omits a código whose mapped cuenta has no movement in the period', () => {
+  it('converts USD movements using the cotización in both formats, same as the 2181', () => {
+    const asientos = [
+      asiento({ codigoIva: 0, debe: '5215', total: 100, moneda: 1, cotizacion: 40 }),
+      asiento({ codigoIva: 2, iva: 10, moneda: 1, cotizacion: 40 }),
+    ];
+    const mapeo = [fila({ codigoIva: 2, cuentaContable: '5215', lado: 'debe' })];
+
+    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([{ codigoLinea: '101', importe: 4400 }]);
+  });
+
+  it('keeps a row whose movements net to zero', () => {
+    const asientos = [asiento({ debe: '5215', total: 300 }), asiento({ debe: '5215', total: -300 })];
+
+    expect(calcularTotalesLinea1376(asientos, [fila()])).toEqual([{ codigoLinea: '101', importe: 0 }]);
+  });
+
+  it('omits a código with no movement in the period', () => {
     const asientos = [asiento({ debe: '9999', total: 1000 })];
-    const mapeo = [fila({ cuentaContable: '5215', lado: 'debe', columnaImporte: 'total' })];
 
-    expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([]);
+    expect(calcularTotalesLinea1376(asientos, [fila({ codigoIva: 2 })])).toEqual([]);
   });
 
   it('keeps two independently mapped códigos isolated from each other', () => {
-    const asientos = [asiento({ debe: '5215', total: 1000 }), asiento({ debe: '', haber: '2131', total: 300 })];
+    const asientos = [
+      asiento({ debe: '5215', total: 1000 }),
+      asiento({ codigoIva: 3, debe: '', haber: '2131', iva: 300 }),
+    ];
     const mapeo = [
-      fila({ codigoLinea: '101', cuentaContable: '5215', lado: 'debe', columnaImporte: 'total' }),
-      fila({ codigoLinea: '502', cuentaContable: '2131', lado: 'haber', columnaImporte: 'total' }),
+      fila({ codigoLinea: '101', codigoIva: 2, cuentaContable: '5215', lado: 'debe' }),
+      fila({ codigoLinea: '502', codigoIva: 3, cuentaContable: '2131', lado: 'haber' }),
     ];
 
     expect(calcularTotalesLinea1376(asientos, mapeo)).toEqual([

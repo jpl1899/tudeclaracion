@@ -70,6 +70,7 @@ Who authors: a human architect directly, **or** an AI workflow that detected an 
 | [ADR-0007](./ADR-0007-plan-cuentas-declaration-per-account.md) | Cada fila de plan_cuentas pertenece a una sola declaración (2181 o 1376); cada motor lee solo las suyas | Accepted | — | — |
 | [ADR-0008](./ADR-0008-rut-required-only-for-2181-lines.md) | El RUT se exige solo en los asientos que resuelve el 2181; el 1376 no lo usa | Accepted | — | — |
 | [ADR-0009](./ADR-0009-1376-reads-columns-by-header.md) | La importación del 1376 lee las columnas por el título del encabezado; el 2181 sigue por posición | Accepted | — | — |
+| [ADR-0010](./ADR-0010-1376-uses-both-2181-criteria.md) | El motor del 1376 aplica los dos criterios del 2181: código de IVA en formato rápido, cuenta en asiento abierto | Accepted | — | — |
 
 > Keep this table in sync whenever an ADR is added or its status changes. It is the fast index every session reads first.
 
