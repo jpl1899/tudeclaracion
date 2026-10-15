@@ -1,13 +1,16 @@
 /**
  * Motor de cálculo del Formulario 1376 — TD-41.
  *
- * Modelo confirmado con la contadora (`.context/Tax-rules/1376/formulas.md`,
- * 2026-09-01): por cada código de línea con cuenta mapeada (TD-38, relación
- * biyectiva), se juntan los asientos del período donde esa cuenta aparece del
- * lado configurado (Debe/Haber), se toma el importe de la columna configurada
- * (Total/IVA) y se suma con signo (las notas de crédito entran negativas). Un
- * código sin ningún asiento que lo toque no aparece en el resultado. Sin
- * apertura por RUT (a diferencia del 2181) y sin redondeo final a entero —
+ * Modelo confirmado con la contadora (`.context/Tax-rules/1376/formulas.md`):
+ * por cada código de línea mapeado (TD-38, relación biyectiva) se juntan los
+ * movimientos del período con los dos criterios del 2181 (ADR-0010):
+ * - Formato rápido (Código IVA > 0): el Código IVA es el de la fila → columna IVA.
+ * - Asiento abierto (Código IVA = 0): la cuenta de la fila aparece del lado
+ *   configurado (Debe/Haber) → columna Total.
+ * El formato de cada movimiento decide el criterio, así que ninguno se cuenta
+ * dos veces. Todo se suma con signo (las notas de crédito entran negativas).
+ * Un código sin ningún movimiento que lo toque no aparece en el resultado.
+ * Sin apertura por RUT (a diferencia del 2181) y sin redondeo final a entero —
  * eso es responsabilidad del exportador (TD-44), igual que en el 2181
  * `consolidarLineasDeclaracion` vs `generarArchivoPadi`.
  */
@@ -25,6 +28,14 @@ function cuentaDelLado(asiento: AsientoLine, lado: MapeoAsignacionInicial['lado'
   return lado === 'debe' ? asiento.debe : asiento.haber;
 }
 
+/** Importe con el que un movimiento alimenta la fila, o `null` si no la toca. */
+function importeDelMovimiento(asiento: AsientoLine, fila: MapeoAsignacionInicial): number | null {
+  if (asiento.codigoIva > 0) {
+    return asiento.codigoIva === fila.codigoIva ? asiento.iva : null;
+  }
+  return cuentaDelLado(asiento, fila.lado) === fila.cuentaContable ? asiento.total : null;
+}
+
 export function calcularTotalesLinea1376(
   asientos: AsientoLine[],
   mapeo: MapeoAsignacionInicial[],
@@ -32,17 +43,20 @@ export function calcularTotalesLinea1376(
   const totales: TotalLinea1376[] = [];
 
   for (const fila of mapeo) {
-    const movimientos = asientos.filter(asiento => cuentaDelLado(asiento, fila.lado) === fila.cuentaContable);
-    if (movimientos.length === 0) {
-      continue;
+    let tocada = false;
+    let importe = 0;
+    for (const asiento of asientos) {
+      const importeBruto = importeDelMovimiento(asiento, fila);
+      if (importeBruto === null) {
+        continue;
+      }
+      tocada = true;
+      importe += convertirImporte(importeBruto, asiento);
     }
 
-    const importe = movimientos.reduce((acumulado, asiento) => {
-      const importeBruto = fila.columnaImporte === 'total' ? asiento.total : asiento.iva;
-      return acumulado + convertirImporte(importeBruto, asiento);
-    }, 0);
-
-    totales.push({ codigoLinea: fila.codigoLinea, importe });
+    if (tocada) {
+      totales.push({ codigoLinea: fila.codigoLinea, importe });
+    }
   }
 
   return totales;
