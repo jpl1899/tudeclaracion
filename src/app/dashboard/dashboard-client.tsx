@@ -239,6 +239,9 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
       p_reemplazar: opciones.reemplazar,
     });
 
+    if (error?.message === 'demasiadas_lineas') {
+      return { kind: 'guardado', message: 'El archivo supera el máximo de 20.000 líneas por período.' };
+    }
     if (error) {
       return { kind: 'guardado', message: 'No se pudo guardar el archivo. Intentá nuevamente en unos minutos.' };
     }

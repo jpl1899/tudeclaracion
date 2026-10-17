@@ -85,6 +85,8 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: desde una cuenta de prueba en staging, llamar el RPC vía `supabase.rpc(...)` con un array de, por ejemplo, 50.000 elementos sintéticos y medir tiempo de respuesta / verificar que no tira la conexión para otros usuarios. No correr contra producción.
 
+**✅ Resuelto 2026-10-17**: la migración `20261017120000_limitar_tamano_payload_rpcs.sql` agrega un chequeo `jsonb_array_length` al inicio de los 4 RPCs de escritura masiva, antes de tocar ninguna tabla: `insertar_asientos` > 20.000 líneas (`demasiadas_lineas`), `crear_empresa_con_plan_cuentas` y `editar_empresa_con_plan_cuentas` > 2.000 cuentas (`demasiadas_cuentas`), `guardar_mapeo_1376` > 500 filas (`demasiadas_filas`). El TXT real más grande visto tiene 2.455 líneas. El importador muestra un mensaje específico ante `demasiadas_lineas`. Validado contra la DB viva dentro de una transacción revertida: cada RPC rechaza el array por encima del límite y por debajo sigue su camino normal.
+
 ---
 
 ## 5. `cotizacion_bcu_cache` sin aislamiento por tenant
@@ -205,6 +207,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 2. ~~Fix del open redirect (ítem 2)~~ — ✅ 2026-10-02.
 3. ~~Verificar RLS de `empresa` contra la DB viva (ítem 8)~~ — ✅ verificado y versionado 2026-10-02.
 4. ~~Headers de seguridad básicos (ítem 3)~~ — ✅ 2026-10-02 (queda el CSP completo).
-5. El resto (4, 5, 6, 7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
+5. ~~Límite de tamaño en RPCs (ítem 4)~~ — ✅ 2026-10-17.
+6. El resto (6, 7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
 
 Este documento se actualiza in-place a medida que se cierran ítems (marcarlos como resueltos con fecha, no borrarlos — sirve como historial de qué se atendió y cuándo).
