@@ -8,6 +8,11 @@
  * cuando es relevante, tuvo movimiento en el período (Debe o Haber) y no está
  * asignada a ningún código en `mapeo_1376` — su importe no entra en ningún
  * total calculado por TD-41.
+ *
+ * Desde ADR-0010 el motor resuelve cada movimiento por su formato: los
+ * asientos abiertos (Código IVA 0) por cuenta y los de formato rápido por
+ * Código IVA. Por eso solo los asientos abiertos cuentan como movimiento de
+ * una cuenta, y los de formato rápido se revisan aparte por Código IVA.
  */
 
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
@@ -29,6 +34,11 @@ export interface DetectarCuentasSinMapearInput {
   cuentasMapeadas: string[]
 }
 
+export interface DetectarCodigosIvaSinMapearInput {
+  asientos: AsientoLine[]
+  codigosIvaMapeados: number[]
+}
+
 export function detectarCuentasSinMapear({
   asientos,
   planCuentas,
@@ -37,7 +47,9 @@ export function detectarCuentasSinMapear({
 }: DetectarCuentasSinMapearInput): CuentaSinMapear[] {
   const codigos = new Set(codigosLinea);
   const mapeadas = new Set(cuentasMapeadas);
-  const conMovimiento = new Set(asientos.flatMap(asiento => [asiento.debe, asiento.haber]));
+  const conMovimiento = new Set(asientos
+    .filter(asiento => asiento.codigoIva === 0)
+    .flatMap(asiento => [asiento.debe, asiento.haber]));
 
   return planCuentas
     .filter(cuenta =>
@@ -46,4 +58,17 @@ export function detectarCuentasSinMapear({
       && !mapeadas.has(cuenta.cuentaContable))
     .map(cuenta => ({ cuentaContable: cuenta.cuentaContable, codigoLinea: cuenta.codigoPadi }))
     .sort((a, b) => a.cuentaContable.localeCompare(b.cuentaContable));
+}
+
+/** Códigos IVA de formato rápido con movimiento que ninguna fila del mapeo junta. */
+export function detectarCodigosIvaSinMapear({
+  asientos,
+  codigosIvaMapeados,
+}: DetectarCodigosIvaSinMapearInput): number[] {
+  const mapeados = new Set(codigosIvaMapeados);
+  const conMovimiento = new Set(asientos
+    .map(asiento => asiento.codigoIva)
+    .filter(codigo => codigo > 0 && !mapeados.has(codigo)));
+
+  return [...conMovimiento].sort((a, b) => a - b);
 }

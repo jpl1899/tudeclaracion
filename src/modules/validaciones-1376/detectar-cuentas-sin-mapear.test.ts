@@ -1,6 +1,6 @@
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
 import { describe, expect, it } from 'vitest';
-import { detectarCuentasSinMapear } from './detectar-cuentas-sin-mapear';
+import { detectarCodigosIvaSinMapear, detectarCuentasSinMapear } from './detectar-cuentas-sin-mapear';
 
 function asiento(overrides: Partial<AsientoLine> = {}): AsientoLine {
   return {
@@ -93,5 +93,54 @@ describe('detectarCuentasSinMapear', () => {
       { cuentaContable: '2131', codigoLinea: '102' },
       { cuentaContable: '5215', codigoLinea: '101' },
     ]);
+  });
+
+  it('ignores accounts that only move in formato rápido asientos (resolved by Código IVA, ADR-0010)', () => {
+    const resultado = detectarCuentasSinMapear({
+      asientos: [asiento({ debe: '5215', codigoIva: 1, iva: 220 })],
+      planCuentas: [{ cuentaContable: '5215', codigoPadi: '101' }],
+      codigosLinea,
+      cuentasMapeadas: [],
+    });
+
+    expect(resultado).toEqual([]);
+  });
+});
+
+describe('detectarCodigosIvaSinMapear', () => {
+  it('flags a formato rápido Código IVA with movement that no mapping row claims', () => {
+    const resultado = detectarCodigosIvaSinMapear({
+      asientos: [asiento({ codigoIva: 3, iva: 100 })],
+      codigosIvaMapeados: [1],
+    });
+
+    expect(resultado).toEqual([3]);
+  });
+
+  it('returns nothing when every Código IVA with movement is mapped', () => {
+    const resultado = detectarCodigosIvaSinMapear({
+      asientos: [asiento({ codigoIva: 1, iva: 220 })],
+      codigosIvaMapeados: [1],
+    });
+
+    expect(resultado).toEqual([]);
+  });
+
+  it('ignores asientos abiertos (Código IVA 0)', () => {
+    const resultado = detectarCodigosIvaSinMapear({
+      asientos: [asiento({ codigoIva: 0 })],
+      codigosIvaMapeados: [],
+    });
+
+    expect(resultado).toEqual([]);
+  });
+
+  it('lists each unmapped Código IVA once, sorted', () => {
+    const resultado = detectarCodigosIvaSinMapear({
+      asientos: [asiento({ codigoIva: 5 }), asiento({ codigoIva: 2 }), asiento({ codigoIva: 5 })],
+      codigosIvaMapeados: [],
+    });
+
+    expect(resultado).toEqual([2, 5]);
   });
 });

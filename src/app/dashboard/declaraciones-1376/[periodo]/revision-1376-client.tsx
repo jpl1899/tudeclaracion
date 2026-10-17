@@ -24,7 +24,7 @@ export interface TotalRevision1376 {
 export type Revision1376
   = | { tipo: 'sin-datos' }
     | { tipo: 'error' }
-    | { tipo: 'resultado', estado: string, totales: TotalRevision1376[], cuentasSinMapear: CuentaSinMapear[] };
+    | { tipo: 'resultado', estado: string, totales: TotalRevision1376[], cuentasSinMapear: CuentaSinMapear[], codigosIvaSinMapear: number[] };
 
 interface Revision1376ClientProps {
   empresaId: string
@@ -35,6 +35,15 @@ interface Revision1376ClientProps {
 
 function nombreArchivo(periodo: string) {
   return `1376_${periodo}.txt`;
+}
+
+/** "2 cuentas y 1 código de IVA", omitiendo la parte que esté vacía. */
+function describirSinMapear(cuentas: number, codigosIva: number) {
+  const partes = [
+    cuentas === 0 ? '' : `${cuentas} ${cuentas === 1 ? 'cuenta' : 'cuentas'}`,
+    codigosIva === 0 ? '' : `${codigosIva} ${codigosIva === 1 ? 'código de IVA' : 'códigos de IVA'}`,
+  ];
+  return partes.filter(Boolean).join(' y ');
 }
 
 function formatearImporte(importe: number) {
@@ -48,8 +57,8 @@ function formatearImporte(importe: number) {
  *
  * TD-44: el botón descarga el archivo PADI (mismo patrón Blob que el 2181)
  * y deja el 1376 en `generada`. Habilitado con resultado limpio o advertencia
- * reconocida; bloqueado mientras la advertencia de cuentas sin mapear no se
- * reconozca.
+ * reconocida; bloqueado mientras la advertencia de cuentas o códigos de IVA
+ * sin mapear no se reconozca.
  */
 export function Revision1376Client({ empresaId, empresaNombre, periodo, revision }: Revision1376ClientProps) {
   const [advertenciaReconocida, setAdvertenciaReconocida] = useState(false);
@@ -57,7 +66,8 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
   const [estadoActual, setEstadoActual] = useState(revision.tipo === 'resultado' ? revision.estado : '');
   const [errorEstado, setErrorEstado] = useState(false);
 
-  const conAdvertencia = revision.tipo === 'resultado' && revision.cuentasSinMapear.length > 0;
+  const conAdvertencia = revision.tipo === 'resultado'
+    && (revision.cuentasSinMapear.length > 0 || revision.codigosIvaSinMapear.length > 0);
   const sinTotales = revision.tipo === 'resultado' && revision.totales.length === 0;
   const puedeDescargar = revision.tipo === 'resultado' && !sinTotales && (!conAdvertencia || advertenciaReconocida) && !descargando;
 
@@ -161,17 +171,20 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
                   className="grid gap-2 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-warning-text"
                 >
                   <p className="font-semibold">
-                    {revision.cuentasSinMapear.length === 1
-                      ? 'Hay 1 cuenta con movimiento que no está mapeada a ningún código del 1376.'
-                      : `Hay ${revision.cuentasSinMapear.length} cuentas con movimiento que no están mapeadas a ningún código del 1376.`}
+                    {`Hay ${describirSinMapear(revision.cuentasSinMapear.length, revision.codigosIvaSinMapear.length)} con movimiento sin mapear a ningún código del 1376.`}
                   </p>
                   <p className="text-sm">
-                    Su importe no está incluido en los totales. Si corresponde, asignala en el mapeo del 1376 de la empresa.
+                    Su importe no está incluido en los totales. Si corresponde, asignalo en el mapeo del 1376 de la empresa.
                   </p>
                   <ul className="grid gap-1 pl-4 text-sm">
                     {revision.cuentasSinMapear.map(cuenta => (
                       <li key={cuenta.cuentaContable} className="list-disc">
                         {`Cuenta ${cuenta.cuentaContable} (código PADI ${cuenta.codigoLinea} en el plan de cuentas)`}
+                      </li>
+                    ))}
+                    {revision.codigosIvaSinMapear.map(codigo => (
+                      <li key={`iva-${codigo}`} data-testid="revision_1376_codigo_iva_sin_mapear" className="list-disc">
+                        {`Código de IVA ${codigo} (asientos en formato rápido)`}
                       </li>
                     ))}
                   </ul>
@@ -181,7 +194,7 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
                       checked={advertenciaReconocida}
                       onCheckedChange={checked => setAdvertenciaReconocida(checked === true)}
                     />
-                    Revisé estas cuentas y quiero continuar igual
+                    Revisé estos movimientos y quiero continuar igual
                   </label>
                 </div>
               )}
