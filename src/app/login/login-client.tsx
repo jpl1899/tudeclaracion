@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
+import { turnstileEnabled, TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,8 @@ function authErrorMessage(code: string | undefined): string {
       return 'El correo o la contraseña no son correctos.';
     case 'email_not_confirmed':
       return 'Todavía no confirmaste tu correo. Revisá tu bandeja de entrada.';
+    case 'captcha_failed':
+      return 'No pudimos completar la verificación de seguridad. Intentá nuevamente.';
     case 'over_request_rate_limit':
       return 'Hiciste demasiados intentos. Esperá unos minutos y volvé a intentar.';
     default:
@@ -39,7 +42,10 @@ export function LoginClient({ googleAuthFailed }: { googleAuthFailed: boolean })
   const [touched, setTouched] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
 
+  const captchaReady = !turnstileEnabled || captchaToken !== null;
   const isValid = email.trim() !== '' && password.trim() !== '';
   const showValidationError = touched && !isValid;
   const showError = showValidationError || authError !== null;
@@ -54,10 +60,16 @@ export function LoginClient({ googleAuthFailed }: { googleAuthFailed: boolean })
 
     setIsSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken: captchaToken ?? undefined },
+    });
     setIsSubmitting(false);
 
     if (error) {
+      setCaptchaToken(null);
+      setCaptchaKey(key => key + 1);
       console.error('[login] signInWithPassword failed:', error);
       setAuthError(authErrorMessage(error.code));
       return;
@@ -146,7 +158,9 @@ export function LoginClient({ googleAuthFailed }: { googleAuthFailed: boolean })
             </a>
           </div>
 
-          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+          <TurnstileWidget key={captchaKey} onToken={setCaptchaToken} />
+
+          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting || !captchaReady}>
             {isSubmitting ? 'Ingresando…' : 'Entrar al sistema'}
           </Button>
 
