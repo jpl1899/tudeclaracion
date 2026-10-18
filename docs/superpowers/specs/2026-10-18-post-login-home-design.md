@@ -74,7 +74,7 @@ New `UserMenu` client component. Trigger: circle with initials (first letter of 
 +---------------------------+
 ```
 
-**Placement**: top-right of `/inicio`, `/empresas` and `/cuenta`; inside `DashboardShell` for every `/dashboard` screen. The component receives `{ nombre, email }` from the server page; no client-side fetch.
+**Placement**: top-right of `/inicio`, `/empresas` and `/cuenta`; inside `DashboardShell` for every `/dashboard` screen. `DashboardShell` is rendered by client components (`dashboard-client`, `revision-1376-client`, `declaracion-detalle-client`), so the menu loads `{ nombre, email }` itself with the browser Supabase client (`auth.getUser()` + `cuenta.nombre`, RLS-scoped) instead of threading props through every page. While loading, the trigger shows the `User` icon.
 
 **Salir**: a Server Action that calls `supabase.auth.signOut()`, deletes `EMPRESA_ACTIVA_COOKIE` (so the next person on the same machine does not inherit it) and redirects to `/login`. On a sign-out error it still clears the cookie and redirects (the session cookie is gone client-side either way); the error is logged.
 
