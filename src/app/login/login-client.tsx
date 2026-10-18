@@ -9,6 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 
+// Supabase Auth messages are English and implementation-specific; the user
+// only sees a fixed Spanish message chosen by the stable error code.
+function authErrorMessage(code: string | undefined): string {
+  switch (code) {
+    case 'invalid_credentials':
+      return 'El correo o la contraseña no son correctos.';
+    case 'email_not_confirmed':
+      return 'Todavía no confirmaste tu correo. Revisá tu bandeja de entrada.';
+    case 'over_request_rate_limit':
+      return 'Hiciste demasiados intentos. Esperá unos minutos y volvé a intentar.';
+    default:
+      return 'No se pudo iniciar sesión. Intentá nuevamente en unos minutos.';
+  }
+}
+
 /**
  * Acceso (login) — .context/design/master-design-plan.md §4.2, mockup en
  * .context/designs/tudeclaracion/mvp-core-screens/login.html
@@ -43,7 +58,8 @@ export function LoginClient({ googleAuthFailed }: { googleAuthFailed: boolean })
     setIsSubmitting(false);
 
     if (error) {
-      setAuthError(error.message);
+      console.error('[login] signInWithPassword failed:', error);
+      setAuthError(authErrorMessage(error.code));
       return;
     }
 

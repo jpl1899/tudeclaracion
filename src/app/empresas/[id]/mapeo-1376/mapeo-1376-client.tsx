@@ -33,6 +33,8 @@ const selectClassName = cn(
 
 type SaveState = 'idle' | 'success' | 'validation-error' | 'save-error';
 
+const GENERIC_SAVE_ERROR = 'Ocurrió un error inesperado. Intentá nuevamente en unos minutos.';
+
 interface EmpresaResumen {
   id: string
   nombre: string
@@ -86,7 +88,10 @@ export function Mapeo1376Client({ empresa, filasIniciales }: {
       return;
     }
     if (error) {
-      throw new Error(`No se pudo guardar el mapeo: ${error.message}`);
+      console.error('[mapeo-1376] guardar_mapeo_1376 failed:', error);
+      setSaveState('save-error');
+      setSaveErrorMessage(GENERIC_SAVE_ERROR);
+      return;
     }
 
     // Alinea el estado con lo que quedó persistido: una fila sin datos no

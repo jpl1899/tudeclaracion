@@ -61,6 +61,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
   const [exentaRows, setExentaRows] = useState<ExentaRow[]>([emptyExentaRow('exenta-0')]);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateRutError, setDuplicateRutError] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ id: string, nombre: string, rut: string } | null>(null);
 
@@ -101,6 +102,7 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
   async function handleSubmit() {
     setSubmitted(true);
     setDuplicateRutError(false);
+    setSaveError(false);
 
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
@@ -142,7 +144,9 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
     }
 
     if (error) {
-      throw new Error(`No se pudo crear la empresa: ${error.message}`);
+      console.error('[nueva-empresa] crear_empresa_con_plan_cuentas failed:', error);
+      setSaveError(true);
+      return;
     }
 
     setSuccess({ id: empresaId, nombre: trimmedNombre, rut: trimmedRut });
@@ -371,6 +375,13 @@ export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea13
             + Agregar cuenta exenta
           </Button>
         </section>
+
+        {saveError && (
+          <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
+            <strong className="mb-1 block">No fue posible crear la empresa.</strong>
+            Ocurrió un error inesperado. Intentá nuevamente en unos minutos.
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-3">
           <Button size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting}>
