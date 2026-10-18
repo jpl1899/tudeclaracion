@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
+import { turnstileEnabled, TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,10 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPendingVerification, setIsPendingVerification] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+
+  const captchaReady = !turnstileEnabled || captchaToken !== null;
 
   const rules = getPasswordRules(password);
   const showPasswordError = (passwordTouched || submitted) && !passwordMeetsRequirements(password);
@@ -71,9 +76,13 @@ export default function SignupPage() {
       password: trimmedPassword,
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?next=/empresas`,
+        captchaToken: captchaToken ?? undefined,
       },
     });
     setIsSubmitting(false);
+    // The token is single-use, whatever the outcome.
+    setCaptchaToken(null);
+    setCaptchaKey(key => key + 1);
 
     const isDuplicate = error?.message.toLowerCase().includes('already registered')
       || (!error && data.user?.identities?.length === 0);
@@ -199,7 +208,9 @@ export default function SignupPage() {
             ))}
           </ul>
 
-          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+          <TurnstileWidget key={captchaKey} onToken={setCaptchaToken} />
+
+          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting || !captchaReady}>
             {isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}
           </Button>
 

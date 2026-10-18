@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { turnstileEnabled, TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,11 @@ export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [showRequiredError, setShowRequiredError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaFailed, setCaptchaFailed] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+
+  const captchaReady = !turnstileEnabled || captchaToken !== null;
 
   function handleEmailChange(value: string) {
     setEmail(value);
@@ -41,11 +47,22 @@ export default function ForgotPasswordPage() {
     }
 
     setIsSubmitting(true);
+    setCaptchaFailed(false);
     const supabase = createClient();
-    await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
       redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?type=recovery&next=/reset-password`,
+      captchaToken: captchaToken ?? undefined,
     });
     setIsSubmitting(false);
+    setCaptchaToken(null);
+    setCaptchaKey(key => key + 1);
+
+    // Other errors stay silent on purpose: the confirmation must not reveal
+    // whether the email has an account.
+    if (error?.code === 'captcha_failed') {
+      setCaptchaFailed(true);
+      return;
+    }
     setSubmitted(true);
   }
 
@@ -109,7 +126,15 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
-          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+          {captchaFailed && (
+            <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
+              No pudimos completar la verificación de seguridad. Intentá nuevamente.
+            </div>
+          )}
+
+          <TurnstileWidget key={captchaKey} onToken={setCaptchaToken} />
+
+          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting || !captchaReady}>
             {isSubmitting ? 'Enviando…' : 'Enviar enlace de recuperación'}
           </Button>
 
