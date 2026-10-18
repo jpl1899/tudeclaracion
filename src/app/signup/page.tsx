@@ -75,7 +75,7 @@ export default function SignupPage() {
       email: trimmedEmail,
       password: trimmedPassword,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?next=/empresas`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?next=/inicio`,
         captchaToken: captchaToken ?? undefined,
       },
     });

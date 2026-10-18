@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
-  const next = safeInternalPath(searchParams.get('next'), '/empresas');
+  const next = safeInternalPath(searchParams.get('next'), '/inicio');
 
   if (tokenHash && type) {
     const supabase = await createClient();

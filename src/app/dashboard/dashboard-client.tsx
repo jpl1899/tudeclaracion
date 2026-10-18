@@ -61,6 +61,7 @@ interface DeclaracionResumen {
 }
 
 interface DashboardClientProps {
+  saludo: string
   empresaId: string
   empresaNombre: string
   declaraciones: DeclaracionResumen[]
@@ -94,7 +95,7 @@ function formatearPeriodo(periodo: string): string {
   return `${periodo.slice(4)}/${periodo.slice(0, 4)}`;
 }
 
-export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
+export function DashboardClient({ saludo, empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
   const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
   const [tipoImportacion, setTipoImportacion] = useState<TipoDeclaracion>('2181');
@@ -254,7 +255,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
 
   return (
     <DashboardShell
-      activeNav="inicio"
+      activeNav="panel"
       empresaNombre={empresaNombre}
       sidebarExtra={(
         <article
@@ -308,8 +309,9 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
       <main className="grid content-start gap-5 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-heading text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-              Hola, Andrea.
+            <Link href="/inicio" className="text-primary hover:underline">← Volver a Inicio</Link>
+            <h1 className="mt-2 font-heading text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+              {`${saludo}.`}
             </h1>
             <p className="mt-2 text-muted-foreground">
               Acceso directo a la operación diaria del estudio. El siguiente paso principal está

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { UserMenu } from '@/components/auth/user-menu';
 import { Logo } from '@/components/brand/logo';
 
 /**
@@ -8,11 +9,12 @@ import { Logo } from '@/components/brand/logo';
  * Screens pass their own sidebar extras (e.g. the BCU quote card) and render
  * their <main> as children.
  */
-type DashboardNavItem = 'inicio' | 'declaraciones' | 'ayuda';
+type DashboardNavItem = 'panel' | 'declaraciones' | 'ayuda';
 
 interface DashboardShellProps {
   activeNav: DashboardNavItem
-  empresaNombre: string
+  /** Absent when there is no active company (only Ayuda allows that). */
+  empresaNombre?: string
   sidebarExtra?: ReactNode
   children: ReactNode
 }
@@ -28,19 +30,25 @@ function navClassName(isActive: boolean, extra = '') {
 export function DashboardShell({ activeNav, empresaNombre, sidebarExtra, children }: DashboardShellProps) {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
-      <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
-        <div className="flex items-center gap-3 font-semibold">
-          <Logo variant="mark" className="h-10 w-10" priority alt="" />
-          <div>tuDeclaracion</div>
+      <aside className="grid content-start gap-[18px] border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
+        <div className="flex items-center justify-between gap-3">
+          <Link
+            href="/inicio"
+            className="flex items-center gap-3 rounded-md font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Logo variant="mark" className="h-10 w-10" priority alt="" />
+            <div>tuDeclaracion</div>
+          </Link>
+          <UserMenu />
         </div>
 
         <nav className="grid gap-2">
           <Link
             href="/dashboard"
-            aria-current={activeNav === 'inicio' ? 'page' : undefined}
-            className={navClassName(activeNav === 'inicio', 'content-center')}
+            aria-current={activeNav === 'panel' ? 'page' : undefined}
+            className={navClassName(activeNav === 'panel', 'content-center')}
           >
-            Inicio
+            Panel
           </Link>
           <button
             type="button"
@@ -69,11 +77,15 @@ export function DashboardShell({ activeNav, empresaNombre, sidebarExtra, childre
           className="mt-2 grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm transition-colors hover:border-primary/30"
         >
           <span className="text-muted-foreground">Empresa activa</span>
-          <span className="font-semibold text-foreground">
-            {empresaNombre}
-            {' '}
-            <span className="font-normal text-primary">(cambiar)</span>
-          </span>
+          {empresaNombre
+            ? (
+                <span className="font-semibold text-foreground">
+                  {empresaNombre}
+                  {' '}
+                  <span className="font-normal text-primary">(cambiar)</span>
+                </span>
+              )
+            : <span className="font-semibold text-primary">Elegir empresa</span>}
         </Link>
 
         {sidebarExtra}

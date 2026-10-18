@@ -35,19 +35,19 @@ export default async function AyudaPage({ searchParams }: AyudaPageProps) {
   }
 
   const cookieStore = await cookies();
+  // Help content does not depend on a company: without one, the shell shows
+  // "Elegir empresa" instead of redirecting away.
   const empresaActiva = await resolverEmpresaActiva(supabase, cookieStore.get(EMPRESA_ACTIVA_COOKIE)?.value);
-  if (!empresaActiva) {
-    redirect('/empresas');
-  }
 
   const { formulario: formularioParam } = await searchParams;
   const formulario: Formulario = esFormulario(formularioParam) ? formularioParam : FORMULARIOS[0];
 
   return (
-    <DashboardShell activeNav="ayuda" empresaNombre={empresaActiva.nombre}>
+    <DashboardShell activeNav="ayuda" empresaNombre={empresaActiva?.nombre}>
       <main className="grid content-start gap-5 p-6">
         <div>
-          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight">Ayuda</h1>
+          <Link href="/inicio" className="text-primary hover:underline">← Volver a Inicio</Link>
+          <h1 className="mt-2 font-heading text-3xl font-semibold leading-tight tracking-tight">Ayuda</h1>
           <p className="mt-1 text-muted-foreground">
             Acerca de: Formulario
             {' '}
