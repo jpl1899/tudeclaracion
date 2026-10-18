@@ -136,6 +136,13 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: contra una cuenta de prueba en staging, intentar N logins fallidos seguidos y observar si en algún punto Supabase empieza a devolver un error de throttling. Hacerlo con moderación — no contra producción ni de forma repetida, para no gastar cuota de Auth innecesariamente.
 
+**🟡 Parcial 2026-10-18**: rate limiting en el middleware no sirve acá — login, signup y recuperación llaman a Supabase Auth directo desde el navegador, sin pasar por el servidor de la app. Toda la protección vive en la configuración de Supabase. Estado leído vía Management API (`/v1/projects/{ref}/config/auth`):
+- `/auth/v1/token` (incluye el grant de password): 150 requests / 5 min por IP. Se deja como está: el mismo límite cubre el refresh de sesión de usuarios legítimos.
+- Emails (`signup`, `recover`): **2 por hora para todo el proyecto** — es el SMTP incorporado de Supabase. Además de ser abusable (agotar la cuota con `/forgot-password`), es un bloqueo funcional para producción.
+- CAPTCHA: estaba apagado. **Hecho**: Cloudflare Turnstile en login, signup y forgot-password (`src/components/auth/turnstile-widget.tsx`, token en `captchaToken`). Orden de activación: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` en Render → deploy → recién ahí activar CAPTCHA en Supabase (Attack Protection, provider Turnstile, clave secreta). Activarlo antes rompe el login.
+- Contraseña: la UI ya exige 10 caracteres + mayúscula + minúscula + número (`password-rules.ts`), pero Supabase aceptaba 6 sin requisitos vía llamada directa. Alinear en Supabase: `password_min_length: 10`, `password_required_characters: lower:upper:digits` (lo aplica el owner del proyecto).
+- **Pendiente**: SMTP propio (ej. Resend) para salir del tope de 2 emails/hora.
+
 ---
 
 ## 8. Tabla `empresa` fuera del historial de migraciones — RLS no verificable desde el repo
@@ -214,6 +221,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 4. ~~Headers de seguridad básicos (ítem 3)~~ — ✅ 2026-10-02 (queda el CSP completo).
 5. ~~Límite de tamaño en RPCs (ítem 4)~~ — ✅ 2026-10-17.
 6. ~~Errores crudos al cliente (ítem 6)~~ — ✅ 2026-10-18 (severidad revisada a Baja).
-7. El resto (7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
+7. Rate limiting (ítem 7) — 🟡 parcial 2026-10-18: CAPTCHA hecho; falta SMTP propio y alinear la política de contraseñas en Supabase.
+8. El resto (9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
 
 Este documento se actualiza in-place a medida que se cierran ítems (marcarlos como resueltos con fecha, no borrarlos — sirve como historial de qué se atendió y cuándo).
