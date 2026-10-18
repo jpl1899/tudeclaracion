@@ -1,8 +1,8 @@
 'use client';
 
 import type { CampoEspecial, CampoInvalido } from '@/modules/parser/parse-asientos';
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { VerAyuda } from '@/components/ayuda/ver-ayuda';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { anclaParaCampo, ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { CAMPOS_ESPECIALES, contarCamposPrimeraLineaDeDatos, tieneEncabezado } from '@/modules/parser/parse-asientos';
 
 const ACCEPTED_EXTENSION = '.txt';
@@ -51,14 +52,11 @@ const CAMPOS_OBLIGATORIOS_LABELS = ['Día', 'Debe', 'Haber', 'Concepto', 'RUT', 
  */
 const UMBRAL_CAMPOS_INVALIDOS_SIMULTANEOS = 3;
 
-/** Módulo Ayuda todavía no existe (a crearse más adelante) -- por ahora es texto plano, sin link, en todo mensaje de formato no aceptado. */
-const MENSAJE_AYUDA = 'Consultá el módulo Ayuda para la guía de cómo debe venir el archivo.';
-
-/** `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
+/** `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. `ayuda` = ancla de la explicación en el módulo Ayuda, si la hay. */
 export type ImportarAsientoError
   = | { kind: 'parse', line: number, errors: CampoInvalido[] }
-    | { kind: 'cotizacion-no-disponible', message: string }
-    | { kind: 'guardado', message: string };
+    | { kind: 'cotizacion-no-disponible', message: string, ayuda?: string }
+    | { kind: 'guardado', message: string, ayuda?: string };
 
 /** `ok` = éxito -- `tieneAsientosNegativos` refleja si alguna línea importada tiene Total o IVA negativo (misma señal que el banner de la pantalla de detalle), para avisar en el momento en vez de recién al navegar ahí. */
 export type ImportarAsientoResultado
@@ -274,6 +272,8 @@ export function ImportarAsientoDialog({
                     className="rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
                   >
                     Archivo con resultado negativo en algunos asientos. El archivo puede incluir líneas vacías.
+                    {' '}
+                    <VerAyuda ancla={ANCLAS_AYUDA.resultadosNegativos} />
                   </div>
                 )}
               </div>
@@ -292,6 +292,7 @@ export function ImportarAsientoDialog({
                     ya fue procesado.
                   </p>
                   <p>¿Deseás reemplazarlo? Se van a borrar los datos cargados anteriormente para este período.</p>
+                  <VerAyuda ancla={ANCLAS_AYUDA.reemplazarPeriodo} />
                 </div>
               )
             : (
@@ -353,9 +354,7 @@ export function ImportarAsientoDialog({
                       <p>
                         Sin encabezados, las columnas se leen en el orden estándar. Si tu archivo trae otro orden, los datos pueden quedar corridos.
                       </p>
-                      <Link href="/dashboard/ayuda?formulario=1376" className="w-fit font-medium text-primary hover:underline">
-                        Ver cómo agregar los encabezados
-                      </Link>
+                      <VerAyuda ancla={ANCLAS_AYUDA.encabezado1376} />
                     </div>
                   )}
 
@@ -381,7 +380,7 @@ export function ImportarAsientoDialog({
                           {CAMPOS_OBLIGATORIOS_LABELS.join(', ')}
                           .
                         </p>
-                        <p className="text-sm">{MENSAJE_AYUDA}</p>
+                        <VerAyuda ancla={ANCLAS_AYUDA.faltanColumnas} className="text-sm" />
                       </div>
                     );
                   })()}
@@ -425,7 +424,7 @@ export function ImportarAsientoDialog({
                         {' '}
                         detectados.
                       </p>
-                      <p className="text-sm text-muted-foreground">{MENSAJE_AYUDA}</p>
+                      <VerAyuda ancla={ANCLAS_AYUDA.columnasEspeciales} className="text-sm" />
                     </div>
                   )}
 
@@ -452,7 +451,7 @@ export function ImportarAsientoDialog({
                                       {' '}
                                       campos inválidos a la vez -- es probable que las columnas no coincidan con el orden esperado.
                                     </p>
-                                    <p className="text-sm">{MENSAJE_AYUDA}</p>
+                                    <VerAyuda ancla={ANCLAS_AYUDA.columnasDesordenadas} className="text-sm" />
                                   </>
                                 )
                               : (
@@ -467,13 +466,25 @@ export function ImportarAsientoDialog({
                                       {error.errors.map(campoError => (
                                         <li key={campoError.field}>
                                           {`Campo "${campoError.field}": ${campoError.message}`}
+                                          {' '}
+                                          <VerAyuda ancla={anclaParaCampo(campoError.field)} />
                                         </li>
                                       ))}
                                     </ul>
                                   </>
                                 )
                           )
-                        : error.message}
+                        : (
+                            <>
+                              {error.message}
+                              {error.ayuda && (
+                                <>
+                                  {' '}
+                                  <VerAyuda ancla={error.ayuda} />
+                                </>
+                              )}
+                            </>
+                          )}
                     </div>
                   )}
                 </>

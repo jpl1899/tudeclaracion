@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { createClient } from '@/infrastructure/supabase/client';
+import { ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { poblarCotizacionesBcuParaPeriodo, reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
 import { resolverCotizacionParaDia } from '@/modules/cotizacion/resolve-cotizacion-por-dia';
 import { parseAsientosTxt, parseAsientosTxt1376 } from '@/modules/parser/parse-asientos';
@@ -216,7 +217,7 @@ export function DashboardClient({ saludo, empresaId, empresaNombre, declaracione
     if (lineasEnDolaresSinCotizacion.length > 0) {
       const { ok } = await poblarCotizacionesBcuParaPeriodo(periodo);
       if (!ok) {
-        return { kind: 'cotizacion-no-disponible', message: 'No se pudo obtener la cotización del BCU para este período. Intentá nuevamente en unos minutos.' };
+        return { kind: 'cotizacion-no-disponible', message: 'No se pudo obtener la cotización del BCU para este período. Intentá nuevamente en unos minutos.', ayuda: ANCLAS_AYUDA.dolaresYCotizacion };
       }
     }
 
@@ -228,7 +229,7 @@ export function DashboardClient({ saludo, empresaId, empresaNombre, declaracione
       }
       const valor = await resolverCotizacionParaDia(supabase, periodo, linea.dia);
       if (valor === null) {
-        return { kind: 'cotizacion-no-disponible', message: `No se encontró cotización del BCU para el día hábil anterior al ${linea.dia} del período.` };
+        return { kind: 'cotizacion-no-disponible', message: `No se encontró cotización del BCU para el día hábil anterior al ${linea.dia} del período.`, ayuda: ANCLAS_AYUDA.dolaresYCotizacion };
       }
       lineas.push({ ...linea, cotizacion: valor });
     }
@@ -241,7 +242,7 @@ export function DashboardClient({ saludo, empresaId, empresaNombre, declaracione
     });
 
     if (error?.message === 'demasiadas_lineas') {
-      return { kind: 'guardado', message: 'El archivo supera el máximo de 20.000 líneas por período.' };
+      return { kind: 'guardado', message: 'El archivo supera el máximo de 20.000 líneas por período.', ayuda: ANCLAS_AYUDA.limiteDeLineas };
     }
     if (error) {
       return { kind: 'guardado', message: 'No se pudo guardar el archivo. Intentá nuevamente en unos minutos.' };
