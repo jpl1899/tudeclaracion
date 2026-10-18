@@ -117,6 +117,11 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: forzar deliberadamente una violación de constraint único (ej. guardar el mismo mapeo dos veces) y revisar en la Network tab / UI qué texto exacto llega al front.
 
+**✅ Resuelto 2026-10-18 — severidad revisada a Baja**: el análisis original sobreestimaba el disclosure.
+- Las escrituras (`guardar_mapeo_1376`, `crear_/editar_empresa_con_plan_cuentas`, `insertar_asientos`) se llaman desde el navegador con `supabase-js`: la respuesta cruda de PostgREST (código, constraint) ya es visible en la Network tab, se muestre o no en la UI. Sanitizar el texto en pantalla no oculta el schema a quien lo busque; la contención real sigue siendo RLS + RPCs `security invoker` (ítem 11).
+- Los `throw new Error(...error.message)` de Server Components no llegan al cliente en producción: Next.js reemplaza el mensaje por uno genérico con `digest` y el detalle queda en el log del servidor.
+- Lo que sí había era un problema de UX: los 3 formularios de escritura hacían `throw` en el handler ante un error no previsto, sin ningún mensaje en pantalla, y el login mostraba el texto en inglés de Supabase Auth. Ahora muestran un mensaje fijo en español y loguean el detalle en consola; el login elige el mensaje por `error.code` (`invalid_credentials`, `email_not_confirmed`, `over_request_rate_limit`). `src/app/error.tsx` agrega una pantalla de error en español con "Reintentar" y el `digest` como código de referencia.
+
 ---
 
 ## 7. Sin rate limiting en capa de aplicación
@@ -208,6 +213,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 3. ~~Verificar RLS de `empresa` contra la DB viva (ítem 8)~~ — ✅ verificado y versionado 2026-10-02.
 4. ~~Headers de seguridad básicos (ítem 3)~~ — ✅ 2026-10-02 (queda el CSP completo).
 5. ~~Límite de tamaño en RPCs (ítem 4)~~ — ✅ 2026-10-17.
-6. El resto (6, 7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
+6. ~~Errores crudos al cliente (ítem 6)~~ — ✅ 2026-10-18 (severidad revisada a Baja).
+7. El resto (7, 9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
 
 Este documento se actualiza in-place a medida que se cierran ítems (marcarlos como resueltos con fecha, no borrarlos — sirve como historial de qué se atendió y cuándo).

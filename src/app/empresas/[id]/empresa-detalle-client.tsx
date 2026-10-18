@@ -212,7 +212,10 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
     }
 
     if (error) {
-      throw new Error(`No se pudieron guardar los cambios: ${error.message}`);
+      console.error('[empresa-detalle] editar_empresa_con_plan_cuentas failed:', error);
+      setSaveState('save-error');
+      setSaveErrorMessage('Ocurrió un error inesperado. Intentá nuevamente en unos minutos.');
+      return;
     }
 
     setSaveState('success');
