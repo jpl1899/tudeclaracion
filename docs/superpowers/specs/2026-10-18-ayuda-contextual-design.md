@@ -34,7 +34,7 @@ Every message text quoted in these files must match the code verbatim (copied fr
 
 - One long page: section index on the left from `md` (stacked above on mobile), all sections below, readable top to bottom and searchable with `Ctrl+F`. Keeps the "← Volver a Inicio" link and `DashboardShell`.
 - Server Component reads `content/ayuda/*.md` (sorted by file name) with `fs` at request time; deploy uses `next start` without `output: 'standalone'`, so the folder is present at runtime. Render with `react-markdown` + `remark-gfm` (tables). Element mapping uses the app's existing typography; headings get their `{#id}`; tables scroll horizontally on narrow screens.
-- No raw HTML rendering (`rehype-raw` not used): `<!-- -->` comments are dropped, anything else stays as text.
+- No raw HTML rendering: `skipHtml` drops every HTML node, including `<!-- -->` comments (without it react-markdown prints HTML as literal text).
 - Legacy link `/dashboard/ayuda?formulario=1376` redirects to `/dashboard/ayuda#encabezado-1376`; any other `formulario` value redirects to `/dashboard/ayuda`.
 
 ## Links from the app
