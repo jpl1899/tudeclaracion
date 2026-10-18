@@ -4,6 +4,7 @@ import { createAdminClient } from '@/infrastructure/supabase/admin';
 import { createClient } from '@/infrastructure/supabase/server';
 import { resolverCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
 import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
+import { construirResumenInicio } from '@/modules/inicio/resumen-inicio';
 import { DashboardClient } from './dashboard-client';
 
 /**
@@ -42,8 +43,15 @@ export default async function DashboardPage() {
 
   const cotizacionBcuInicial = await resolverCotizacionBcu(createAdminClient());
 
+  const { data: cuenta, error: cuentaError } = await supabase.from('cuenta').select('nombre').eq('id', user.id).maybeSingle();
+  if (cuentaError) {
+    console.error('[dashboard] cuenta:', cuentaError);
+  }
+  const { saludo } = construirResumenInicio({ nombre: cuenta?.nombre ?? null, empresas: null, pendientes: null });
+
   return (
     <DashboardClient
+      saludo={saludo}
       empresaId={empresaActiva.id}
       empresaNombre={empresaActiva.nombre}
       declaraciones={declaraciones ?? []}

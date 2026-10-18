@@ -75,7 +75,7 @@ export function LoginClient({ googleAuthFailed }: { googleAuthFailed: boolean })
       return;
     }
 
-    router.push('/empresas');
+    router.push('/inicio');
     router.refresh();
   }
 

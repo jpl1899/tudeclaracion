@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { UserMenu } from '@/components/auth/user-menu';
 import { Logo } from '@/components/brand/logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -74,9 +75,12 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
             <div className="text-sm text-muted-foreground">Selección de empresa</div>
           </div>
         </div>
-        <Button variant="outline" onClick={() => router.push('/login')}>
-          Volver al acceso
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button asChild variant="outline">
+            <Link href="/inicio">Inicio</Link>
+          </Button>
+          <UserMenu />
+        </div>
       </header>
 
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
@@ -98,7 +102,7 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
           <button
             type="button"
             onClick={() => router.push('/empresas/nueva')}
-            className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-primary/25 bg-muted p-4.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+            className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-primary/25 bg-muted p-[18px] text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-xl font-bold text-primary">
               +
@@ -130,7 +134,7 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
             {empresasDePagina.map(empresa => (
               <div
                 key={empresa.id}
-                className={`grid gap-3 rounded-2xl border p-4.5 transition-colors ${
+                className={`grid gap-3 rounded-2xl border p-[18px] transition-colors ${
                   selected?.id === empresa.id
                     ? 'border-primary/40 bg-primary/5 shadow-md'
                     : 'border-border bg-card has-[button:hover]:border-primary/25 has-[button:hover]:shadow-sm has-[button:focus-visible]:border-primary/25 has-[button:focus-visible]:shadow-sm'
@@ -190,21 +194,21 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
             )}
 
             {empresas.length === 0 && (
-              <div className="rounded-2xl border border-border bg-muted p-4.5 text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-muted p-[18px] text-muted-foreground">
                 Todavía no tenés empresas registradas. Usá &quot;Agregar nueva empresa&quot; para dar
                 de alta tu primer cliente.
               </div>
             )}
 
             {empresas.length > 0 && filtered.length === 0 && (
-              <div className="rounded-2xl border border-border bg-muted p-4.5 text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-muted p-[18px] text-muted-foreground">
                 No hay empresas que coincidan con la búsqueda. Probá con otro nombre o con el RUT.
               </div>
             )}
           </div>
         </div>
 
-        <aside className="grid content-start gap-4.5 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <aside className="grid content-start gap-[18px] rounded-xl border border-border bg-card p-6 shadow-sm">
           <div>
             <strong className="text-lg">Empresa seleccionada</strong>
             <p className="mt-2 text-sm text-muted-foreground">
