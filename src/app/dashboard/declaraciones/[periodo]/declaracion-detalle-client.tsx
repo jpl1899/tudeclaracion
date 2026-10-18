@@ -4,11 +4,13 @@ import type { NormalizedAsiento } from '@/modules/normalizer/normalize-asiento';
 import type { LineaDeclaracion } from '@/modules/tax-engine/consolidate-lines';
 import Link from 'next/link';
 import { useState } from 'react';
+import { VerAyuda } from '@/components/ayuda/ver-ayuda';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createClient } from '@/infrastructure/supabase/client';
+import { ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { generarArchivoPadi } from '@/modules/exporter/generate-padi-file';
 
 type AsientoSinResolver = Extract<NormalizedAsiento, { resolved: false }>;
@@ -145,6 +147,7 @@ export function DeclaracionDetalleClient({
                     </li>
                   ))}
                 </ul>
+                <VerAyuda ancla={ANCLAS_AYUDA.asientosExcluidos} className="text-sm" />
               </div>
             )}
 
@@ -162,6 +165,8 @@ export function DeclaracionDetalleClient({
                 className="rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
               >
                 Archivo con resultado negativo en algunos asientos. El archivo puede incluir líneas vacías.
+                {' '}
+                <VerAyuda ancla={ANCLAS_AYUDA.resultadosNegativos} />
               </div>
             )}
           </Card>

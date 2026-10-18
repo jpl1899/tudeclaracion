@@ -3,12 +3,14 @@
 import type { CuentaSinMapear } from '@/modules/validaciones-1376/detectar-cuentas-sin-mapear';
 import Link from 'next/link';
 import { useState } from 'react';
+import { VerAyuda } from '@/components/ayuda/ver-ayuda';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createClient } from '@/infrastructure/supabase/client';
+import { ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { generarArchivoPadi1376 } from '@/modules/exporter/generate-padi-file-1376';
 
 export interface TotalRevision1376 {
@@ -146,6 +148,7 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
               presentes un número incompleto. Recargá la página en unos minutos; si el problema sigue, revisá que el
               mapeo del 1376 de la empresa esté guardado.
             </p>
+            <VerAyuda ancla={ANCLAS_AYUDA.mapeo1376} />
           </Card>
         )}
 
@@ -175,6 +178,8 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
                   </p>
                   <p className="text-sm">
                     Su importe no está incluido en los totales. Si corresponde, asignalo en el mapeo del 1376 de la empresa.
+                    {' '}
+                    <VerAyuda ancla={ANCLAS_AYUDA.mapeo1376} />
                   </p>
                   <ul className="grid gap-1 pl-4 text-sm">
                     {revision.cuentasSinMapear.map(cuenta => (
