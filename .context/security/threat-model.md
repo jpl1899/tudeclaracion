@@ -182,6 +182,12 @@ Fix disponible en `15.5.21`. Además, `bun audit --prod` reporta 20 vulnerabilid
 
 **Cómo probarlo**: iniciar sesión en staging, abrir DevTools → Application → Cookies, e inspeccionar los flags (`HttpOnly`, `Secure`, `SameSite`) de las cookies `sb-*`.
 
+**✅ Resuelto 2026-10-18** (verificado en el código de `@supabase/ssr` 0.12.0, `DEFAULT_COOKIE_OPTIONS`; las opciones propias se mergean encima, no reemplazan):
+- `SameSite=Lax`, `Path=/`: correcto. Las escrituras a Supabase se autentican con el header `Authorization`, no con la cookie.
+- `HttpOnly=false`: **por diseño, no se cambia**. El login ocurre en el navegador y `createBrowserClient` lee/escribe la sesión vía `document.cookie`; forzar `HttpOnly` rompe el login. La contención frente a XSS es no tener XSS (ítem 11) + el CSP completo pendiente (ítem 3).
+- `Secure`: no se fijaba. Ahora `supabaseCookieOptions` (`src/infrastructure/supabase/env.ts`) pone `secure: true` en producción en los tres clientes (browser, server, `middleware.ts`). Antes ya estaba mitigado por HSTS (ítem 3) a partir de la segunda visita.
+- `Max-Age` 400 días: informativo. La vida real de la sesión la define Supabase Auth, y hoy `sessions_timebox` y `sessions_inactivity_timeout` están en 0 (las sesiones no vencen). Fijarlos requiere plan Pro de Supabase.
+
 ---
 
 ## 10. Backoffice futuro sin modelo de roles
@@ -222,6 +228,7 @@ Documentado para que quede explícito qué SÍ está bien y no hay que "arreglar
 5. ~~Límite de tamaño en RPCs (ítem 4)~~ — ✅ 2026-10-17.
 6. ~~Errores crudos al cliente (ítem 6)~~ — ✅ 2026-10-18 (severidad revisada a Baja).
 7. Rate limiting (ítem 7) — 🟡 parcial 2026-10-18: CAPTCHA hecho; falta SMTP propio y alinear la política de contraseñas en Supabase.
-8. El resto (9) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
+8. ~~Cookies de sesión (ítem 9)~~ — ✅ 2026-10-18 (`Secure` explícito; `HttpOnly` no aplica por diseño).
+9. Lo que queda (CSP completo, SMTP propio, ítem 10 con el backoffice) se pueden ir tomando de a uno en sesiones siguientes — ninguno es urgente hoy, pero todos son reales.
 
 Este documento se actualiza in-place a medida que se cierran ítems (marcarlos como resueltos con fecha, no borrarlos — sirve como historial de qué se atendió y cuándo).

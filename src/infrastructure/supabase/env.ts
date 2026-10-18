@@ -28,3 +28,13 @@ export const supabasePublishableKey = requireEnv(
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
+
+/**
+ * Merged by @supabase/ssr over its defaults (path '/', sameSite 'lax',
+ * 400-day maxAge). httpOnly stays false on purpose: the browser client reads
+ * and writes the session through document.cookie. Off in development because
+ * http://localhost would drop a Secure cookie in some browsers.
+ */
+export const supabaseCookieOptions = {
+  secure: process.env.NODE_ENV === 'production',
+};

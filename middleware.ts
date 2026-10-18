@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
-import { supabasePublishableKey, supabaseUrl } from '@/infrastructure/supabase/env';
+import { supabaseCookieOptions, supabasePublishableKey, supabaseUrl } from '@/infrastructure/supabase/env';
 
 const PROTECTED_ROUTES = ['/empresas', '/dashboard'];
 // /reset-password is intentionally excluded — a user lands there via a
@@ -19,6 +19,7 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
+    cookieOptions: supabaseCookieOptions,
     cookies: {
       getAll() {
         return request.cookies.getAll();
