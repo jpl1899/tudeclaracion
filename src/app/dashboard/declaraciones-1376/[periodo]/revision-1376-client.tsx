@@ -8,7 +8,6 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { createClient } from '@/infrastructure/supabase/client';
 import { ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { generarArchivoPadi1376 } from '@/modules/exporter/generate-padi-file-1376';
@@ -58,12 +57,11 @@ function formatearImporte(importe: number) {
  * (`declaracion-detalle-client.tsx`): mismo shell, mismas cards/badges.
  *
  * TD-44: el botón descarga el archivo PADI (mismo patrón Blob que el 2181)
- * y deja el 1376 en `generada`. Habilitado con resultado limpio o advertencia
- * reconocida; bloqueado mientras la advertencia de cuentas o códigos de IVA
- * sin mapear no se reconozca.
+ * y deja el 1376 en `generada`. Las cuentas o códigos de IVA sin mapear no
+ * bloquean la descarga: lo que no está mapeado no corresponde al 1376
+ * (confirmado con el contador 2026-10-21), así que el aviso es informativo.
  */
 export function Revision1376Client({ empresaId, empresaNombre, periodo, revision }: Revision1376ClientProps) {
-  const [advertenciaReconocida, setAdvertenciaReconocida] = useState(false);
   const [descargando, setDescargando] = useState(false);
   const [estadoActual, setEstadoActual] = useState(revision.tipo === 'resultado' ? revision.estado : '');
   const [errorEstado, setErrorEstado] = useState(false);
@@ -71,7 +69,7 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
   const conAdvertencia = revision.tipo === 'resultado'
     && (revision.cuentasSinMapear.length > 0 || revision.codigosIvaSinMapear.length > 0);
   const sinTotales = revision.tipo === 'resultado' && revision.totales.length === 0;
-  const puedeDescargar = revision.tipo === 'resultado' && !sinTotales && (!conAdvertencia || advertenciaReconocida) && !descargando;
+  const puedeDescargar = revision.tipo === 'resultado' && !sinTotales && !descargando;
 
   async function handleDescargar() {
     if (revision.tipo !== 'resultado' || !puedeDescargar) {
@@ -177,9 +175,10 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
                     {`Hay ${describirSinMapear(revision.cuentasSinMapear.length, revision.codigosIvaSinMapear.length)} con movimiento sin mapear a ningún código del 1376.`}
                   </p>
                   <p className="text-sm">
-                    Su importe no está incluido en los totales. Si corresponde, asignalo en el mapeo del 1376 de la empresa.
+                    Lo que no está mapeado no se incluye en el 1376. Si alguno debería ir, asignalo en el mapeo del 1376
+                    de la empresa.
                     {' '}
-                    <VerAyuda ancla={ANCLAS_AYUDA.mapeo1376} />
+                    <VerAyuda ancla={ANCLAS_AYUDA.movimientosSinMapear1376} />
                   </p>
                   <ul className="grid gap-1 pl-4 text-sm">
                     {revision.cuentasSinMapear.map(cuenta => (
@@ -193,14 +192,6 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
                       </li>
                     ))}
                   </ul>
-                  <label className="mt-1 flex items-center gap-2 text-sm font-semibold">
-                    <Checkbox
-                      data-testid="revision_1376_reconocer_advertencia"
-                      checked={advertenciaReconocida}
-                      onCheckedChange={checked => setAdvertenciaReconocida(checked === true)}
-                    />
-                    Revisé estos movimientos y quiero continuar igual
-                  </label>
                 </div>
               )}
 
@@ -249,11 +240,6 @@ export function Revision1376Client({ empresaId, empresaNombre, periodo, revision
               {sinTotales && (
                 <p data-testid="revision_1376_sin_totales_descarga" className="text-sm text-muted-foreground">
                   No hay totales para descargar en este período.
-                </p>
-              )}
-              {!sinTotales && conAdvertencia && !advertenciaReconocida && (
-                <p className="text-sm text-muted-foreground">
-                  Reconocé la advertencia de cuentas sin mapear para habilitar la descarga.
                 </p>
               )}
               {errorEstado && (
