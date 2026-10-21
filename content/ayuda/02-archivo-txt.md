@@ -77,10 +77,8 @@ Importe numérico, con punto como separador decimal. Puede ser negativo. Mensaje
 
 Un dígito del 0 al 9. Mensaje: *"… debe ser un dígito entre 0 y 9"*.
 
-- **Mayor que 0** (asientos en *formato rápido*): la cuenta se resuelve por el código de IVA del plan de cuentas.
-- **0** (asientos abiertos): la cuenta se resuelve por las cuentas de Debe y Haber.
-
-<!-- revisar contador: descripción de formato rápido vs. asientos abiertos -->
+- **Mayor que 0** (asientos en *formato rápido*): quien carga el asiento digita un código en Código IVA, y la columna IVA trae el monto del impuesto. Ese monto se vuelca a la cuenta contable mapeada a ese código en el plan de cuentas.
+- **0** (asientos abiertos): el movimiento contable viene en al menos 3 líneas, con la cuenta del impuesto desglosada (en general IVA ventas o IVA compras). La cuenta se resuelve por las cuentas de Debe y Haber.
 
 #### IVA {#campo-iva}
 
@@ -92,15 +90,22 @@ Importe numérico del IVA. Mensaje: *"… no es un importe numérico válido"*.
 
 #### Libro {#campo-libro}
 
-Una de estas letras: `C`, `V`, `E`, `I`, `P`. Mensajes:
+Indica el libro al que pertenece el asiento. Todos se tienen en cuenta en los cálculos:
+
+| Letra | Libro |
+|---|---|
+| `C` | Compras |
+| `V` | Ventas |
+| `E` | Egresos |
+| `I` | Ingresos |
+| `P` | P (no se controla contra el tipo de cuenta) |
+
+Mensajes:
 
 - *"… debe ser uno de: C, V, E, I, P"*
 - *"… es inconsistente con la cuenta … (venta si empieza con 2, compra si empieza con 1)"*: el libro no coincide con la cuenta de IVA que resolvió el asiento. Revisá el Libro en el TXT de origen, o el código de IVA de esa cuenta en el plan de cuentas.
-
-<!-- revisar contador: significado de cada letra de Libro -->
-
 #### Tipo {#campo-tipo}
 
-Uno de `504`, `CIE`, `RES`, `DIF`, `APE`, o vacío. Mensaje: *"… debe ser uno de: 504, CIE, RES, DIF, APE o estar vacío"*. Los asientos con Tipo distinto de 504 no entran en el 2181 (ver [Asientos excluidos](#asientos-excluidos)).
+Abreviatura que identifica el asiento. Por ejemplo, `DIF` es una diferencia de cambio y `504` es una compra exenta para el 2181.
 
-<!-- revisar contador: significado de cada Tipo -->
+Uno de `504`, `CIE`, `RES`, `DIF`, `APE`, o vacío. Mensaje: *"… debe ser uno de: 504, CIE, RES, DIF, APE o estar vacío"*. Los asientos con Tipo distinto de 504 no entran en el 2181 (ver [Asientos excluidos](#asientos-excluidos)).
