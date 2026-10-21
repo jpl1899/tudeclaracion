@@ -14,6 +14,7 @@ export const ANCLAS_AYUDA = {
   limiteDeLineas: 'limite-de-lineas',
   asientosExcluidos: 'asientos-excluidos',
   mapeo1376: 'mapeo-1376',
+  movimientosSinMapear1376: 'movimientos-sin-mapear-1376',
   dolaresYCotizacion: 'dolares-y-cotizacion',
   resultadosNegativos: 'resultados-negativos',
 } as const;
