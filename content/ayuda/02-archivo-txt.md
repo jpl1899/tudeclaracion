@@ -100,12 +100,21 @@ Indica el libro al que pertenece el asiento. Todos se tienen en cuenta en los c�
 | `I` | Ingresos |
 | `P` | P (no se controla contra el tipo de cuenta) |
 
-Mensajes:
+Mensaje: *"… debe ser uno de: C, V, E, I, P"*.
 
-- *"… debe ser uno de: C, V, E, I, P"*
-- *"… es inconsistente con la cuenta … (venta si empieza con 2, compra si empieza con 1)"*: el libro no coincide con la cuenta de IVA que resolvió el asiento. Revisá el Libro en el TXT de origen, o el código de IVA de esa cuenta en el plan de cuentas.
+Un Libro que no coincide con la cuenta del asiento (las cuentas que empiezan con 2 son de venta y las que empiezan con 1 son de compra) no rechaza el archivo: ese asiento queda fuera del 2181 y se lista en [Asientos excluidos](#asientos-excluidos).
+
 #### Tipo {#campo-tipo}
 
-Abreviatura que identifica el asiento. Por ejemplo, `DIF` es una diferencia de cambio y `504` es una compra exenta para el 2181.
+Abreviatura que identifica el asiento:
 
-Uno de `504`, `CIE`, `RES`, `DIF`, `APE`, o vacío. Mensaje: *"… debe ser uno de: 504, CIE, RES, DIF, APE o estar vacío"*. Los asientos con Tipo distinto de 504 no entran en el 2181 (ver [Asientos excluidos](#asientos-excluidos)).
+| Tipo | Significado | 2181 | 1376 |
+|---|---|---|---|
+| `504` | Compra exenta | Entra | Entra |
+| `DIF` | Diferencia de cambio | No entra | Entra |
+| `CIE` | Cierre | No entra | No entra |
+| `RES` | Resultados | No entra | No entra |
+| `APE` | Apertura | No entra | No entra |
+| *(vacío)* | Asiento común | Entra | Entra |
+
+Mensaje: *"… debe ser uno de: 504, CIE, RES, DIF, APE o estar vacío"*. Los asientos que no entran en el 2181 se listan en [Asientos excluidos](#asientos-excluidos).

@@ -41,7 +41,7 @@ describe('resolveAsientoFiscal', () => {
 
     expect(result).toEqual({
       resolved: false,
-      reason: 'libro-inconsistente',
+      reason: 'codigo-iva-libro-inconsistente',
       rut: '233669988774',
       dia: 5,
       valor: expect.stringContaining('2131'),

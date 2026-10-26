@@ -16,7 +16,7 @@ const RUT_RE = /^\d{12}$/;
  */
 export type NormalizedAsiento
   = | { resolved: true, codigoPadi: string, importe: number, rut: string }
-    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' | 'importe-invalido' | 'libro-inconsistente' | 'rut-invalido', rut: string, dia: number, valor: string };
+    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' | 'importe-invalido' | 'libro-inconsistente' | 'codigo-iva-libro-inconsistente' | 'rut-invalido', rut: string, dia: number, valor: string };
 
 function noResuelto(
   asiento: AsientoLine,
@@ -63,9 +63,10 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     // Mismo cruce de Libro contra el prefijo de la cuenta que Camino 2
     // (2026-08-02, corregido -- se aplicaba antes solo a Camino 2, pero el
     // caso reportado por el contador era justamente uno resuelto por Código
-    // IVA directo).
+    // IVA directo). Motivo propio (TD-51): el que no coincide con el Libro es
+    // el Código IVA, no la cuenta del asiento.
     if (!esConsistenteConLibro(match, asiento.libro, asiento.total)) {
-      return noResuelto(asiento, 'libro-inconsistente', `cuenta ${match.cuentaContable} con Libro ${asiento.libro}`);
+      return noResuelto(asiento, 'codigo-iva-libro-inconsistente', `Código IVA ${asiento.codigoIva} (cuenta ${match.cuentaContable}) con Libro ${asiento.libro}`);
     }
     resolucion = { codigoPadi: match.codigoPadi, importe: convertirImporte(asiento.iva, asiento) };
   }

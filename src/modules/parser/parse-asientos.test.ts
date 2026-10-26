@@ -214,18 +214,14 @@ describe('parseAsientosTxt', () => {
     expect(result.lines[0].cotizacion).toBe(40);
   });
 
-  it('reports a Libro inconsistent with the cuenta resolved via Código IVA directo (Camino 1)', () => {
+  it('accepts a Libro inconsistent with the cuenta resolved via Código IVA directo (Camino 1) -- the 2181 engine excludes it later (TD-51)', () => {
     const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: 3 }];
     // Reproduce el caso reportado por el contador: venta resuelta por Código IVA directo, con Libro 'E' (compra) por error.
     const content = '16,"1234","5678","Factura venta A 9999","233669988774",0,1000,3,180.33,0,"E",';
 
     const result = parseAsientosTxt(content, planCuentas);
 
-    expect(result).toEqual({
-      ok: false,
-      line: 1,
-      errors: [{ field: 'Libro', message: expect.stringContaining('2131') }],
-    });
+    expect(result.ok).toBe(true);
   });
 
   it('does not flag Libro for Código IVA directo when it is consistent with the resolved cuenta prefix', () => {
@@ -246,7 +242,7 @@ describe('parseAsientosTxt', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('reports a Libro inconsistent with the resolved cuenta de IVA prefix, alongside other invalid fields in the same line', () => {
+  it('does not report a Libro inconsistent with the resolved cuenta de IVA prefix among the invalid fields of a line (TD-51)', () => {
     const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: null }];
     // Día 14, venta -- RUT, Moneda y Cotización inválidos, y Libro 'E' (compra) con una cuenta de venta (prefijo 2).
     const content = '14,"2131","11111","Factura venta A 555","2336699887",9,1000,0,0,-5,"E",';
@@ -260,22 +256,17 @@ describe('parseAsientosTxt', () => {
         { field: 'RUT', message: expect.any(String) },
         { field: 'Moneda', message: expect.any(String) },
         { field: 'Cotización', message: expect.any(String) },
-        { field: 'Libro', message: expect.stringContaining('2131') },
       ],
     });
   });
 
-  it('reports a Libro inconsistent with a compra account prefix (1) as its own error', () => {
+  it('accepts a Libro inconsistent with a compra account prefix (1) -- the 2181 engine excludes it later (TD-51)', () => {
     const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: null }];
     const content = '10,"1131","11111","Factura compra A 123","233669988774",0,1000,0,0,0,"V",';
 
     const result = parseAsientosTxt(content, planCuentas);
 
-    expect(result).toEqual({
-      ok: false,
-      line: 1,
-      errors: [{ field: 'Libro', message: expect.stringContaining('1131') }],
-    });
+    expect(result.ok).toBe(true);
   });
 
   it('does not flag Libro when the account does not match any entry in the plan de cuentas', () => {

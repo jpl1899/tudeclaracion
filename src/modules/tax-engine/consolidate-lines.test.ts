@@ -1,6 +1,6 @@
 import type { NormalizedAsiento } from '@/modules/normalizer/normalize-asiento';
 import { describe, expect, it } from 'vitest';
-import { consolidarLineasDeclaracion } from './consolidate-lines';
+import { consolidarLineasDeclaracion, detectarLineasSinSaldoPositivo } from './consolidate-lines';
 
 function resuelto(overrides: Partial<Extract<NormalizedAsiento, { resolved: true }>> = {}): NormalizedAsiento {
   return {
@@ -89,5 +89,26 @@ describe('consolidarLineasDeclaracion', () => {
     ];
 
     expect(consolidarLineasDeclaracion(resueltos)).toEqual([]);
+  });
+});
+
+describe('detectarLineasSinSaldoPositivo', () => {
+  it('returns the consolidated lines whose net is 0 or negative, with their net', () => {
+    const resueltos = [
+      resuelto({ codigoPadi: '502', importe: 500 }),
+      resuelto({ codigoPadi: '502', importe: -600 }),
+      resuelto({ codigoPadi: '504', importe: 300 }),
+      resuelto({ codigoPadi: '504', importe: -300 }),
+      resuelto({ codigoPadi: '506', importe: 100 }),
+    ];
+
+    expect(detectarLineasSinSaldoPositivo(resueltos)).toEqual([
+      { rut: '233669988774', codigoPadi: '502', importe: -100 },
+      { rut: '233669988774', codigoPadi: '504', importe: 0 },
+    ]);
+  });
+
+  it('returns nothing when every line nets positive', () => {
+    expect(detectarLineasSinSaldoPositivo([resuelto({ importe: 100 })])).toEqual([]);
   });
 });
