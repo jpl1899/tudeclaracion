@@ -7,11 +7,13 @@ import { redondearImporte } from './generate-padi-file';
  * `codigo;importe` por código de línea, sin encabezado, importe entero sin
  * separador de miles (mismo redondeo que el 2181), sin RUT ni período.
  * Un código cuyo total da negativo no se exporta (decisión del usuario,
- * 2026-10-01).
+ * 2026-10-01), ni uno cuyo importe redondeado da 0 (confirmado con el
+ * contador 2026-10-26).
  */
 export function generarArchivoPadi1376(totales: TotalLinea1376[]): string {
   return totales
-    .filter(total => total.importe >= 0)
-    .map(total => `${total.codigoLinea};${redondearImporte(total.importe)}`)
+    .map(total => ({ codigoLinea: total.codigoLinea, importe: redondearImporte(total.importe) }))
+    .filter(total => total.importe > 0)
+    .map(total => `${total.codigoLinea};${total.importe}`)
     .join('\n');
 }

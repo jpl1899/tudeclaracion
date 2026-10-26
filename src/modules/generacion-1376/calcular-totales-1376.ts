@@ -24,6 +24,18 @@ export interface TotalLinea1376 {
   importe: number
 }
 
+/**
+ * Tipos que el motor no tiene en cuenta: cierre, resultados y apertura
+ * (confirmado con el contador 2026-10-26). Se filtran antes del cálculo y de
+ * las advertencias de mapeo, para que una cuenta tocada solo por estos
+ * asientos no aparezca como "sin mapear".
+ */
+const TIPOS_FUERA_DEL_MOTOR = ['CIE', 'RES', 'APE'];
+
+export function asientosDelMotor1376(asientos: AsientoLine[]): AsientoLine[] {
+  return asientos.filter(asiento => asiento.tipo === null || !TIPOS_FUERA_DEL_MOTOR.includes(asiento.tipo));
+}
+
 function cuentaDelLado(asiento: AsientoLine, lado: MapeoAsignacionInicial['lado']): string {
   return lado === 'debe' ? asiento.debe : asiento.haber;
 }

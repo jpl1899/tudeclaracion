@@ -23,4 +23,4 @@ Algún asiento tiene Total o IVA negativo, por ejemplo una nota de crédito. Es 
 El archivo PADI nunca lleva importes negativos:
 
 - **2181:** una nota de crédito se descuenta de las ventas del mismo RUT y código. Si el neto da 0 o negativo (por ejemplo, una nota de crédito mayor que la venta del período), esa línea no va en el archivo.
-- **1376:** un código de línea cuyo total da negativo no va en el archivo.
+- **1376:** un código de línea cuyo total da 0 o negativo no va en el archivo.
