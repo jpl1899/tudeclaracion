@@ -9,4 +9,6 @@ El recorrido completo para generar una declaración, de punta a punta:
 5. **Revisá.** El 2181 muestra el detalle por RUT y los asientos que no pudieron incluirse; el 1376 muestra los totales por código de línea y sus advertencias.
 6. **Descargá el archivo PADI** desde la pantalla de la declaración.
 
+En *Actividad reciente* del panel, cada período muestra el estado del 2181 (anexo del 1376) y del 1376. Tocá un estado para abrir esa declaración. El período queda **Completo** cuando las dos están generadas.
+
 Si un paso falla, el mensaje en pantalla trae un enlace *Ver ayuda* que te lleva directo a la explicación de ese caso.
