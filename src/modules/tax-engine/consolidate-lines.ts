@@ -14,6 +14,19 @@ export interface LineaDeclaracion {
  * a la venta del período), esa línea no va en el archivo PADI.
  */
 export function consolidarLineasDeclaracion(resueltos: NormalizedAsiento[]): LineaDeclaracion[] {
+  return sumarPorRutYCodigo(resueltos).filter(linea => linea.importe > 0);
+}
+
+/**
+ * TD-51: las líneas que `consolidarLineasDeclaracion` descarta porque el neto
+ * dio 0 o negativo, para listarlas como excluidas en vez de omitirlas sin
+ * aviso.
+ */
+export function detectarLineasSinSaldoPositivo(resueltos: NormalizedAsiento[]): LineaDeclaracion[] {
+  return sumarPorRutYCodigo(resueltos).filter(linea => linea.importe <= 0);
+}
+
+function sumarPorRutYCodigo(resueltos: NormalizedAsiento[]): LineaDeclaracion[] {
   const lineasPorClave = new Map<string, LineaDeclaracion>();
 
   for (const asiento of resueltos) {
@@ -32,5 +45,5 @@ export function consolidarLineasDeclaracion(resueltos: NormalizedAsiento[]): Lin
     }
   }
 
-  return [...lineasPorClave.values()].filter(linea => linea.importe > 0);
+  return [...lineasPorClave.values()];
 }

@@ -37,6 +37,16 @@ describe('generarArchivoPadi1376', () => {
     expect(resultado).toBe('101;1000\n601;50');
   });
 
+  it('omits line codes whose rounded total is 0', () => {
+    const resultado = generarArchivoPadi1376([
+      { codigoLinea: '101', importe: 0 },
+      { codigoLinea: '102', importe: 0.5 },
+      { codigoLinea: '201', importe: 1000 },
+    ]);
+
+    expect(resultado).toBe('201;1000');
+  });
+
   it('contains only line codes and amounts (no RUT, no period)', () => {
     const resultado = generarArchivoPadi1376([{ codigoLinea: '101', importe: 10000 }]);
 

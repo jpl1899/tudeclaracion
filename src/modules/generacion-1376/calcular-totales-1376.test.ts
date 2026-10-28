@@ -1,7 +1,7 @@
 import type { MapeoAsignacionInicial } from '@/modules/mapeo-1376/mapeo-1376';
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
 import { describe, expect, it } from 'vitest';
-import { calcularTotalesLinea1376 } from './calcular-totales-1376';
+import { asientosDelMotor1376, calcularTotalesLinea1376 } from './calcular-totales-1376';
 
 function asiento(overrides: Partial<AsientoLine> = {}): AsientoLine {
   return {
@@ -143,5 +143,27 @@ describe('calcularTotalesLinea1376', () => {
 
   it('returns an empty array when there is no mapeo', () => {
     expect(calcularTotalesLinea1376([asiento()], [])).toEqual([]);
+  });
+});
+
+describe('asientosDelMotor1376', () => {
+  it('drops cierre, resultados and apertura asientos', () => {
+    const asientos = [
+      asiento({ tipo: 'CIE' }),
+      asiento({ tipo: 'RES' }),
+      asiento({ tipo: 'APE' }),
+    ];
+
+    expect(asientosDelMotor1376(asientos)).toEqual([]);
+  });
+
+  it('keeps asientos without Tipo, Tipo 504 and DIF', () => {
+    const asientos = [
+      asiento({ tipo: null }),
+      asiento({ tipo: '504' }),
+      asiento({ tipo: 'DIF' }),
+    ];
+
+    expect(asientosDelMotor1376(asientos)).toEqual(asientos);
   });
 });

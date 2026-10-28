@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
-import { calcularTotalesLinea1376 } from '@/modules/generacion-1376/calcular-totales-1376';
+import { asientosDelMotor1376, calcularTotalesLinea1376 } from '@/modules/generacion-1376/calcular-totales-1376';
 import { UNIQUE_VIOLATION_CODE } from '@/modules/mapeo-1376/mapeo-1376';
 import { detectarCodigosIvaSinMapear, detectarCuentasSinMapear } from '@/modules/validaciones-1376/detectar-cuentas-sin-mapear';
 import { Revision1376Client } from './revision-1376-client';
@@ -80,7 +80,7 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
     );
   }
 
-  const asientos: AsientoLine[] = asientosRes.data.map(asiento => ({
+  const asientosDelPeriodo: AsientoLine[] = asientosRes.data.map(asiento => ({
     dia: asiento.dia,
     debe: asiento.debe,
     haber: asiento.haber,
@@ -95,9 +95,11 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
     tipo: asiento.tipo as AsientoLine['tipo'],
   }));
 
-  if (asientos.length === 0) {
+  if (asientosDelPeriodo.length === 0) {
     return { tipo: 'sin-datos' };
   }
+
+  const asientos = asientosDelMotor1376(asientosDelPeriodo);
 
   const mapeo = mapeoRes.data.map(fila => ({
     codigoIva: fila.codigo_iva,
