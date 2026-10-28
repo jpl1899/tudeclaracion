@@ -20,9 +20,16 @@ const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
   'sin-mapeo': 'no está mapeado en el plan de cuentas',
   'tipo-fuera-de-alcance': 'tiene un tipo fuera del alcance de esta declaración',
   'importe-invalido': 'tiene un importe inválido (no puede ser cero)',
-  'libro-inconsistente': 'tiene un Libro que no coincide con el tipo de cuenta resuelta (revisar el TXT de origen)',
+  'libro-inconsistente': 'tiene un Libro equivocado para esa cuenta (revisar el TXT de origen)',
+  'codigo-iva-libro-inconsistente': 'tiene un Código IVA que no coincide con el Libro (revisar el TXT de origen o el plan de cuentas)',
   'rut-invalido': 'tiene un RUT que no es de 12 dígitos (revisar el TXT de origen)',
 };
+
+/** TD-51: una línea RUT+código PADI cuyo neto dio 0 o negativo no va al archivo PADI. */
+function describirLineaSinSaldo(linea: LineaDeclaracion) {
+  const resultado = linea.importe === 0 ? 'quedó en 0' : `quedó en negativo (${linea.importe})`;
+  return `RUT ${linea.rut}, código PADI ${linea.codigoPadi}: el importe neto ${resultado}.`;
+}
 
 /**
  * Client Component: TD-20 (ADR-0003). Pantalla de detalle/descarga de una
@@ -46,6 +53,7 @@ interface DeclaracionDetalleClientProps {
   asientosSinResolver: AsientoSinResolver[]
   totalAsientos: number
   lineas: LineaDeclaracion[]
+  lineasSinSaldoPositivo: LineaDeclaracion[]
   tieneAsientosNegativos: boolean
 }
 
@@ -62,13 +70,15 @@ export function DeclaracionDetalleClient({
   asientosSinResolver,
   totalAsientos,
   lineas,
+  lineasSinSaldoPositivo,
   tieneAsientosNegativos,
 }: DeclaracionDetalleClientProps) {
   const [estadoActual, setEstadoActual] = useState(estado);
   const [descargando, setDescargando] = useState(false);
   const [errorEstado, setErrorEstado] = useState(false);
 
-  const conErrores = asientosSinResolver.length > 0;
+  const totalExcluidos = asientosSinResolver.length + lineasSinSaldoPositivo.length;
+  const conErrores = totalExcluidos > 0;
   const generada = !conErrores && estadoActual === 'generada';
   const puedeDescargar = totalAsientos > 0 && !descargando;
 
@@ -123,7 +133,7 @@ export function DeclaracionDetalleClient({
             <div className="flex items-center justify-between gap-3">
               <strong>Resultado del procesamiento</strong>
               {conErrores
-                ? <Badge variant="warning">Con errores</Badge>
+                ? <Badge variant="warning">Con advertencias</Badge>
                 : generada
                   ? <Badge variant="success">Generada</Badge>
                   : <Badge variant="warning">Pendiente de generar</Badge>}
@@ -132,18 +142,22 @@ export function DeclaracionDetalleClient({
             {conErrores && (
               <div
                 data-testid="declaracion_con_errores"
-                className="grid gap-2 rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
+                className="grid gap-2 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-warning-text"
               >
-                <p>
-                  {asientosSinResolver.length === 1 ? 'Hay 1 asiento' : `Hay ${asientosSinResolver.length} asientos`}
+                <p className="font-semibold">
+                  {totalExcluidos === 1 ? 'Hay 1 exclusión' : `Hay ${totalExcluidos} exclusiones`}
                   {' '}
-                  de este período que no se pudo resolver a un código PADI. Estas líneas no se incluyen en el archivo
-                  PADI generado — si corresponden a una cuenta fiscal real, revisá el plan de cuentas de la empresa.
+                  en este período. No se incluyen en el archivo PADI generado.
                 </p>
                 <ul className="grid gap-1 pl-4 text-sm">
                   {asientosSinResolver.map((asiento, indice) => (
                     <li key={`${asiento.rut}-${asiento.dia}-${indice}`} className="list-disc">
                       {`Día ${asiento.dia}, RUT ${asiento.rut}: ${asiento.valor} ${MENSAJE_POR_RAZON[asiento.reason]}.`}
+                    </li>
+                  ))}
+                  {lineasSinSaldoPositivo.map(linea => (
+                    <li key={`${linea.rut}-${linea.codigoPadi}`} data-testid="declaracion_linea_sin_saldo" className="list-disc">
+                      {describirLineaSinSaldo(linea)}
                     </li>
                   ))}
                 </ul>

@@ -2,6 +2,7 @@
 
 import type { ImportarAsientoOpciones, ImportarAsientoResultado } from '@/components/importar-asiento-dialog';
 import type { EstadoCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
+import type { PeriodoDeclaraciones } from '@/modules/declaraciones/periodos';
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 import type { Json } from '@/types/supabase';
 import { Trash2 } from 'lucide-react';
@@ -66,6 +67,8 @@ interface DashboardClientProps {
   empresaId: string
   empresaNombre: string
   declaraciones: DeclaracionResumen[]
+  /** TD-45 / TD-46: una fila por período con el 2181 (anexo) y el 1376, ver `armarPeriodos`. */
+  periodos: PeriodoDeclaraciones[]
   cotizacionBcuInicial: EstadoCotizacionBcu
 }
 
@@ -96,7 +99,7 @@ function formatearPeriodo(periodo: string): string {
   return `${periodo.slice(4)}/${periodo.slice(0, 4)}`;
 }
 
-export function DashboardClient({ saludo, empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
+export function DashboardClient({ saludo, empresaId, empresaNombre, declaraciones, periodos, cotizacionBcuInicial }: DashboardClientProps) {
   const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
   const [tipoImportacion, setTipoImportacion] = useState<TipoDeclaracion>('2181');
@@ -374,64 +377,76 @@ export function DashboardClient({ saludo, empresaId, empresaNombre, declaracione
             {' '}
             {empresaNombre}
           </strong>
-          <table className="mt-3 w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Declaración</th>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Período</th>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Estado</th>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Última actualización</th>
-                <th className="border-b border-border p-3">
-                  <span className="sr-only">Acciones</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {declaraciones.map(fila => (
-                <tr key={fila.periodo}>
-                  <td className="border-b border-border p-3">2181</td>
-                  <td className="border-b border-border p-3 font-mono">
-                    <Link href={`/dashboard/declaraciones/${fila.periodo}`} className="text-primary hover:underline">
-                      {fila.periodo}
-                    </Link>
-                    <Link
-                      href={`/dashboard/declaraciones-1376/${fila.periodo}`}
-                      className="ml-3 font-sans text-sm text-primary hover:underline"
-                    >
-                      Ver 1376
-                    </Link>
-                  </td>
-                  <td className="border-b border-border p-3">
-                    <Badge variant={badgeVariant[fila.estado] ?? 'warning'}>{estadoLabel[fila.estado] ?? fila.estado}</Badge>
-                  </td>
-                  <td className="border-b border-border p-3 text-muted-foreground">
-                    {new Date(fila.updated_at).toLocaleDateString('es-UY')}
-                  </td>
-                  <td className="border-b border-border p-3 text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      data-testid={`borrar_periodo_${fila.periodo}`}
-                      aria-label={`Borrar período ${formatearPeriodo(fila.periodo)}`}
-                      title="Borrar período"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => setPeriodoABorrar(fila.periodo)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {declaraciones.length === 0 && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
                 <tr>
-                  <td colSpan={5} className="border-b border-border p-3 text-center text-muted-foreground">
-                    Todavía no hay declaraciones para esta empresa.
-                  </td>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Período</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">2181 (anexo)</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">1376</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Estado del período</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Última actualización</th>
+                  <th className="border-b border-border p-3">
+                    <span className="sr-only">Acciones</span>
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {periodos.map(fila => (
+                  <tr key={fila.periodo} data-testid={`periodo_${fila.periodo}`}>
+                    <td className="border-b border-border p-3 font-mono">{fila.periodo}</td>
+                    <td className="border-b border-border p-3">
+                      <Link
+                        href={`/dashboard/declaraciones/${fila.periodo}`}
+                        data-testid={`periodo_${fila.periodo}_2181`}
+                        aria-label={`Ver 2181 de ${formatearPeriodo(fila.periodo)}`}
+                      >
+                        <Badge variant={badgeVariant[fila.estado2181] ?? 'warning'}>{estadoLabel[fila.estado2181] ?? fila.estado2181}</Badge>
+                      </Link>
+                    </td>
+                    <td className="border-b border-border p-3">
+                      <Link
+                        href={`/dashboard/declaraciones-1376/${fila.periodo}`}
+                        data-testid={`periodo_${fila.periodo}_1376`}
+                        aria-label={`Ver 1376 de ${formatearPeriodo(fila.periodo)}`}
+                      >
+                        <Badge variant={badgeVariant[fila.estado1376] ?? 'warning'}>{estadoLabel[fila.estado1376] ?? fila.estado1376}</Badge>
+                      </Link>
+                    </td>
+                    <td className="border-b border-border p-3" data-testid={`periodo_${fila.periodo}_estado`}>
+                      {fila.completo
+                        ? <Badge variant="success">Completo</Badge>
+                        : <span className="text-sm text-muted-foreground">Incompleto</span>}
+                    </td>
+                    <td className="border-b border-border p-3 text-muted-foreground">
+                      {new Date(fila.updatedAt).toLocaleDateString('es-UY')}
+                    </td>
+                    <td className="border-b border-border p-3 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        data-testid={`borrar_periodo_${fila.periodo}`}
+                        aria-label={`Borrar período ${formatearPeriodo(fila.periodo)}`}
+                        title="Borrar período"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setPeriodoABorrar(fila.periodo)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {periodos.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="border-b border-border p-3 text-center text-muted-foreground">
+                      Todavía no hay declaraciones para esta empresa.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </main>
 
