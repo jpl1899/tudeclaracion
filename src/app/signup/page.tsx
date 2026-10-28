@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import type { Plan } from '@/modules/planes/planes';
+import { useEffect, useState } from 'react';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { turnstileEnabled, TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { Logo } from '@/components/brand/logo';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { getPasswordRules, passwordMeetsRequirements } from '@/lib/validation/password-rules';
+import { DIAS_DE_PRUEBA, resolverPlan } from '@/modules/planes/planes';
 
 /**
  * Crear cuenta (signup) — .context/design/master-design-plan.md §4.5, mockup en
@@ -39,6 +41,12 @@ export default function SignupPage() {
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [planElegido, setPlanElegido] = useState<Plan | null>(null);
+
+  // Read on mount instead of useSearchParams so the page needs no Suspense boundary.
+  useEffect(() => {
+    setPlanElegido(resolverPlan(new URLSearchParams(window.location.search).get('plan')));
+  }, []);
 
   const captchaReady = !turnstileEnabled || captchaToken !== null;
 
@@ -77,6 +85,8 @@ export default function SignupPage() {
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?next=/inicio`,
         captchaToken: captchaToken ?? undefined,
+        // Plan picked on the landing; kept as user metadata until billing exists.
+        data: planElegido ? { plan_elegido: planElegido.id } : undefined,
       },
     });
     setIsSubmitting(false);
@@ -131,6 +141,15 @@ export default function SignupPage() {
               Usa un correo profesional y una contraseña robusta para habilitar el acceso de tu estudio.
             </p>
           </div>
+
+          {planElegido && (
+            <div data-testid="signup_plan_elegido" className="rounded-md border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground">
+              <strong>{`Plan ${planElegido.nombre}`}</strong>
+              {` · ${planElegido.empresas.toLowerCase()} · USD ${planElegido.precioMensualUsd} / mes. Empezás con ${DIAS_DE_PRUEBA} días de prueba gratis, sin tarjeta.`}
+              {' '}
+              <a href="/#planes" className="font-semibold text-primary hover:underline">Cambiar plan</a>
+            </div>
+          )}
 
           {authError === 'duplicate' && (
             <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
