@@ -7,7 +7,7 @@ El archivo se importó bien, pero algunos asientos o líneas no pueden ir al 218
 | Motivo en pantalla | Qué significa | Qué hacer |
 |---|---|---|
 | *no está mapeado en el plan de cuentas* | Ni su código de IVA ni sus cuentas de Debe y Haber están en el plan de cuentas de la empresa. | Nada, si el asiento no va al 2181. Si debería ir, agregá su código de IVA o su cuenta, con el código PADI que corresponde, en el plan de cuentas (detalle de la empresa) y volvé a importar el TXT. |
-| *tiene un tipo fuera del alcance de esta declaración* | El asiento tiene un Tipo distinto de 504 (por ejemplo CIE o APE). | Nada, si el Tipo es correcto. Si no, corregilo en el TXT de origen. |
+| *tiene un tipo fuera del alcance de esta declaración* | El asiento tiene un Tipo con letras (por ejemplo CIE o APE). | Nada, si el Tipo es correcto. Si no, corregilo en el TXT de origen. |
 | *tiene un importe inválido (no puede ser cero)* | El Total es 0. | Revisá el importe en el TXT de origen. |
 | *tiene un Libro equivocado para esa cuenta* | Asiento abierto (Código IVA 0) cuyo Libro no coincide con su cuenta: las que empiezan con 2 son de venta y las que empiezan con 1 son de compra. | Corregí el Libro en el TXT de origen. |
 | *tiene un Código IVA que no coincide con el Libro* | Asiento en formato rápido cuyo Código IVA lleva a una cuenta de venta con un Libro de compra, o al revés. | Corregí el Código IVA o el Libro en el TXT de origen, o la cuenta de ese Código IVA en el plan de cuentas. |

@@ -92,7 +92,7 @@ async function cargarRevision({ supabase, empresaId, periodo }: CargarRevisionIn
     iva: asiento.iva,
     cotizacion: asiento.cotizacion,
     libro: asiento.libro as AsientoLine['libro'],
-    tipo: asiento.tipo as AsientoLine['tipo'],
+    tipo: asiento.tipo,
   }));
 
   if (asientosDelPeriodo.length === 0) {

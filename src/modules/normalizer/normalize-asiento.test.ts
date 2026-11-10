@@ -217,7 +217,7 @@ describe('resolveAsientoFiscal', () => {
   it('unsupported alphabetic Tipo values are out of scope', () => {
     const planCuentas: PlanCuentaRow[] = [];
 
-    for (const tipo of ['CIE', 'RES', 'DIF', 'APE'] as const) {
+    for (const tipo of ['CIE', 'RES', 'DIF', 'APE', 'XYZ']) {
       expect(resolveAsientoFiscal(asiento({ tipo }), planCuentas)).toEqual({
         resolved: false,
         reason: 'tipo-fuera-de-alcance',

@@ -89,6 +89,6 @@ environments:
     api_url: http://localhost:3000/api
     db_project_ref: kqrleobwemscldkfissh
   staging:
-    web_url: https://tudeclaracion-staging.onrender.com
-    api_url: https://tudeclaracion-staging.onrender.com/api
+    web_url: https://tudeclaracion-staging-pus8.onrender.com
+    api_url: https://tudeclaracion-staging-pus8.onrender.com/api
     db_project_ref: kqrleobwemscldkfissh

@@ -49,6 +49,39 @@ describe('parseAsientosTxt', () => {
     expect(result.lines[0].tipo).toBe('CIE');
   });
 
+  it('accepts an unknown alphabetic Tipo value -- any Tipo with letters is ignored by the engine, not rejected', () => {
+    const content = '15,"2000","3000","Otro ajuste","123456789012",0,500,0,0,0,"P",XYZ';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].tipo).toBe('XYZ');
+  });
+
+  it('ignores a numeric Tipo other than 504 -- user mistake, treated as an empty Tipo, not rejected', () => {
+    const content = '15,"2000","3000","Otro ajuste","123456789012",0,500,0,0,0,"P",505';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].tipo).toBeNull();
+  });
+
+  it('still resolves a line with a numeric Tipo other than 504 through the plan de cuentas, like an empty Tipo (RUT required for the 2181)', () => {
+    const planCuentas = [{ cuentaContable: '5215', codigoPadi: '504', codigoIva: null }];
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","FAC 1234",0,1000,0,0,0,"E",502';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'RUT', message: expect.any(String) }],
+    });
+  });
+
   it('parses the numeric Tipo value 504', () => {
     const content = '15,"2000","3000","Ajuste por 504","123456789012",0,500,0,0,0,"P",504';
 
