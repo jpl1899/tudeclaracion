@@ -1,5 +1,6 @@
 'use client';
 
+import type { CodigoLinea1376 } from '@/modules/empresa/plan-cuentas';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -9,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
 import {
+  buildOpcionesCodigoPadi,
   CODIGO_PADI_EXENTA,
-  CODIGOS_PADI_IVA,
   DUPLICATE_RUT_ERROR_CODE,
+  opcionIdDeCodigoPadi,
   RUT_UNIQUE_CONSTRAINT,
 } from '@/modules/empresa/plan-cuentas';
 
@@ -52,6 +54,7 @@ interface IvaRowInicial {
   codigoIva: string
   cuentaContable: string
   codigoPadi: string
+  declaracion: string
 }
 
 interface ExentaRowInicial {
@@ -64,6 +67,7 @@ interface IvaRow {
   id: string | null
   codigoIva: string
   cuentaContable: string
+  /** Id sintético de la opción elegida en el <select> — ver buildOpcionesCodigoPadi. */
   codigoPadi: string
 }
 
@@ -75,26 +79,35 @@ interface ExentaRow {
 
 type SaveState = 'idle' | 'success' | 'validation-error' | 'save-error';
 
-function emptyIvaRow(key: string): IvaRow {
-  return { key, id: null, codigoIva: '', cuentaContable: '', codigoPadi: CODIGOS_PADI_IVA[0].value };
+function emptyIvaRow(key: string, primeraOpcionId: string): IvaRow {
+  return { key, id: null, codigoIva: '', cuentaContable: '', codigoPadi: primeraOpcionId };
 }
 
 function emptyExentaRow(key: string): ExentaRow {
   return { key, id: null, cuentaContable: '' };
 }
 
-export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsIniciales }: {
+export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsIniciales, codigos1376 }: {
   empresa: EmpresaDetalle
   ivaRowsIniciales: IvaRowInicial[]
   exentaRowsIniciales: ExentaRowInicial[]
+  codigos1376: CodigoLinea1376[]
 }) {
   const router = useRouter();
   const nextKey = useRef(0);
+  const opciones = buildOpcionesCodigoPadi(codigos1376);
+  const primeraOpcionId = opciones[0].id;
 
   const [rut, setRut] = useState(empresa.rut);
   const [nombre, setNombre] = useState(empresa.nombre);
   const [ivaRows, setIvaRows] = useState<IvaRow[]>(
-    () => ivaRowsIniciales.map(r => ({ key: r.id, id: r.id, codigoIva: r.codigoIva, cuentaContable: r.cuentaContable, codigoPadi: r.codigoPadi })),
+    () => ivaRowsIniciales.map(r => ({
+      key: r.id,
+      id: r.id,
+      codigoIva: r.codigoIva,
+      cuentaContable: r.cuentaContable,
+      codigoPadi: opcionIdDeCodigoPadi(opciones, r),
+    })),
   );
   const [exentaRows, setExentaRows] = useState<ExentaRow[]>(
     () => exentaRowsIniciales.map(r => ({ key: r.id, id: r.id, cuentaContable: r.cuentaContable })),
@@ -120,7 +133,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
   }
 
   function addIvaRow() {
-    setIvaRows(prev => [...prev, emptyIvaRow(`nueva-iva-${nextKey.current++}`)]);
+    setIvaRows(prev => [...prev, emptyIvaRow(`nueva-iva-${nextKey.current++}`, primeraOpcionId)]);
     clearBanners();
   }
 
@@ -153,7 +166,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
   const invalidRutLength = submitted && rut.trim() !== '' && rut.trim().length !== 12;
   const missingNombre = submitted && nombre.trim() === '';
   const ivaRowsIncomplete = ivaRows.some(r => r.codigoIva.trim() === '' || r.cuentaContable.trim() === '');
-  const exentaRowsIncomplete = exentaRows.some(r => r.cuentaContable.trim() === '');
 
   async function handleSubmit() {
     setSubmitted(true);
@@ -161,7 +173,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
 
-    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
+    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete) {
       setSaveState('validation-error');
       return;
     }
@@ -173,14 +185,21 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
       p_rut: trimmedRut,
       p_nombre: trimmedNombre,
       p_cuentas: [
-        ...ivaRows.map(r => ({
-          cuenta_contable: r.cuentaContable.trim(),
-          codigo_padi: r.codigoPadi,
-          codigo_iva: Number(r.codigoIva),
-        })),
-        ...exentaRows.map(r => ({
+        ...ivaRows.map((r) => {
+          // Sin opción: código que ya no está en el catálogo -- se conserva
+          // tal cual, como fila del 2181 (el default de la columna).
+          const opcion = opciones.find(o => o.id === r.codigoPadi);
+          return {
+            cuenta_contable: r.cuentaContable.trim(),
+            codigo_padi: opcion?.codigoPadi ?? r.codigoPadi,
+            codigo_iva: Number(r.codigoIva),
+            declaracion: opcion?.declaracion ?? '2181',
+          };
+        }),
+        ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
+          declaracion: '2181',
         })),
       ],
     });
@@ -193,7 +212,10 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
     }
 
     if (error) {
-      throw new Error(`No se pudieron guardar los cambios: ${error.message}`);
+      console.error('[empresa-detalle] editar_empresa_con_plan_cuentas failed:', error);
+      setSaveState('save-error');
+      setSaveErrorMessage('Ocurrió un error inesperado. Intentá nuevamente en unos minutos.');
+      return;
     }
 
     setSaveState('success');
@@ -236,7 +258,7 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
         <section className="grid gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Datos generales</h2>
-            <Badge variant="outline">Empresa existente</Badge>
+            <Badge variant="outline">{nombre.trim() || 'Empresa existente'}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
             Nombre y RUT identifican la empresa sobre la que ya estás trabajando. Si cancelas, vuelves
@@ -284,6 +306,14 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className="justify-self-start text-sm font-medium text-primary underline underline-offset-4"
+            onClick={() => router.push(`/empresas/${empresa.id}/mapeo-1376`)}
+          >
+            Configurar el mapeo del 1376
+          </button>
         </section>
 
         <section className="grid gap-4">
@@ -340,8 +370,8 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
                             value={row.codigoPadi}
                             onChange={e => updateIvaRow(row.key, { codigoPadi: e.target.value })}
                           >
-                            {CODIGOS_PADI_IVA.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            {opciones.map(opt => (
+                              <option key={opt.id} value={opt.id}>{opt.label}</option>
                             ))}
                           </select>
                         </div>
@@ -389,7 +419,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
             : (
                 <div className="grid gap-3">
                   {exentaRows.map((row) => {
-                    const rowIncomplete = submitted && row.cuentaContable.trim() === '';
                     return (
                       <div key={row.key} className="grid grid-cols-[1fr_auto] items-end gap-3 rounded-md border border-border bg-muted/40 p-4">
                         <div className="grid gap-1.5">
@@ -413,9 +442,6 @@ export function EmpresaDetalleClient({ empresa, ivaRowsIniciales, exentaRowsInic
                         >
                           ×
                         </Button>
-                        {rowIncomplete && (
-                          <span className="col-span-full text-sm text-error-text">Completá la cuenta contable.</span>
-                        )}
                       </div>
                     );
                   })}

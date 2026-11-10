@@ -1,6 +1,10 @@
+import type { Plan } from '@/modules/planes/planes';
+import { Check } from 'lucide-react';
 import Link from 'next/link';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DIAS_DE_PRUEBA, PLANES } from '@/modules/planes/planes';
 
 /**
  * Portada (landing) — .context/design/master-design-plan.md §4.1, mockup en
@@ -13,11 +17,20 @@ export default function RootPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-white">
       <div className="mx-auto w-full max-w-[1200px] px-4">
-        <header className="flex min-h-[72px] items-center gap-3 py-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-            TD
-          </div>
+        <header className="flex min-h-[72px] flex-wrap items-center gap-3 py-4">
+          <Logo variant="mark" className="h-11 w-11" priority alt="" />
           <span className="font-semibold text-foreground">tuDeclaracion</span>
+          <nav aria-label="Principal" className="ml-auto flex items-center gap-1 sm:gap-2">
+            <Button asChild variant="ghost" className="h-12 px-3">
+              <a href="#planes">Planes</a>
+            </Button>
+            <Button asChild variant="ghost" className="h-12 px-3">
+              <Link href="/login">Ingresar</Link>
+            </Button>
+            <Button asChild className="hidden h-12 px-4 sm:inline-flex">
+              <Link href="/signup">Crear cuenta</Link>
+            </Button>
+          </nav>
         </header>
 
         <section className="grid gap-6 py-8 md:py-12">
@@ -67,11 +80,63 @@ export default function RootPage() {
           </div>
         </section>
 
+        <section id="planes" aria-labelledby="planes-titulo" className="scroll-mt-6 py-8 md:py-12">
+          <h2 id="planes-titulo" className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+            Planes
+          </h2>
+          <p className="mt-2 max-w-[60ch] text-muted-foreground">
+            {`Probalo gratis ${DIAS_DE_PRUEBA} días, sin tarjeta. Todos los planes incluyen las cuatro declaraciones; lo que cambia es cuántas empresas gestionás.`}
+          </p>
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {PLANES.map(plan => <PlanCard key={plan.id} plan={plan} />)}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Precios en dólares, por mes. Pagando el año completo, dos meses son gratis.
+          </p>
+        </section>
+
         <footer className="py-8 text-sm text-muted-foreground">
           Herramienta de apoyo. No reemplaza asesoramiento contable ni legal.
         </footer>
       </div>
     </main>
+  );
+}
+
+function PlanCard({ plan }: { plan: Plan }) {
+  return (
+    <Card
+      data-testid={`plan_${plan.id}`}
+      className={plan.recomendado ? 'relative border-2 border-primary shadow-md' : 'relative'}
+    >
+      <CardContent className="grid h-full content-start gap-4 pt-6">
+        {plan.recomendado && (
+          <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary-foreground">
+            Recomendado
+          </span>
+        )}
+        <div>
+          <strong className="text-lg text-foreground">{plan.nombre}</strong>
+          <p className="text-sm text-muted-foreground">{plan.paraQuien}</p>
+        </div>
+        <p className="flex items-baseline gap-1 text-foreground">
+          <span className="font-heading text-4xl font-semibold">{`USD ${plan.precioMensualUsd}`}</span>
+          <span className="text-muted-foreground">/ mes</span>
+        </p>
+        <p className="-mt-3 text-sm text-muted-foreground">{`o USD ${plan.precioAnualUsd} al año`}</p>
+        <ul className="grid gap-2 text-sm">
+          {[plan.empresas, ...plan.incluye].map(item => (
+            <li key={item} className="flex items-start gap-2 text-foreground">
+              <Check aria-hidden="true" className="mt-0.5 h-4 w-4 flex-none text-primary" />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <Button asChild size="lg" variant={plan.recomendado ? 'default' : 'outline'} className="mt-auto h-[52px]">
+          <Link href={`/signup?plan=${plan.id}`}>{`Empezar con ${plan.nombre}`}</Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 

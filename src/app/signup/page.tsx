@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import type { Plan } from '@/modules/planes/planes';
+import { useEffect, useState } from 'react';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
+import { turnstileEnabled, TurnstileWidget } from '@/components/auth/turnstile-widget';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { getPasswordRules, passwordMeetsRequirements } from '@/lib/validation/password-rules';
+import { DIAS_DE_PRUEBA, resolverPlan } from '@/modules/planes/planes';
 
 /**
  * Crear cuenta (signup) — .context/design/master-design-plan.md §4.5, mockup en
@@ -34,6 +39,16 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPendingVerification, setIsPendingVerification] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [planElegido, setPlanElegido] = useState<Plan | null>(null);
+
+  // Read on mount instead of useSearchParams so the page needs no Suspense boundary.
+  useEffect(() => {
+    setPlanElegido(resolverPlan(new URLSearchParams(window.location.search).get('plan')));
+  }, []);
+
+  const captchaReady = !turnstileEnabled || captchaToken !== null;
 
   const rules = getPasswordRules(password);
   const showPasswordError = (passwordTouched || submitted) && !passwordMeetsRequirements(password);
@@ -68,10 +83,16 @@ export default function SignupPage() {
       email: trimmedEmail,
       password: trimmedPassword,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?next=/empresas`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm?next=/inicio`,
+        captchaToken: captchaToken ?? undefined,
+        // Plan picked on the landing; kept as user metadata until billing exists.
+        data: planElegido ? { plan_elegido: planElegido.id } : undefined,
       },
     });
     setIsSubmitting(false);
+    // The token is single-use, whatever the outcome.
+    setCaptchaToken(null);
+    setCaptchaKey(key => key + 1);
 
     const isDuplicate = error?.message.toLowerCase().includes('already registered')
       || (!error && data.user?.identities?.length === 0);
@@ -121,6 +142,15 @@ export default function SignupPage() {
             </p>
           </div>
 
+          {planElegido && (
+            <div data-testid="signup_plan_elegido" className="rounded-md border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground">
+              <strong>{`Plan ${planElegido.nombre}`}</strong>
+              {` · ${planElegido.empresas.toLowerCase()} · USD ${planElegido.precioMensualUsd} / mes. Empezás con ${DIAS_DE_PRUEBA} días de prueba gratis, sin tarjeta.`}
+              {' '}
+              <a href="/#planes" className="font-semibold text-primary hover:underline">Cambiar plan</a>
+            </div>
+          )}
+
           {authError === 'duplicate' && (
             <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
               <strong className="mb-1 block">Este correo ya está registrado.</strong>
@@ -141,6 +171,14 @@ export default function SignupPage() {
               Ocurrió un error al procesar tu solicitud. Intenta nuevamente en unos minutos.
             </div>
           )}
+
+          <GoogleSignInButton />
+
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            o
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
           <div className="grid gap-2">
             <Label htmlFor="email">Correo electrónico</Label>
@@ -189,7 +227,9 @@ export default function SignupPage() {
             ))}
           </ul>
 
-          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+          <TurnstileWidget key={captchaKey} onToken={setCaptchaToken} />
+
+          <Button type="button" size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting || !captchaReady}>
             {isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}
           </Button>
 
@@ -204,9 +244,7 @@ function IntroPanel() {
   return (
     <section className="grid gap-6 bg-gradient-to-b from-primary/5 to-white p-10">
       <div>
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-          TD
-        </div>
+        <Logo variant="mark" className="mb-4 h-11 w-11" priority />
         <h1 className="mb-3 font-heading text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-5xl">
           Crear cuenta para empezar con seguridad.
         </h1>

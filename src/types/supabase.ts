@@ -86,6 +86,27 @@ export type Database = {
           },
         ]
       }
+      codigo_linea_1376: {
+        Row: {
+          codigo: string
+          concepto: string
+          created_at: string
+          orden: number
+        }
+        Insert: {
+          codigo: string
+          concepto: string
+          created_at?: string
+          orden: number
+        }
+        Update: {
+          codigo?: string
+          concepto?: string
+          created_at?: string
+          orden?: number
+        }
+        Relationships: []
+      }
       cotizacion_bcu_cache: {
         Row: {
           fecha: string
@@ -192,6 +213,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "declaracion_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      declaracion_1376: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          estado: string
+          id: string
+          periodo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          estado?: string
+          id?: string
+          periodo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          estado?: string
+          id?: string
+          periodo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "declaracion_1376_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresa"
@@ -309,12 +365,58 @@ export type Database = {
           },
         ]
       }
+      mapeo_1376: {
+        Row: {
+          codigo_iva: number | null
+          codigo_linea: string
+          created_at: string
+          cuenta_contable: string
+          empresa_id: string
+          id: string
+          lado: string
+        }
+        Insert: {
+          codigo_iva?: number | null
+          codigo_linea: string
+          created_at?: string
+          cuenta_contable: string
+          empresa_id: string
+          id?: string
+          lado: string
+        }
+        Update: {
+          codigo_iva?: number | null
+          codigo_linea?: string
+          created_at?: string
+          cuenta_contable?: string
+          empresa_id?: string
+          id?: string
+          lado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mapeo_1376_codigo_linea_fkey"
+            columns: ["codigo_linea"]
+            isOneToOne: false
+            referencedRelation: "codigo_linea_1376"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "mapeo_1376_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_cuentas: {
         Row: {
           codigo_iva: number | null
           codigo_padi: string
           created_at: string
           cuenta_contable: string
+          declaracion: string
           empresa_id: string
           id: string
         }
@@ -323,6 +425,7 @@ export type Database = {
           codigo_padi: string
           created_at?: string
           cuenta_contable: string
+          declaracion?: string
           empresa_id: string
           id?: string
         }
@@ -331,6 +434,7 @@ export type Database = {
           codigo_padi?: string
           created_at?: string
           cuenta_contable?: string
+          declaracion?: string
           empresa_id?: string
           id?: string
         }
@@ -349,12 +453,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      borrar_periodo: {
+        Args: { p_empresa_id: string; p_periodo: string }
+        Returns: undefined
+      }
       crear_empresa_con_plan_cuentas: {
         Args: { p_cuentas: Json; p_nombre: string; p_rut: string }
         Returns: string
       }
       editar_empresa_con_plan_cuentas: {
         Args: { p_cuentas: Json; p_empresa_id: string; p_nombre: string; p_rut: string }
+        Returns: undefined
+      }
+      guardar_mapeo_1376: {
+        Args: { p_empresa_id: string; p_filas: Json }
         Returns: undefined
       }
       insertar_asientos: {

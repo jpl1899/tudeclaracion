@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contarCamposPrimeraLineaDeDatos, derivarLayout, parseAsientosTxt } from './parse-asientos';
+import { contarCamposPrimeraLineaDeDatos, derivarLayout, parseAsientosTxt, parseAsientosTxt1376, tieneEncabezado } from './parse-asientos';
 
 describe('parseAsientosTxt', () => {
   it('interprets a compra exenta line resolved by cuenta contable (Código IVA = 0)', () => {
@@ -85,8 +85,34 @@ describe('parseAsientosTxt', () => {
     });
   });
 
-  it('rejects a RUT that is not exactly 12 digits', () => {
+  it('rejects a RUT that is not exactly 12 digits when the line resolves to the 2181 via Camino 2', () => {
+    const planCuentas = [{ cuentaContable: '5215', codigoPadi: '504', codigoIva: null }];
     const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",0,1000,0,0,0,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'RUT', message: expect.any(String) }],
+    });
+  });
+
+  it('rejects a non-RUT value when the line resolves to the 2181 via a mapped Código IVA (formato rápido)', () => {
+    const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: 3 }];
+    const content = '10,"5215","11111","Factura compra A 123","FAC 1234",0,1000,3,180.33,0,"C",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'RUT', message: expect.stringContaining('FAC 1234') }],
+    });
+  });
+
+  it('rejects a non-RUT value on a Tipo 504 line -- 504 always reaches the 2181, regardless of the plan de cuentas', () => {
+    const content = '15,"2000","3000","Ajuste por 504","FAC 1234",0,500,0,0,0,"P",504';
 
     const result = parseAsientosTxt(content, []);
 
@@ -97,10 +123,33 @@ describe('parseAsientosTxt', () => {
     });
   });
 
-  it('reports every invalid field of the same line at once, not just the first one found', () => {
-    const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",9,1000,0,0,-5,"E",';
+  it('accepts any RUT value on a line the 2181 does not resolve -- ej. pago de anticipo de IRAE (13122 contra caja 11111), only used by the 1376 (ADR-0008)', () => {
+    const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: 3 }];
+    const content = '5,"13122","11111","Anticipo IRAE","FAC 1234",0,1500,0,0,0,"C",';
+
+    const result = parseAsientosTxt(content, planCuentas);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ debe: '13122', haber: '11111', rut: 'FAC 1234', total: 1500 });
+  });
+
+  it('accepts any RUT value on a line with an unmapped Código IVA or an out-of-scope Tipo', () => {
+    const content = [
+      '5,"5215","11111","Formato rápido sin mapear","FAC 1234",0,1000,7,220,0,"C",',
+      '6,"2000","3000","Cierre de ejercicio","",0,500,0,0,0,"P",CIE',
+    ].join('\n');
 
     const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('reports every invalid field of the same line at once, not just the first one found', () => {
+    const planCuentas = [{ cuentaContable: '5215', codigoPadi: '504', codigoIva: null }];
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","2336699887",9,1000,0,0,-5,"E",';
+
+    const result = parseAsientosTxt(content, planCuentas);
 
     expect(result).toEqual({
       ok: false,
@@ -145,6 +194,16 @@ describe('parseAsientosTxt', () => {
     expect(result.lines[0].cotizacion).toBe(39.60396039);
   });
 
+  it('accepts a zero cotización written with decimals (ej. 0.0000) as pesos', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0.0000,"E",';
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0].cotizacion).toBe(0);
+  });
+
   it('accepts a cotización with no decimals at all', () => {
     const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",1,1000,0,0,40,"E",';
 
@@ -155,18 +214,14 @@ describe('parseAsientosTxt', () => {
     expect(result.lines[0].cotizacion).toBe(40);
   });
 
-  it('reports a Libro inconsistent with the cuenta resolved via Código IVA directo (Camino 1)', () => {
+  it('accepts a Libro inconsistent with the cuenta resolved via Código IVA directo (Camino 1) -- the 2181 engine excludes it later (TD-51)', () => {
     const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: 3 }];
     // Reproduce el caso reportado por el contador: venta resuelta por Código IVA directo, con Libro 'E' (compra) por error.
     const content = '16,"1234","5678","Factura venta A 9999","233669988774",0,1000,3,180.33,0,"E",';
 
     const result = parseAsientosTxt(content, planCuentas);
 
-    expect(result).toEqual({
-      ok: false,
-      line: 1,
-      errors: [{ field: 'Libro', message: expect.stringContaining('2131') }],
-    });
+    expect(result.ok).toBe(true);
   });
 
   it('does not flag Libro for Código IVA directo when it is consistent with the resolved cuenta prefix', () => {
@@ -187,7 +242,7 @@ describe('parseAsientosTxt', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('reports a Libro inconsistent with the resolved cuenta de IVA prefix, alongside other invalid fields in the same line', () => {
+  it('does not report a Libro inconsistent with the resolved cuenta de IVA prefix among the invalid fields of a line (TD-51)', () => {
     const planCuentas = [{ cuentaContable: '2131', codigoPadi: '502', codigoIva: null }];
     // Día 14, venta -- RUT, Moneda y Cotización inválidos, y Libro 'E' (compra) con una cuenta de venta (prefijo 2).
     const content = '14,"2131","11111","Factura venta A 555","2336699887",9,1000,0,0,-5,"E",';
@@ -201,22 +256,17 @@ describe('parseAsientosTxt', () => {
         { field: 'RUT', message: expect.any(String) },
         { field: 'Moneda', message: expect.any(String) },
         { field: 'Cotización', message: expect.any(String) },
-        { field: 'Libro', message: expect.stringContaining('2131') },
       ],
     });
   });
 
-  it('reports a Libro inconsistent with a compra account prefix (1) as its own error', () => {
+  it('accepts a Libro inconsistent with a compra account prefix (1) -- the 2181 engine excludes it later (TD-51)', () => {
     const planCuentas = [{ cuentaContable: '1131', codigoPadi: '552', codigoIva: null }];
     const content = '10,"1131","11111","Factura compra A 123","233669988774",0,1000,0,0,0,"V",';
 
     const result = parseAsientosTxt(content, planCuentas);
 
-    expect(result).toEqual({
-      ok: false,
-      line: 1,
-      errors: [{ field: 'Libro', message: expect.stringContaining('1131') }],
-    });
+    expect(result.ok).toBe(true);
   });
 
   it('does not flag Libro when the account does not match any entry in the plan de cuentas', () => {
@@ -492,5 +542,117 @@ describe('parseAsientosTxt', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) { return; }
     expect(result.lines).toHaveLength(1);
+  });
+});
+
+describe('parseAsientosTxt1376', () => {
+  const encabezadoRucAntesDeConcepto = 'DIA,DEBE,HABER,RUC,CONCEPTO,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO';
+
+  it('reads each column by its header title, so RUC before CONCEPTO does not swap the values', () => {
+    const content = `${encabezadoRucAntesDeConcepto}\r\n1,11411,11111,211111111111,FAC 1234,0,1000,0,0,0.0000,E\r\n2,13122,11111,,BOLETO PAGO IRAE,0,5000,0,0,0.0000,E`;
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines.map(linea => ({ concepto: linea.concepto, rut: linea.rut }))).toEqual([
+      { concepto: 'FAC 1234', rut: '211111111111' },
+      { concepto: 'BOLETO PAGO IRAE', rut: '' },
+    ]);
+    expect(result.lines[1]).toMatchObject({ debe: '13122', haber: '11111', total: 5000, libro: 'E', tipo: null });
+  });
+
+  it('matches titles regardless of case, accents and separators', () => {
+    const content = 'Día,Debe,Haber,Concepto,R.U.T.,Moneda,Total,Código IVA,IVA,Cotización,Libro,Tipo\n5,5215,11111,Ancap,233669988774,0,1000,0,0,0,E,';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: 'Ancap', rut: '233669988774', codigoIva: 0, tipo: null });
+  });
+
+  it('ignores the known special columns named in the header', () => {
+    const content = 'DIA,DEBE,HABER,COMPROBANTE,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO\n5,5215,11111,A-123,Ancap,233669988774,0,1000,0,0,0,E';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: 'Ancap', rut: '233669988774' });
+  });
+
+  it('rejects a line with more fields than header columns instead of shifting them', () => {
+    const content = `${encabezadoRucAntesDeConcepto}\n2,13122,11111,,BOLETO PAGO IRAE,0,5000,0,0,0,0.0000,E`;
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 2,
+      errors: [{ field: 'línea', message: 'El encabezado tiene 11 columnas, pero la línea trae 12 campos' }],
+    });
+  });
+
+  it('rejects an unknown header title', () => {
+    const content = 'DIA,DEBE,HABER,CONCEPTO,RUT,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO,OBSERVACION\n5,5215,11111,Ancap,233669988774,0,1000,0,0,0,E,x';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Encabezado', message: '"OBSERVACION" no es un título de campo conocido' }],
+    });
+  });
+
+  it('rejects a header that is missing a required column', () => {
+    const content = 'DIA,DEBE,HABER,CONCEPTO,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO\n5,5215,11111,Ancap,0,1000,0,0,0,E';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Encabezado', message: 'Falta la columna: rut' }],
+    });
+  });
+
+  it('rejects a repeated header title (RUC and RUT are the same field)', () => {
+    const content = 'DIA,DEBE,HABER,CONCEPTO,RUT,RUC,MONEDA,TOTAL,CODIGOIVA,IVA,COTIZACION,LIBRO\n5,5215,11111,Ancap,233669988774,233669988774,0,1000,0,0,0,E';
+
+    const result = parseAsientosTxt1376(content, []);
+
+    expect(result).toEqual({
+      ok: false,
+      line: 1,
+      errors: [{ field: 'Encabezado', message: '"RUC" está repetido' }],
+    });
+  });
+
+  it('falls back to the positional layout when the file has no header', () => {
+    const content = '5,"5215","11111","Ancap Ticket A 12452548","233669988774",0,1000,0,0,0,"E",';
+
+    expect(parseAsientosTxt1376(content, [])).toEqual(parseAsientosTxt(content, []));
+  });
+
+  it('leaves the 2181 parser reading by position even when the header has another order', () => {
+    const content = `${encabezadoRucAntesDeConcepto}\n1,11411,11111,211111111111,FAC 1234,0,1000,0,0,0.0000,E`;
+
+    const result = parseAsientosTxt(content, []);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.lines[0]).toMatchObject({ concepto: '211111111111', rut: 'FAC 1234' });
+  });
+});
+
+describe('tieneEncabezado', () => {
+  it('detects a leading header row', () => {
+    expect(tieneEncabezado('DIA,DEBE,HABER\n1,2,3')).toBe(true);
+  });
+
+  it('returns false for a file that starts with data', () => {
+    expect(tieneEncabezado('1,11411,11111')).toBe(false);
   });
 });

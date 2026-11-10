@@ -14,6 +14,70 @@ export const CODIGOS_PADI_IVA = [
 
 export const CODIGO_PADI_EXENTA = '504';
 
+export interface CodigoLinea1376 {
+  codigo: string
+  concepto: string
+}
+
+/** Declaración a la que pertenece una fila de `plan_cuentas` — ADR-0007. */
+export type DeclaracionPlanCuentas = '2181' | '1376';
+
+export interface OpcionCodigoPadi {
+  id: string
+  codigoPadi: string
+  declaracion: DeclaracionPlanCuentas
+  label: string
+}
+
+/**
+ * Combina el catálogo de códigos PADI del 2181 (`CODIGOS_PADI_IVA`, fijo) con
+ * el catálogo de líneas del 1376 (`codigo_linea_1376`, config-driven). Algunos
+ * códigos existen en ambos catálogos con conceptos distintos (ej. 502) — el
+ * `id` sintético (`2181-<codigo>` / `1376-<codigo>`) evita que un <select>
+ * controlado reciba dos <option> con el mismo `value`; `codigoPadi` sigue
+ * siendo el código real que se manda a `crear_empresa_con_plan_cuentas`, y
+ * `declaracion` se guarda junto a él (ADR-0007) para que cada motor lea solo
+ * sus cuentas.
+ *
+ * Para un código que colisiona entre catálogos, el label antepone el número
+ * de declaración jurada (`2181-502` / `1376-502`) para que el contador no
+ * confunda cuál está eligiendo — los códigos que no colisionan se muestran
+ * igual que siempre, sin prefijo.
+ */
+export function buildOpcionesCodigoPadi(codigos1376: CodigoLinea1376[]): OpcionCodigoPadi[] {
+  const codigos1376Set = new Set(codigos1376.map(c => c.codigo));
+  const codigos2181Set = new Set<string>(CODIGOS_PADI_IVA.map(opt => opt.value));
+
+  return [
+    ...CODIGOS_PADI_IVA.map(opt => ({
+      id: `2181-${opt.value}`,
+      codigoPadi: opt.value,
+      declaracion: '2181' as const,
+      label: codigos1376Set.has(opt.value) ? `2181-${opt.label}` : opt.label,
+    })),
+    ...codigos1376.map(c => ({
+      id: `1376-${c.codigo}`,
+      codigoPadi: c.codigo,
+      declaracion: '1376' as const,
+      label: codigos2181Set.has(c.codigo) ? `1376-${c.codigo} — ${c.concepto}` : `${c.codigo} — ${c.concepto}`,
+    })),
+  ];
+}
+
+/**
+ * Inversa de `buildOpcionesCodigoPadi` para una fila ya guardada: código y
+ * declaración identifican la opción exacta (ADR-0007). Si el par no está en
+ * las opciones (catálogo cambiado), cae en cualquier opción con ese código.
+ */
+export function opcionIdDeCodigoPadi(
+  opciones: OpcionCodigoPadi[],
+  fila: { codigoPadi: string, declaracion: string },
+): string {
+  return opciones.find(o => o.id === `${fila.declaracion}-${fila.codigoPadi}`)?.id
+    ?? opciones.find(o => o.codigoPadi === fila.codigoPadi)?.id
+    ?? fila.codigoPadi;
+}
+
 export const DUPLICATE_RUT_ERROR_CODE = '23505';
 
 // `plan_cuentas` also carries UNIQUE(empresa_id, codigo_iva) and

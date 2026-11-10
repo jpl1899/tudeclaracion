@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { UserMenu } from '@/components/auth/user-menu';
+import { Logo } from '@/components/brand/logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +24,8 @@ import { seleccionarEmpresaActiva } from './actions';
  * resto del dashboard lee vía `resolverEmpresaActiva`. Antes este paso era
  * solo visual y el dashboard siempre operaba sobre la empresa más reciente.
  */
+const EMPRESAS_POR_PAGINA = 10;
+
 export interface Empresa {
   id: string
   nombre: string
@@ -34,6 +38,7 @@ export interface Empresa {
 export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas: Empresa[], empresaActivaIdInicial: string | null }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [selected, setSelected] = useState<Empresa | null>(
     empresas.find(e => e.id === empresaActivaIdInicial) ?? empresas[0] ?? null,
   );
@@ -52,21 +57,30 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
     return empresas.filter(e => `${e.nombre} ${e.rut}`.toLowerCase().includes(term));
   }, [search, empresas]);
 
+  const totalPaginas = Math.max(1, Math.ceil(filtered.length / EMPRESAS_POR_PAGINA));
+  const empresasDePagina = filtered.slice((pagina - 1) * EMPRESAS_POR_PAGINA, pagina * EMPRESAS_POR_PAGINA);
+
+  function handleSearch(value: string) {
+    setSearch(value);
+    setPagina(1);
+  }
+
   return (
     <main className="mx-auto w-[min(1200px,calc(100%-32px))] py-6 pb-10">
       <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-[42px] w-[42px] items-center justify-center rounded-md bg-primary font-bold text-primary-foreground shadow-sm">
-            TD
-          </div>
+          <Logo variant="mark" className="h-[42px] w-[42px]" priority alt="" />
           <div>
             <div className="font-semibold tracking-tight">tuDeclaracion</div>
             <div className="text-sm text-muted-foreground">Selección de empresa</div>
           </div>
         </div>
-        <Button variant="outline" onClick={() => router.push('/login')}>
-          Volver al acceso
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button asChild variant="outline">
+            <Link href="/inicio">Inicio</Link>
+          </Button>
+          <UserMenu />
+        </div>
       </header>
 
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
@@ -85,13 +99,29 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
             </p>
           </div>
 
+          <button
+            type="button"
+            onClick={() => router.push('/empresas/nueva')}
+            className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-primary/25 bg-muted p-[18px] text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-xl font-bold text-primary">
+              +
+            </span>
+            <span>
+              <strong>Agregar nueva empresa</strong>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Dar de alta un cliente nuevo bajo tu cuenta.
+              </p>
+            </span>
+          </button>
+
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <Input
               placeholder="Buscar por nombre de empresa o RUT"
               aria-label="Buscar empresa"
               className="h-[52px]"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => handleSearch(e.target.value)}
             />
             <div className="flex h-11 items-center rounded-md border border-border bg-muted px-3.5 font-semibold text-muted-foreground">
               {filtered.length}
@@ -101,10 +131,10 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
           </div>
 
           <div className="grid gap-3">
-            {filtered.map(empresa => (
+            {empresasDePagina.map(empresa => (
               <div
                 key={empresa.id}
-                className={`grid gap-3 rounded-2xl border p-4.5 transition-colors ${
+                className={`grid gap-3 rounded-2xl border p-[18px] transition-colors ${
                   selected?.id === empresa.id
                     ? 'border-primary/40 bg-primary/5 shadow-md'
                     : 'border-border bg-card has-[button:hover]:border-primary/25 has-[button:hover]:shadow-sm has-[button:focus-visible]:border-primary/25 has-[button:focus-visible]:shadow-sm'
@@ -149,38 +179,36 @@ export function EmpresasClient({ empresas, empresaActivaIdInicial }: { empresas:
               </div>
             ))}
 
-            <button
-              type="button"
-              onClick={() => router.push('/empresas/nueva')}
-              className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-primary/25 bg-muted p-4.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-xl font-bold text-primary">
-                +
-              </span>
-              <span>
-                <strong>Agregar nueva empresa</strong>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Dar de alta un cliente nuevo bajo tu cuenta.
-                </p>
-              </span>
-            </button>
+            {totalPaginas > 1 && (
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <Button variant="outline" size="sm" disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {`Página ${pagina} de ${totalPaginas}`}
+                </span>
+                <Button variant="outline" size="sm" disabled={pagina === totalPaginas} onClick={() => setPagina(pagina + 1)}>
+                  Siguiente
+                </Button>
+              </div>
+            )}
 
             {empresas.length === 0 && (
-              <div className="rounded-2xl border border-border bg-muted p-4.5 text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-muted p-[18px] text-muted-foreground">
                 Todavía no tenés empresas registradas. Usá &quot;Agregar nueva empresa&quot; para dar
                 de alta tu primer cliente.
               </div>
             )}
 
             {empresas.length > 0 && filtered.length === 0 && (
-              <div className="rounded-2xl border border-border bg-muted p-4.5 text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-muted p-[18px] text-muted-foreground">
                 No hay empresas que coincidan con la búsqueda. Probá con otro nombre o con el RUT.
               </div>
             )}
           </div>
         </div>
 
-        <aside className="grid content-start gap-4.5 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <aside className="grid content-start gap-[18px] rounded-xl border border-border bg-card p-6 shadow-sm">
           <div>
             <strong className="text-lg">Empresa seleccionada</strong>
             <p className="mt-2 text-sm text-muted-foreground">

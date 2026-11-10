@@ -2,7 +2,7 @@
 
 > Registro único y acumulativo de todo lo que quedó pendiente de confirmar en el proyecto. Hand-maintained, append-only (mismo criterio que `business/domain-glossary.md`) — no se regenera automáticamente ni se reescribe desde cero. Cada vez que surja un nuevo pendiente (en cualquier fase: Constitution, PRD, SRS, tax-rules, Design, Sprint), se agrega acá. Cuando uno se resuelve, se tacha (`~~texto~~`) con la fecha y la decisión tomada, no se borra — mantiene el historial de qué se decidió y cuándo.
 
-Última actualización: 2026-07-07.
+Última actualización: 2026-08-27 (agregada sección "1376 / MVP 2 Track A").
 
 ## Arquitectura (`ADR-0001-modular-reusable-tax-platform.md`)
 
@@ -46,6 +46,20 @@
 - [x] ~~El mockup `companySelector.html` no tiene CTA de "dar de alta nueva empresa" (US 1.3) — solo permite seleccionar entre empresas existentes. Definir si se agrega ahí (ej. card "+ Nueva empresa") o si US 1.3 tiene pantalla propia.~~ **Resuelto 2026-07-05**: se agregó una card con borde punteado "Agregar nueva empresa" al final del listado, en `companySelector.html`. Dispara un placeholder por ahora — el formulario/flujo real de alta de empresa sigue sin mockear.
 - [ ] Decisión sobre `successText`/`errorText` agregados a `DESIGN.md`: ¿mantener la corrección de accesibilidad (recomendado) o revertir a los tonos originales del prototipo, que fallaban WCAG AA?
 - [ ] Pantallas todavía sin mockear: wizard de carga de TXT (US 3.x), flujo de error de validación en contexto real (US 4.2/4.3), recuperación de contraseña (US 1.4), pantalla de descarga del archivo PADI (US 6.1).
+
+## 1376 / MVP 2 Track A (`SRS/13-forms-1376.md`, `tax-rules/1376/`, `ADR-0006`)
+
+> Lista detallada y viva en `.context/tax-rules/1376/open-questions.md`. Acá el resumen de las que afectan diseño/arquitectura.
+
+- [ ] **Catálogo real de líneas del 1376** por panel/rubro — DGI lo publica en imágenes, no capturado. Los códigos que hoy están en `tax-rules/1376/codigos.md` (101/201/301/302/501/502/510/601) son del diseño del usuario, sin validar contra DGI (`tax-rules/1376/codigos.md`, `panels.md`).
+- [x] ~~**Cómo se computa el saldo de una cuenta** desde el formato del TXT del 2181, donde `Debe`/`Haber` son códigos de cuenta y los importes están en `Total`/`IVA` (`tax-rules/1376/formulas.md`, `SRS/13-forms-1376.md`).~~ **Resuelto 2026-09-01 (con la contadora)**: la columna de importe (`Total` | `IVA`) se configura por fila en la matriz de mapeo del 1376 (TD-38) — `Total` para asientos abiertos, `IVA` para el formato rápido de Memory Conty. Suma simple con signo de los movimientos de esa cuenta en el período. Detalle en `tax-rules/1376/formulas.md`.
+- [ ] **¿El motor determina la liquidación** (saldo a pagar, líneas 322/970/971/972, boleto 2908) o solo entrega totales por código de línea? El ejemplo real es solo totales (`SRS/13-forms-1376.md`, `ADR-0006`).
+- [ ] **Fuente del dato "ventas/compras acumuladas del ejercicio"** que pide el Panel 1 — el TXT mensual no lo trae (`tax-rules/1376/panels.md`).
+- [ ] **Regla de selección de código "según tipo de contribuyente/sector"** (IRAE 108/126/128, IPAT 328/320/323, Sobretasa 335/330/333) (`tax-rules/1376/codigos.md`).
+- [ ] **Casos especiales — alcance MVP 2**: DJ sin movimiento, giro agropecuario (líneas 33/36/54), IVA en Suspenso, chatarra/residuos. ¿Entran? (`tax-rules/1376/panels.md`).
+- [ ] **Vínculo 2181 ↔ 1376 en el modelo de datos** — la 2181 es anexo de la 1376; cómo se relaciona el par bajo una `declaracion` de período (trabajo de `/sprint-development`, `ADR-0006`).
+- [x] ~~**Matriz de mapeo del 1376**: schema físico, si admite versión/histórico como `plan_cuentas`, si hay mapeo base sugerido (US M2.3) (`tax-rules/1376/mapping.md`).~~ **Resuelto 2026-09-01 (TD-38)**: tablas `codigo_linea_1376` (catálogo configurable sembrado) + `mapeo_1376` (por empresa, biyectivo — 2 uniques: `(empresa_id, codigo_linea)` y `(empresa_id, cuenta_contable)`). Sin versión/histórico en MVP 2. Mapeo base sugerido = TD-40, fuera de alcance de TD-38.
+- [ ] **Fixtures de prueba**: TXT reales procesados en PADI para la 1376 + resultado esperado — pendiente que la contadora los aporte.
 
 ## Notas
 

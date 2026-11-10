@@ -1,8 +1,11 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { createAdminClient } from '@/infrastructure/supabase/admin';
 import { createClient } from '@/infrastructure/supabase/server';
 import { resolverCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
+import { armarPeriodos } from '@/modules/declaraciones/periodos';
 import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
+import { construirResumenInicio } from '@/modules/inicio/resumen-inicio';
 import { DashboardClient } from './dashboard-client';
 
 /**
@@ -39,13 +42,30 @@ export default async function DashboardPage() {
     throw new Error(`No se pudieron cargar las declaraciones: ${declaracionesError.message}`);
   }
 
-  const cotizacionBcuInicial = await resolverCotizacionBcu(supabase);
+  const { data: declaraciones1376, error: declaraciones1376Error } = await supabase
+    .from('declaracion_1376')
+    .select('periodo, estado, updated_at')
+    .eq('empresa_id', empresaActiva.id);
+
+  if (declaraciones1376Error) {
+    throw new Error(`No se pudieron cargar las declaraciones 1376: ${declaraciones1376Error.message}`);
+  }
+
+  const cotizacionBcuInicial = await resolverCotizacionBcu(createAdminClient());
+
+  const { data: cuenta, error: cuentaError } = await supabase.from('cuenta').select('nombre').eq('id', user.id).maybeSingle();
+  if (cuentaError) {
+    console.error('[dashboard] cuenta:', cuentaError);
+  }
+  const { saludo } = construirResumenInicio({ nombre: cuenta?.nombre ?? null, empresas: null, pendientes: null });
 
   return (
     <DashboardClient
+      saludo={saludo}
       empresaId={empresaActiva.id}
       empresaNombre={empresaActiva.nombre}
       declaraciones={declaraciones ?? []}
+      periodos={armarPeriodos(declaraciones ?? [], declaraciones1376 ?? [])}
       cotizacionBcuInicial={cotizacionBcuInicial}
     />
   );

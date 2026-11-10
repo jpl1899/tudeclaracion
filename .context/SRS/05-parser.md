@@ -18,12 +18,12 @@ Delimitador: `,` (coma) — **corregido 2026-07-15**, no `;` como se documentaba
 | 2 | Debe | Numérico, largo variable, **puede venir vacío** | **Corregido 2026-07-15**: NO es un importe — es el **código de cuenta contable que se debita** en el asiento (ej. `5215`, `114115`). Ver `06-normalizer.md` / `08-tax-engine.md` para cómo se usa en la resolución del código PADI. **Confirmado 2026-07-21**: un asiento "abierto" (multilínea, una cuenta por línea) legítimamente trae Debe vacío en las líneas donde solo hay Haber — Debe y Haber nunca están vacíos **a la vez** en la misma línea. |
 | 3 | Haber | Numérico, largo variable, **puede venir vacío** | **Corregido 2026-07-15**: tampoco es un importe — es el **código de cuenta contable que se acredita**. Misma naturaleza que Debe, cuenta distinta. Mismo permiso de vacío que Debe (ver arriba) — nunca ambos a la vez. |
 | 4 | Concepto | Alfanumérico, 20–50 caracteres | Nunca vacío. Ej: `Efactura A 1234`, `Ancap Ticket A 12452548` |
-| 5 | RUT | Numérico, 12 dígitos | — |
+| 5 | RUT | Numérico, 12 dígitos | **Corregido 2026-10-05 (ADR-0008)**: se exige solo en las líneas que resuelve el 2181 (Tipo `504`; Código IVA > 0 mapeado; o Código IVA = 0 con cuenta de Debe/Haber en el plan de cuentas 2181). El 1376 declara solo totales y no usa el RUT, así que una línea ajena al 2181 (ej. anticipo de IRAE, 13122 contra 11111) acepta cualquier valor. |
 | 6 | Moneda | Numérico, 1 dígito (0–9) | 0 = pesos, 1 = dólares |
 | 7 | Total | Numérico | Sin separador de miles en la práctica (ej. `1000`). Campo crítico |
 | 8 | Código IVA | Numérico, 1 dígito (0–9) | `0` = sin código asignado (ver regla de dos caminos en `08-tax-engine.md`) |
 | 9 | IVA | Numérico, con decimales | Siempre en pesos (ej. `180.33`) |
-| 10 | Cotización | Numérico | **Confirmado 2026-08-02**: `0` (pesos) o un valor con dos dígitos enteros y dos decimales (ej. `38.45`) — el peso uruguayo nunca cotiza por debajo de 10, así que un solo dígito entero también es inválido |
+| 10 | Cotización | Numérico | **Confirmado 2026-08-02**: `0` (pesos) o un valor con dos dígitos enteros y dos decimales (ej. `38.45`) — el peso uruguayo nunca cotiza por debajo de 10, así que un solo dígito entero también es inválido. Ampliado después: cualquier cantidad de decimales (2026-08-19), y el cero también puede venir con decimales, ej. `0.0000` (2026-10-05) |
 | 11 | Libro | Categórico, **case-insensitive** | Solo uno de: `C`, `V`, `E`, `I`, `P` (confirmado 2026-07-22: el TXT puede traerlo en minúscula — ej. notas de crédito con `"v"` — se normaliza a mayúscula al parsear) |
 | 12 | Tipo | Categórico, **opcional** | Confirmado 2026-07-14. En la práctica el campo 12 aparece siempre como posición (coma final), vacío cuando no aplica. Valores posibles en el TXT: `504`, `CIE` (cierre del ejercicio), `RES` (resultado del ejercicio), `DIF` (diferencia de cambio), `APE` (apertura de ejercicio) — pero **confirmado 2026-07-15**: el motor solo procesa el valor numérico `504`; los valores alfabéticos (`CIE`/`RES`/`DIF`/`APE`) se ignoran, fuera de alcance definitivo. Regla de negocio de `504` → ver `08-tax-engine.md`. Nunca contiene `502`, `503`, `505`, `506`, `552` o `553` — esos códigos PADI solo se derivan por la cadena Código IVA / cuenta contable → configuración de empresa. |
 
@@ -52,6 +52,8 @@ Algunos proveedores contables (ej. FMSSRL, archivo `FMSSRL Asientos Abril 2026.T
 ## Confirmado 2026-07-22 — fila de encabezado opcional
 
 El TXT puede venir con o sin una primera fila de encabezado (`DIA,DEBE,HABER,CONCEPTO,RUT,...`) describiendo los campos — depende de cómo lo exporte el proveedor contable en cada caso. El parser la detecta (campo Día no numérico, valor `DIA`) y la descarta antes de interpretar datos; no se trata como una línea inválida y no corre el conteo de línea de los asientos reales.
+
+**Actualizado 2026-10-07 (ADR-0009):** en la importación del 1376, si el archivo trae encabezado, cada columna se lee por su título (sin distinguir mayúsculas, tildes ni separadores; `RUC` = `RUT`; las columnas especiales se ignoran). Un título desconocido, repetido o un campo obligatorio ausente rechaza el archivo en la línea 1, y cada línea debe traer exactamente tantos campos como columnas tiene el encabezado. El 2181 no cambia: sigue leyendo por posición.
 
 ## Aceptado 2026-08-07 — layout configurable de campos (reemplaza el caso FMSSRL puntual)
 
@@ -105,6 +107,10 @@ Hoy ese archivo cae en la misma rama que "sobran columnas" (`esNoEstandar`): mue
 **Consecuencias**: el mensaje es el mismo sin importar cuál(es) columna(s) falten — deliberadamente no distingue "falta RUT" de "falta Moneda y Cotización". Si en el futuro aparece evidencia real de que el mensaje genérico no alcanza, se puede revisar esta decisión con un caso concreto, no antes.
 
 No amerita un ADR nuevo — no pasa el gate 2 de `.context/ADR/README.md` (hard to reverse): es una extensión de bajo riesgo de la lógica de UI ya cubierta por ADR-0005, sin tocar el modelo de datos ni el parser.
+
+## Compartido con el 1376 (MVP 2 Track A) — 2026-08-27
+
+El motor de la DJ 1376 (`13-forms-1376.md`) consume **el mismo TXT de entrada** que el 2181 — mismo formato, mismo Parser, sin cambios acá. La divergencia empieza aguas abajo: el 1376 agrega saldos por cuenta contable en vez de resolver línea por línea y consolidar por RUT (ver `08-tax-engine.md` §"Modo 1376" y `ADR-0006`). Abierto: cómo se computa el saldo de una cuenta desde este formato (donde `Debe`/`Haber` son códigos de cuenta, no importes) — `[PLACEHOLDER]` en `13-forms-1376.md`.
 
 ## Pendiente de producto (no bloquea el motor)
 

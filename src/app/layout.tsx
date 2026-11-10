@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   title: 'tuDeclaracion — Declaraciones juradas DGI sin fricción',
   description:
     'Carga el TXT del proveedor contable, valida RUTs e importes, y genera el archivo PADI de la declaración jurada 2181 en un mismo flujo.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/brand/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

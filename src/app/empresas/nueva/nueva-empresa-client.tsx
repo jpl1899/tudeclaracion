@@ -1,5 +1,6 @@
 'use client';
 
+import type { CodigoLinea1376 } from '@/modules/empresa/plan-cuentas';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
-import { CODIGO_PADI_EXENTA, CODIGOS_PADI_IVA, DUPLICATE_RUT_ERROR_CODE } from '@/modules/empresa/plan-cuentas';
+import { buildOpcionesCodigoPadi, CODIGO_PADI_EXENTA, DUPLICATE_RUT_ERROR_CODE } from '@/modules/empresa/plan-cuentas';
 
 /**
  * Agregar nueva empresa — .context/design/master-design-plan.md §4.7,
@@ -31,6 +32,7 @@ interface IvaRow {
   key: string
   codigoIva: string
   cuentaContable: string
+  /** Id sintético de la opción elegida en el <select> — ver buildOpcionesCodigoPadi. */
   codigoPadi: string
 }
 
@@ -39,26 +41,29 @@ interface ExentaRow {
   cuentaContable: string
 }
 
-function emptyIvaRow(key: string): IvaRow {
-  return { key, codigoIva: '', cuentaContable: '', codigoPadi: CODIGOS_PADI_IVA[0].value };
+function emptyIvaRow(key: string, primeraOpcionId: string): IvaRow {
+  return { key, codigoIva: '', cuentaContable: '', codigoPadi: primeraOpcionId };
 }
 
 function emptyExentaRow(key: string): ExentaRow {
   return { key, cuentaContable: '' };
 }
 
-export function NuevaEmpresaClient() {
+export function NuevaEmpresaClient({ codigos1376 }: { codigos1376: CodigoLinea1376[] }) {
   const router = useRouter();
   const nextKey = useRef(2);
+  const opciones = buildOpcionesCodigoPadi(codigos1376);
+  const primeraOpcionId = opciones[0].id;
 
   const [rut, setRut] = useState('');
   const [nombre, setNombre] = useState('');
-  const [ivaRows, setIvaRows] = useState<IvaRow[]>([emptyIvaRow('iva-0')]);
+  const [ivaRows, setIvaRows] = useState<IvaRow[]>([emptyIvaRow('iva-0', primeraOpcionId)]);
   const [exentaRows, setExentaRows] = useState<ExentaRow[]>([emptyExentaRow('exenta-0')]);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateRutError, setDuplicateRutError] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ nombre: string, rut: string } | null>(null);
+  const [success, setSuccess] = useState<{ id: string, nombre: string, rut: string } | null>(null);
 
   function handleRutChange(value: string) {
     setRut(value.replace(/\D/g, ''));
@@ -66,7 +71,7 @@ export function NuevaEmpresaClient() {
   }
 
   function addIvaRow() {
-    setIvaRows(prev => [...prev, emptyIvaRow(`iva-${nextKey.current++}`)]);
+    setIvaRows(prev => [...prev, emptyIvaRow(`iva-${nextKey.current++}`, primeraOpcionId)]);
   }
 
   function removeIvaRow(key: string) {
@@ -93,33 +98,41 @@ export function NuevaEmpresaClient() {
   const invalidRutLength = submitted && rut.trim() !== '' && rut.trim().length !== 12;
   const missingNombre = submitted && nombre.trim() === '';
   const ivaRowsIncomplete = ivaRows.some(r => r.codigoIva.trim() === '' || r.cuentaContable.trim() === '');
-  const exentaRowsIncomplete = exentaRows.some(r => r.cuentaContable.trim() === '');
 
   async function handleSubmit() {
     setSubmitted(true);
     setDuplicateRutError(false);
+    setSaveError(false);
 
     const trimmedRut = rut.trim();
     const trimmedNombre = nombre.trim();
 
-    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete || exentaRowsIncomplete) {
+    if (trimmedRut === '' || trimmedRut.length !== 12 || trimmedNombre === '' || ivaRowsIncomplete) {
       return;
     }
 
     setIsSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.rpc('crear_empresa_con_plan_cuentas', {
+    const { data: empresaId, error } = await supabase.rpc('crear_empresa_con_plan_cuentas', {
       p_rut: trimmedRut,
       p_nombre: trimmedNombre,
       p_cuentas: [
-        ...ivaRows.map(r => ({
-          cuenta_contable: r.cuentaContable.trim(),
-          codigo_padi: r.codigoPadi,
-          codigo_iva: Number(r.codigoIva),
-        })),
-        ...exentaRows.map(r => ({
+        ...ivaRows.map((r) => {
+          const opcion = opciones.find(o => o.id === r.codigoPadi);
+          if (!opcion) {
+            throw new Error(`Código PADI seleccionado inválido: ${r.codigoPadi}`);
+          }
+          return {
+            cuenta_contable: r.cuentaContable.trim(),
+            codigo_padi: opcion.codigoPadi,
+            codigo_iva: Number(r.codigoIva),
+            declaracion: opcion.declaracion,
+          };
+        }),
+        ...exentaRows.filter(r => r.cuentaContable.trim() !== '').map(r => ({
           cuenta_contable: r.cuentaContable.trim(),
           codigo_padi: CODIGO_PADI_EXENTA,
+          declaracion: '2181',
         })),
       ],
     });
@@ -131,16 +144,18 @@ export function NuevaEmpresaClient() {
     }
 
     if (error) {
-      throw new Error(`No se pudo crear la empresa: ${error.message}`);
+      console.error('[nueva-empresa] crear_empresa_con_plan_cuentas failed:', error);
+      setSaveError(true);
+      return;
     }
 
-    setSuccess({ nombre: trimmedNombre, rut: trimmedRut });
+    setSuccess({ id: empresaId, nombre: trimmedNombre, rut: trimmedRut });
   }
 
   function handleAddAnother() {
     setRut('');
     setNombre('');
-    setIvaRows([emptyIvaRow(`iva-${nextKey.current++}`)]);
+    setIvaRows([emptyIvaRow(`iva-${nextKey.current++}`, primeraOpcionId)]);
     setExentaRows([emptyExentaRow(`exenta-${nextKey.current++}`)]);
     setSubmitted(false);
     setDuplicateRutError(false);
@@ -155,6 +170,13 @@ export function NuevaEmpresaClient() {
             <strong className="mb-1 block">Empresa creada correctamente.</strong>
             {`${success.nombre} (RUT ${success.rut}) ya está disponible en tu listado, con el mapeo inicial completo para empezar la carga del Formulario 2181.`}
           </div>
+          <button
+            type="button"
+            className="justify-self-start text-sm font-medium text-primary underline underline-offset-4"
+            onClick={() => router.push(`/empresas/${success.id}/mapeo-1376`)}
+          >
+            Configurar el mapeo del 1376
+          </button>
           <div className="flex flex-wrap gap-3">
             <Button size="lg" className="h-[52px]" onClick={() => router.push('/empresas')}>
               Volver a empresas
@@ -278,8 +300,8 @@ export function NuevaEmpresaClient() {
                       value={row.codigoPadi}
                       onChange={e => updateIvaRow(row.key, { codigoPadi: e.target.value })}
                     >
-                      {CODIGOS_PADI_IVA.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      {opciones.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.label}</option>
                       ))}
                     </select>
                   </div>
@@ -320,7 +342,6 @@ export function NuevaEmpresaClient() {
 
           <div className="grid gap-3">
             {exentaRows.map((row) => {
-              const rowIncomplete = submitted && row.cuentaContable.trim() === '';
               return (
                 <div key={row.key} className="grid grid-cols-[1fr_auto] items-end gap-3 rounded-md border border-border bg-muted/40 p-4">
                   <div className="grid gap-1.5">
@@ -345,9 +366,6 @@ export function NuevaEmpresaClient() {
                   >
                     ×
                   </Button>
-                  {rowIncomplete && (
-                    <span className="col-span-full text-sm text-error-text">Completá la cuenta contable.</span>
-                  )}
                 </div>
               );
             })}
@@ -357,6 +375,13 @@ export function NuevaEmpresaClient() {
             + Agregar cuenta exenta
           </Button>
         </section>
+
+        {saveError && (
+          <div className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text">
+            <strong className="mb-1 block">No fue posible crear la empresa.</strong>
+            Ocurrió un error inesperado. Intentá nuevamente en unos minutos.
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-3">
           <Button size="lg" className="h-[52px]" onClick={() => void handleSubmit()} disabled={isSubmitting}>

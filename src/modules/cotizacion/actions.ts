@@ -1,12 +1,26 @@
 'use server';
 
+import { createAdminClient } from '@/infrastructure/supabase/admin';
 import { createClient } from '@/infrastructure/supabase/server';
 import { resolverCotizacionBcu } from './resolve-cotizacion-bcu';
 import { asegurarCotizacionesBcuCacheadas } from './resolve-cotizacion-por-dia';
 
-export async function reintentarCotizacionBcu() {
+/**
+ * The BCU cache is written with the admin client (users only have SELECT,
+ * threat-model item 5), so these actions must check the session themselves:
+ * RLS no longer stops an anonymous caller.
+ */
+async function haySesion(): Promise<boolean> {
   const supabase = await createClient();
-  return resolverCotizacionBcu(supabase);
+  const { data: { user } } = await supabase.auth.getUser();
+  return user !== null;
+}
+
+export async function reintentarCotizacionBcu() {
+  if (!(await haySesion())) {
+    return { estado: 'error' } as const;
+  }
+  return resolverCotizacionBcu(createAdminClient());
 }
 
 /**
@@ -15,9 +29,11 @@ export async function reintentarCotizacionBcu() {
  * (Server Action) porque su webservice no habilita CORS para el navegador.
  */
 export async function poblarCotizacionesBcuParaPeriodo(periodo: string): Promise<{ ok: boolean }> {
-  const supabase = await createClient();
+  if (!(await haySesion())) {
+    return { ok: false };
+  }
   try {
-    await asegurarCotizacionesBcuCacheadas(supabase, periodo);
+    await asegurarCotizacionesBcuCacheadas(createAdminClient(), periodo);
     return { ok: true };
   }
   catch {

@@ -32,3 +32,17 @@ Aplica las reglas tributarias del formulario 2181: dado un **concepto fiscal** (
 - **Libro = 'P' en Camino 2 — superado 2026-07-21**: la regla anterior (confirmada 2026-07-16) trataba `Libro = 'P'` como fuera de alcance porque el Camino 2 dependía de `Libro` para elegir Debe o Haber. Al revertirse esa dependencia (ver bullet de arriba), `Libro = 'P'` ya **no** es un caso especial — se resuelve igual que cualquier otro asiento del Camino 2 (Debe primero, Haber después).
 
 No fabricar reglas tributarias fuera de lo confirmado — este archivo se completa a medida que el usuario las provea.
+
+## Modo 1376 — agregación por cuenta (MVP 2 Track A)
+
+> Agregado 2026-08-27. Ver `13-forms-1376.md` para el detalle completo y `ADR-0006-1376-aggregation-by-account-pipeline.md` para la decisión de arquitectura.
+
+Todo lo de arriba describe el motor del **2181**: resolución por línea (`plan_cuentas`, dos caminos) → consolidación por `RUT + código PADI`. El **1376** corre un modo distinto sobre el mismo TXT parseado:
+
+1. **Agregación de saldos por cuenta contable** del período (no por línea, no por RUT). `[PLACEHOLDER]` — cómo se computa el saldo desde el formato del TXT del 2181 (donde `Debe`/`Haber` son códigos de cuenta y los importes están en `Total`/`IVA`) está pendiente de definir con el usuario.
+2. **Matching cuenta → código de línea 1376** vía la matriz de mapeo por empresa (tabla nueva, distinta de `plan_cuentas` — ver `13-forms-1376.md`).
+3. **Totales por código de línea**, sin apertura de RUT.
+
+No comparte con el modo 2181: `plan_cuentas`, Camino 1 / Camino 2, la regla de consolidación por RUT+código (`tax-rules/2181/mapping.md`), ni el formato de `10-exporter.md`. Sí comparte: el Parser (`05-parser.md`) y las reglas comunes de `tax-rules/common/` (IVA, fechas, conversión de moneda — a confirmar cuáles aplican).
+
+Reglas tributarias del 1376 (mapeo, fórmulas por rubro, catálogo de líneas): `.context/tax-rules/1376/`.

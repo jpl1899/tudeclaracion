@@ -45,28 +45,46 @@ export default async function EmpresaDetallePage({ params }: { params: Promise<{
 
   const { data: planCuentas, error: planCuentasError } = await supabase
     .from('plan_cuentas')
-    .select('id, cuenta_contable, codigo_padi, codigo_iva')
+    .select('id, cuenta_contable, codigo_padi, codigo_iva, declaracion')
     .eq('empresa_id', id);
 
   if (planCuentasError) {
     throw new Error(`No se pudo cargar el plan de cuentas: ${planCuentasError.message}`);
   }
 
+  const { data: codigos1376, error: codigos1376Error } = await supabase
+    .from('codigo_linea_1376')
+    .select('codigo, concepto')
+    .order('orden');
+
+  if (codigos1376Error) {
+    throw new Error(`No se pudo cargar el catálogo de códigos del 1376: ${codigos1376Error.message}`);
+  }
+
   const rows = planCuentas ?? [];
+  const esExenta = (row: (typeof rows)[number]) => row.codigo_padi === CODIGO_PADI_EXENTA && row.declaracion === '2181';
   const ivaRows = rows
-    .filter(row => row.codigo_padi !== CODIGO_PADI_EXENTA)
+    .filter(row => !esExenta(row))
     .map(row => ({
       id: row.id,
       codigoIva: row.codigo_iva !== null ? String(row.codigo_iva) : '',
       cuentaContable: row.cuenta_contable,
       codigoPadi: row.codigo_padi,
+      declaracion: row.declaracion,
     }));
   const exentaRows = rows
-    .filter(row => row.codigo_padi === CODIGO_PADI_EXENTA)
+    .filter(esExenta)
     .map(row => ({
       id: row.id,
       cuentaContable: row.cuenta_contable,
     }));
 
-  return <EmpresaDetalleClient empresa={empresa} ivaRowsIniciales={ivaRows} exentaRowsIniciales={exentaRows} />;
+  return (
+    <EmpresaDetalleClient
+      empresa={empresa}
+      ivaRowsIniciales={ivaRows}
+      exentaRowsIniciales={exentaRows}
+      codigos1376={codigos1376 ?? []}
+    />
+  );
 }

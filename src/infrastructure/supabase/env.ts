@@ -6,8 +6,8 @@
  * (`process.env[name]`) silently resolves to `undefined` client-side.
  *
  * Only the browser-safe values live here (URL + publishable key). The
- * secret key is never read by application runtime code in this project —
- * it is only used out-of-band by the Supabase MCP server (see .mcp.json).
+ * secret key is read only by the server-side admin client (./admin.ts),
+ * scoped to the shared BCU cache.
  */
 
 function requireEnv(name: string, value: string | undefined): string {
@@ -28,3 +28,13 @@ export const supabasePublishableKey = requireEnv(
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
+
+/**
+ * Merged by @supabase/ssr over its defaults (path '/', sameSite 'lax',
+ * 400-day maxAge). httpOnly stays false on purpose: the browser client reads
+ * and writes the session through document.cookie. Off in development because
+ * http://localhost would drop a Secure cookie in some browsers.
+ */
+export const supabaseCookieOptions = {
+  secure: process.env.NODE_ENV === 'production',
+};

@@ -6,6 +6,7 @@ export type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camin
 
 const TIPO_504 = '504';
 const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
+const RUT_RE = /^\d{12}$/;
 
 /**
  * TD-18: la rama `resolved: false` lleva `rut` + `dia` (identifica la línea)
@@ -15,7 +16,7 @@ const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
  */
 export type NormalizedAsiento
   = | { resolved: true, codigoPadi: string, importe: number, rut: string }
-    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' | 'importe-invalido' | 'libro-inconsistente', rut: string, dia: number, valor: string };
+    | { resolved: false, reason: 'tipo-fuera-de-alcance' | 'sin-mapeo' | 'importe-invalido' | 'libro-inconsistente' | 'codigo-iva-libro-inconsistente' | 'rut-invalido', rut: string, dia: number, valor: string };
 
 function noResuelto(
   asiento: AsientoLine,
@@ -31,13 +32,17 @@ function noResuelto(
  * ej. 4115.50792 -> 4116; 4115.50 -> 4115) -- distinto del redondeo estándar
  * de JS (`Math.round`), que redondea 0.50 hacia arriba.
  */
-function redondearMitadAbajo(valor: number): number {
+export function redondearMitadAbajo(valor: number): number {
   const piso = Math.floor(valor);
   return valor - piso > 0.5 ? piso + 1 : piso;
 }
 
-/** Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx), redondeando el producto final a un entero. */
-function convertirImporte(importe: number, asiento: AsientoLine): number {
+/**
+ * Los importes del TXT vienen en la moneda del asiento (`moneda`) — si es dólares (1), se convierten a pesos con la cotización cargada al importar (ver importar-asiento-dialog.tsx), redondeando el producto final a un entero.
+ *
+ * Exportada (además del 2181) para el motor del 1376 (TD-41) — misma conversión por cotización, confirmado en `.context/Tax-rules/1376/formulas.md`.
+ */
+export function convertirImporte(importe: number, asiento: AsientoLine): number {
   return asiento.moneda === 1 ? redondearMitadAbajo(importe * asiento.cotizacion) : importe;
 }
 
@@ -58,9 +63,10 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
     // Mismo cruce de Libro contra el prefijo de la cuenta que Camino 2
     // (2026-08-02, corregido -- se aplicaba antes solo a Camino 2, pero el
     // caso reportado por el contador era justamente uno resuelto por Código
-    // IVA directo).
+    // IVA directo). Motivo propio (TD-51): el que no coincide con el Libro es
+    // el Código IVA, no la cuenta del asiento.
     if (!esConsistenteConLibro(match, asiento.libro, asiento.total)) {
-      return noResuelto(asiento, 'libro-inconsistente', `cuenta ${match.cuentaContable} con Libro ${asiento.libro}`);
+      return noResuelto(asiento, 'codigo-iva-libro-inconsistente', `Código IVA ${asiento.codigoIva} (cuenta ${match.cuentaContable}) con Libro ${asiento.libro}`);
     }
     resolucion = { codigoPadi: match.codigoPadi, importe: convertirImporte(asiento.iva, asiento) };
   }
@@ -97,6 +103,17 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
    */
   if (resolucion.importe === 0) {
     return noResuelto(asiento, 'importe-invalido', resolucion.importe.toString());
+  }
+
+  /**
+   * ADR-0008: el RUT ya no se exige en la tabla `asiento` -- el 1376 no lo
+   * usa y el parser solo lo valida en las líneas que el 2181 resuelve. Esta
+   * es la segunda barrera: una línea que resuelve al 2181 con un RUT
+   * inválido (ej. el plan de cuentas cambió después de importar) se excluye
+   * en vez de llegar al archivo PADI.
+   */
+  if (!RUT_RE.test(asiento.rut)) {
+    return noResuelto(asiento, 'rut-invalido', asiento.rut);
   }
 
   return { resolved: true, codigoPadi: resolucion.codigoPadi, importe: resolucion.importe, rut: asiento.rut };

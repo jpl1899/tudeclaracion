@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/infrastructure/supabase/server';
 import { EMPRESA_ACTIVA_COOKIE, resolverEmpresaActiva } from '@/modules/empresa/empresa-activa';
 import { resolveAsientoFiscal } from '@/modules/normalizer/normalize-asiento';
-import { consolidarLineasDeclaracion } from '@/modules/tax-engine/consolidate-lines';
+import { consolidarLineasDeclaracion, detectarLineasSinSaldoPositivo } from '@/modules/tax-engine/consolidate-lines';
 import { filtrarAsientosSinResolver } from '@/modules/tax-engine/filter-asientos-sin-resolver';
 import { DeclaracionDetalleClient } from './declaracion-detalle-client';
 
@@ -57,7 +57,8 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
     supabase
       .from('plan_cuentas')
       .select('cuenta_contable, codigo_padi, codigo_iva')
-      .eq('empresa_id', empresaActiva.id),
+      .eq('empresa_id', empresaActiva.id)
+      .eq('declaracion', '2181'),
   ]);
 
   if (asientosError) {
@@ -91,6 +92,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
   const resueltos = asientoLines.map(linea => resolveAsientoFiscal(linea, planCuentasRows));
   const asientosSinResolver = filtrarAsientosSinResolver(asientoLines, resueltos);
   const lineas = consolidarLineasDeclaracion(resueltos);
+  const lineasSinSaldoPositivo = detectarLineasSinSaldoPositivo(resueltos);
   const tieneAsientosNegativos = asientoLines.some(asiento => asiento.total < 0 || asiento.iva < 0);
 
   return (
@@ -103,6 +105,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
       asientosSinResolver={asientosSinResolver}
       totalAsientos={resueltos.length}
       lineas={lineas}
+      lineasSinSaldoPositivo={lineasSinSaldoPositivo}
       tieneAsientosNegativos={tieneAsientosNegativos}
     />
   );

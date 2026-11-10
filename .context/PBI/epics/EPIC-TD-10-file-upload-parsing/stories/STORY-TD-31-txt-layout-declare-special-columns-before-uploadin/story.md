@@ -3,7 +3,7 @@
 **Jira Key:** [TD-31](https://lk-tudeclaracion.atlassian.net/browse/TD-31)
 **Epic:** [TD-10](https://lk-tudeclaracion.atlassian.net/browse/TD-10) (File Upload & Parsing)
 **Type:** Historia
-**Status:** Tareas por hacer
+**Status:** Deployed
 **Priority:** Medium
 **Story Points:** -
 

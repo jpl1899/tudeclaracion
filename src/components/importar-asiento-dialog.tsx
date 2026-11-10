@@ -2,6 +2,7 @@
 
 import type { CampoEspecial, CampoInvalido } from '@/modules/parser/parse-asientos';
 import { useEffect, useRef, useState } from 'react';
+import { VerAyuda } from '@/components/ayuda/ver-ayuda';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -15,7 +16,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { CAMPOS_ESPECIALES, contarCamposPrimeraLineaDeDatos } from '@/modules/parser/parse-asientos';
+import { anclaParaCampo, ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
+import { CAMPOS_ESPECIALES, contarCamposPrimeraLineaDeDatos, tieneEncabezado } from '@/modules/parser/parse-asientos';
 
 const ACCEPTED_EXTENSION = '.txt';
 
@@ -50,14 +52,16 @@ const CAMPOS_OBLIGATORIOS_LABELS = ['Día', 'Debe', 'Haber', 'Concepto', 'RUT', 
  */
 const UMBRAL_CAMPOS_INVALIDOS_SIMULTANEOS = 3;
 
-/** Módulo Ayuda todavía no existe (a crearse más adelante) -- por ahora es texto plano, sin link, en todo mensaje de formato no aceptado. */
-const MENSAJE_AYUDA = 'Consultá el módulo Ayuda para la guía de cómo debe venir el archivo.';
-
-/** `null` = éxito. `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. */
+/** `parse` = uno o más campos inválidos de la misma línea, identificados de una sola pasada (05-parser.md); `cotizacion-no-disponible` = el archivo trae líneas en dólares sin cotización propia y el BCU no tiene el día hábil anterior necesario en el caché (TD-27); `guardado` = falló la persistencia tras un parseo válido. `ayuda` = ancla de la explicación en el módulo Ayuda, si la hay. */
 export type ImportarAsientoError
   = | { kind: 'parse', line: number, errors: CampoInvalido[] }
-    | { kind: 'cotizacion-no-disponible', message: string }
-    | { kind: 'guardado', message: string };
+    | { kind: 'cotizacion-no-disponible', message: string, ayuda?: string }
+    | { kind: 'guardado', message: string, ayuda?: string };
+
+/** `ok` = éxito -- `tieneAsientosNegativos` refleja si alguna línea importada tiene Total o IVA negativo (misma señal que el banner de la pantalla de detalle), para avisar en el momento en vez de recién al navegar ahí. */
+export type ImportarAsientoResultado
+  = | { kind: 'ok', tieneAsientosNegativos: boolean }
+    | ImportarAsientoError;
 
 export interface ImportarAsientoOpciones {
   reemplazar: boolean
@@ -68,8 +72,10 @@ interface ImportarAsientoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   empresaActiva: string
+  /** 1376 (ADR-0009): con encabezado, las columnas se leen por título y no hace falta declarar las especiales. */
+  leerEncabezado?: boolean
   onCheckPeriodo: (periodo: string) => Promise<boolean>
-  onImportar: (file: File, periodo: string, opciones: ImportarAsientoOpciones) => Promise<ImportarAsientoError | null>
+  onImportar: (file: File, periodo: string, opciones: ImportarAsientoOpciones) => Promise<ImportarAsientoResultado>
 }
 
 function isArchivoValido(file: File) {
@@ -80,6 +86,7 @@ export function ImportarAsientoDialog({
   open,
   onOpenChange,
   empresaActiva,
+  leerEncabezado = false,
   onCheckPeriodo,
   onImportar,
 }: ImportarAsientoDialogProps) {
@@ -90,17 +97,19 @@ export function ImportarAsientoDialog({
   const [error, setError] = useState<ImportarAsientoError | null>(null);
   const [periodo, setPeriodo] = useState('');
   const [confirmarReemplazo, setConfirmarReemplazo] = useState(false);
-  const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date } | null>(null);
+  const [confirmacion, setConfirmacion] = useState<{ archivo: string, timestamp: Date, tieneAsientosNegativos: boolean } | null>(null);
   const [camposDetectados, setCamposDetectados] = useState<number | null>(null);
+  const [porEncabezado, setPorEncabezado] = useState(false);
+  const [sinEncabezado, setSinEncabezado] = useState(false);
   const [camposEspecialesSeleccionados, setCamposEspecialesSeleccionados] = useState<Set<CampoEspecial>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const listoButtonRef = useRef<HTMLButtonElement>(null);
   const reemplazarButtonRef = useRef<HTMLButtonElement>(null);
 
   /** ADR-0005 (TD-31): 11/12 campos es el modelo clásico, sin configuración adicional. */
-  const esNoEstandar = camposDetectados !== null && camposDetectados > 12;
+  const esNoEstandar = !porEncabezado && camposDetectados !== null && camposDetectados > 12;
   /** SRS/05-parser.md §"Confirmado 2026-08-17": al archivo le falta alguno de los 11 campos obligatorios -- nunca hay forma de completarlo desde la UI, el usuario debe conseguir una versión completa del archivo. */
-  const esFaltante = camposDetectados !== null && camposDetectados < 11;
+  const esFaltante = !porEncabezado && camposDetectados !== null && camposDetectados < 11;
   const anchoDeclarado = 12 + camposEspecialesSeleccionados.size;
   const configEspecialCompleta = anchoDeclarado === camposDetectados;
 
@@ -144,6 +153,7 @@ export function ImportarAsientoDialog({
     if (!isArchivoValido(file)) {
       setArchivo(null);
       setArchivoInvalido(true);
+      setSinEncabezado(false);
       setCamposDetectados(null);
       setCamposEspecialesSeleccionados(new Set());
       return;
@@ -153,6 +163,9 @@ export function ImportarAsientoDialog({
     setCamposEspecialesSeleccionados(new Set());
     const contenido = await file.text();
     setCamposDetectados(contarCamposPrimeraLineaDeDatos(contenido));
+    const conEncabezado = tieneEncabezado(contenido);
+    setPorEncabezado(leerEncabezado && conEncabezado);
+    setSinEncabezado(leerEncabezado && !conEncabezado);
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -170,6 +183,8 @@ export function ImportarAsientoDialog({
     setPeriodo('');
     setConfirmarReemplazo(false);
     setConfirmacion(null);
+    setPorEncabezado(false);
+    setSinEncabezado(false);
     setCamposDetectados(null);
     setCamposEspecialesSeleccionados(new Set());
   }
@@ -197,11 +212,11 @@ export function ImportarAsientoDialog({
     setImportando(false);
     setConfirmarReemplazo(false);
 
-    if (resultado) {
+    if (resultado.kind !== 'ok') {
       setError(resultado);
       return;
     }
-    setConfirmacion({ archivo: nombreArchivo, timestamp: new Date() });
+    setConfirmacion({ archivo: nombreArchivo, timestamp: new Date(), tieneAsientosNegativos: resultado.tieneAsientosNegativos });
   }
 
   async function handleImportarClick() {
@@ -233,21 +248,34 @@ export function ImportarAsientoDialog({
 
         {confirmacion
           ? (
-              <div
-                data-testid="importar_asiento_confirmacion"
-                className="grid gap-1.5 rounded-md border border-success/25 bg-success-bg px-4 py-3 text-success-text"
-              >
-                <p className="font-medium">Carga exitosa</p>
-                <p>
-                  Archivo
-                  {' '}
-                  <span className="font-medium">{confirmacion.archivo}</span>
-                  {' '}
-                  cargado el
-                  {' '}
-                  {confirmacion.timestamp.toLocaleString('es-UY')}
-                  .
-                </p>
+              <div className="grid gap-3">
+                <div
+                  data-testid="importar_asiento_confirmacion"
+                  className="grid gap-1.5 rounded-md border border-success/25 bg-success-bg px-4 py-3 text-success-text"
+                >
+                  <p className="font-medium">Carga exitosa</p>
+                  <p>
+                    Archivo
+                    {' '}
+                    <span className="font-medium">{confirmacion.archivo}</span>
+                    {' '}
+                    cargado el
+                    {' '}
+                    {confirmacion.timestamp.toLocaleString('es-UY')}
+                    .
+                  </p>
+                </div>
+
+                {confirmacion.tieneAsientosNegativos && (
+                  <div
+                    data-testid="importar_asiento_negativos"
+                    className="rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+                  >
+                    Archivo con resultado negativo en algunos asientos. El archivo puede incluir líneas vacías.
+                    {' '}
+                    <VerAyuda ancla={ANCLAS_AYUDA.resultadosNegativos} />
+                  </div>
+                )}
               </div>
             )
           : confirmarReemplazo
@@ -264,6 +292,7 @@ export function ImportarAsientoDialog({
                     ya fue procesado.
                   </p>
                   <p>¿Deseás reemplazarlo? Se van a borrar los datos cargados anteriormente para este período.</p>
+                  <VerAyuda ancla={ANCLAS_AYUDA.reemplazarPeriodo} />
                 </div>
               )
             : (
@@ -315,6 +344,20 @@ export function ImportarAsientoDialog({
                     )}
                   </div>
 
+                  {/* 1376: sin encabezado, las columnas se leen en el orden canónico y un archivo con otro orden (ej. RUC antes de CONCEPTO) se corre -- se avisa, sin bloquear. */}
+                  {sinEncabezado && (
+                    <div
+                      data-testid="importar_asiento_sin_encabezado"
+                      className="grid gap-1.5 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+                    >
+                      <p className="font-medium">El archivo no trae la fila de encabezados.</p>
+                      <p>
+                        Sin encabezados, las columnas se leen en el orden estándar. Si tu archivo trae otro orden, los datos pueden quedar corridos.
+                      </p>
+                      <VerAyuda ancla={ANCLAS_AYUDA.encabezado1376} />
+                    </div>
+                  )}
+
                   {esFaltante && (() => {
                     const columnasFaltantes = 11 - (camposDetectados ?? 0);
                     return (
@@ -337,7 +380,7 @@ export function ImportarAsientoDialog({
                           {CAMPOS_OBLIGATORIOS_LABELS.join(', ')}
                           .
                         </p>
-                        <p className="text-sm">{MENSAJE_AYUDA}</p>
+                        <VerAyuda ancla={ANCLAS_AYUDA.faltanColumnas} className="text-sm" />
                       </div>
                     );
                   })()}
@@ -381,7 +424,7 @@ export function ImportarAsientoDialog({
                         {' '}
                         detectados.
                       </p>
-                      <p className="text-sm text-muted-foreground">{MENSAJE_AYUDA}</p>
+                      <VerAyuda ancla={ANCLAS_AYUDA.columnasEspeciales} className="text-sm" />
                     </div>
                   )}
 
@@ -408,7 +451,7 @@ export function ImportarAsientoDialog({
                                       {' '}
                                       campos inválidos a la vez -- es probable que las columnas no coincidan con el orden esperado.
                                     </p>
-                                    <p className="text-sm">{MENSAJE_AYUDA}</p>
+                                    <VerAyuda ancla={ANCLAS_AYUDA.columnasDesordenadas} className="text-sm" />
                                   </>
                                 )
                               : (
@@ -423,13 +466,25 @@ export function ImportarAsientoDialog({
                                       {error.errors.map(campoError => (
                                         <li key={campoError.field}>
                                           {`Campo "${campoError.field}": ${campoError.message}`}
+                                          {' '}
+                                          <VerAyuda ancla={anclaParaCampo(campoError.field)} />
                                         </li>
                                       ))}
                                     </ul>
                                   </>
                                 )
                           )
-                        : error.message}
+                        : (
+                            <>
+                              {error.message}
+                              {error.ayuda && (
+                                <>
+                                  {' '}
+                                  <VerAyuda ancla={error.ayuda} />
+                                </>
+                              )}
+                            </>
+                          )}
                     </div>
                   )}
                 </>

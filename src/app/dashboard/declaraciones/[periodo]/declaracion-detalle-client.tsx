@@ -4,10 +4,13 @@ import type { NormalizedAsiento } from '@/modules/normalizer/normalize-asiento';
 import type { LineaDeclaracion } from '@/modules/tax-engine/consolidate-lines';
 import Link from 'next/link';
 import { useState } from 'react';
+import { VerAyuda } from '@/components/ayuda/ver-ayuda';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createClient } from '@/infrastructure/supabase/client';
+import { ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { generarArchivoPadi } from '@/modules/exporter/generate-padi-file';
 
 type AsientoSinResolver = Extract<NormalizedAsiento, { resolved: false }>;
@@ -17,8 +20,16 @@ const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
   'sin-mapeo': 'no está mapeado en el plan de cuentas',
   'tipo-fuera-de-alcance': 'tiene un tipo fuera del alcance de esta declaración',
   'importe-invalido': 'tiene un importe inválido (no puede ser cero)',
-  'libro-inconsistente': 'tiene un Libro que no coincide con el tipo de cuenta resuelta (revisar el TXT de origen)',
+  'libro-inconsistente': 'tiene un Libro equivocado para esa cuenta (revisar el TXT de origen)',
+  'codigo-iva-libro-inconsistente': 'tiene un Código IVA que no coincide con el Libro (revisar el TXT de origen o el plan de cuentas)',
+  'rut-invalido': 'tiene un RUT que no es de 12 dígitos (revisar el TXT de origen)',
 };
+
+/** TD-51: una línea RUT+código PADI cuyo neto dio 0 o negativo no va al archivo PADI. */
+function describirLineaSinSaldo(linea: LineaDeclaracion) {
+  const resultado = linea.importe === 0 ? 'quedó en 0' : `quedó en negativo (${linea.importe})`;
+  return `RUT ${linea.rut}, código PADI ${linea.codigoPadi}: el importe neto ${resultado}.`;
+}
 
 /**
  * Client Component: TD-20 (ADR-0003). Pantalla de detalle/descarga de una
@@ -42,6 +53,7 @@ interface DeclaracionDetalleClientProps {
   asientosSinResolver: AsientoSinResolver[]
   totalAsientos: number
   lineas: LineaDeclaracion[]
+  lineasSinSaldoPositivo: LineaDeclaracion[]
   tieneAsientosNegativos: boolean
 }
 
@@ -58,13 +70,15 @@ export function DeclaracionDetalleClient({
   asientosSinResolver,
   totalAsientos,
   lineas,
+  lineasSinSaldoPositivo,
   tieneAsientosNegativos,
 }: DeclaracionDetalleClientProps) {
   const [estadoActual, setEstadoActual] = useState(estado);
   const [descargando, setDescargando] = useState(false);
   const [errorEstado, setErrorEstado] = useState(false);
 
-  const conErrores = asientosSinResolver.length > 0;
+  const totalExcluidos = asientosSinResolver.length + lineasSinSaldoPositivo.length;
+  const conErrores = totalExcluidos > 0;
   const generada = !conErrores && estadoActual === 'generada';
   const puedeDescargar = totalAsientos > 0 && !descargando;
 
@@ -100,35 +114,7 @@ export function DeclaracionDetalleClient({
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
-      <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
-        <div className="flex items-center gap-3 font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-            TD
-          </div>
-          <div>tuDeclaracion</div>
-        </div>
-
-        <nav className="grid gap-2">
-          <Link
-            href="/dashboard"
-            className="min-h-12 rounded-md border border-transparent px-3.5 py-3 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Inicio
-          </Link>
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-primary/15 bg-accent px-3.5 text-left font-semibold text-primary"
-          >
-            Declaraciones generadas
-          </button>
-        </nav>
-
-        <div className="mt-2 grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm">
-          <span className="text-muted-foreground">Empresa activa</span>
-          <span className="font-semibold text-foreground">{empresaNombre}</span>
-        </div>
-      </aside>
+    <DashboardShell activeNav="declaraciones" empresaNombre={empresaNombre}>
 
       <main className="grid content-start gap-5 p-6">
         <div>
@@ -147,7 +133,7 @@ export function DeclaracionDetalleClient({
             <div className="flex items-center justify-between gap-3">
               <strong>Resultado del procesamiento</strong>
               {conErrores
-                ? <Badge variant="warning">Con errores</Badge>
+                ? <Badge variant="warning">Con advertencias</Badge>
                 : generada
                   ? <Badge variant="success">Generada</Badge>
                   : <Badge variant="warning">Pendiente de generar</Badge>}
@@ -156,13 +142,12 @@ export function DeclaracionDetalleClient({
             {conErrores && (
               <div
                 data-testid="declaracion_con_errores"
-                className="grid gap-2 rounded-md border border-error/25 bg-error-bg px-4 py-3 text-error-text"
+                className="grid gap-2 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-warning-text"
               >
-                <p>
-                  {asientosSinResolver.length === 1 ? 'Hay 1 asiento' : `Hay ${asientosSinResolver.length} asientos`}
+                <p className="font-semibold">
+                  {totalExcluidos === 1 ? 'Hay 1 exclusión' : `Hay ${totalExcluidos} exclusiones`}
                   {' '}
-                  de este período que no se pudo resolver a un código PADI. Estas líneas no se incluyen en el archivo
-                  PADI generado — si corresponden a una cuenta fiscal real, revisá el plan de cuentas de la empresa.
+                  en este período. No se incluyen en el archivo PADI generado.
                 </p>
                 <ul className="grid gap-1 pl-4 text-sm">
                   {asientosSinResolver.map((asiento, indice) => (
@@ -170,7 +155,13 @@ export function DeclaracionDetalleClient({
                       {`Día ${asiento.dia}, RUT ${asiento.rut}: ${asiento.valor} ${MENSAJE_POR_RAZON[asiento.reason]}.`}
                     </li>
                   ))}
+                  {lineasSinSaldoPositivo.map(linea => (
+                    <li key={`${linea.rut}-${linea.codigoPadi}`} data-testid="declaracion_linea_sin_saldo" className="list-disc">
+                      {describirLineaSinSaldo(linea)}
+                    </li>
+                  ))}
                 </ul>
+                <VerAyuda ancla={ANCLAS_AYUDA.asientosExcluidos} className="text-sm" />
               </div>
             )}
 
@@ -188,6 +179,8 @@ export function DeclaracionDetalleClient({
                 className="rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
               >
                 Archivo con resultado negativo en algunos asientos. El archivo puede incluir líneas vacías.
+                {' '}
+                <VerAyuda ancla={ANCLAS_AYUDA.resultadosNegativos} />
               </div>
             )}
           </Card>
@@ -223,6 +216,6 @@ export function DeclaracionDetalleClient({
           </Card>
         </section>
       </main>
-    </div>
+    </DashboardShell>
   );
 }

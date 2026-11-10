@@ -1,20 +1,32 @@
 'use client';
 
-import type { ImportarAsientoError, ImportarAsientoOpciones } from '@/components/importar-asiento-dialog';
+import type { ImportarAsientoOpciones, ImportarAsientoResultado } from '@/components/importar-asiento-dialog';
 import type { EstadoCotizacionBcu } from '@/modules/cotizacion/resolve-cotizacion-bcu';
+import type { PeriodoDeclaraciones } from '@/modules/declaraciones/periodos';
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 import type { Json } from '@/types/supabase';
+import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { ImportarAsientoDialog } from '@/components/importar-asiento-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { createClient } from '@/infrastructure/supabase/client';
+import { ANCLAS_AYUDA } from '@/modules/ayuda/anclas';
 import { poblarCotizacionesBcuParaPeriodo, reintentarCotizacionBcu } from '@/modules/cotizacion/actions';
 import { resolverCotizacionParaDia } from '@/modules/cotizacion/resolve-cotizacion-por-dia';
-import { parseAsientosTxt } from '@/modules/parser/parse-asientos';
+import { parseAsientosTxt, parseAsientosTxt1376 } from '@/modules/parser/parse-asientos';
 
 /**
  * Dashboard / Panel principal — .context/design/master-design-plan.md §4.3,
@@ -51,11 +63,28 @@ interface DeclaracionResumen {
 }
 
 interface DashboardClientProps {
+  saludo: string
   empresaId: string
   empresaNombre: string
   declaraciones: DeclaracionResumen[]
+  /** TD-45 / TD-46: una fila por período con el 2181 (anexo) y el 1376, ver `armarPeriodos`. */
+  periodos: PeriodoDeclaraciones[]
   cotizacionBcuInicial: EstadoCotizacionBcu
 }
+
+/**
+ * 1376 no tiene carga propia: se calcula sobre los mismos asientos que el
+ * 2181, así que ambos botones abren la misma importación. 2183 y 1050 todavía
+ * no existen y se muestran deshabilitados.
+ */
+type TipoDeclaracion = '2181' | '1376' | '2183' | '1050';
+
+const TIPOS_DECLARACION: { tipo: TipoDeclaracion, disponible: boolean }[] = [
+  { tipo: '2181', disponible: true },
+  { tipo: '1376', disponible: true },
+  { tipo: '2183', disponible: false },
+  { tipo: '1050', disponible: false },
+];
 
 function formatearValorCotizacion(valor: number): string {
   return `$ ${valor.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -65,15 +94,71 @@ function formatearFechaCotizacion(fecha: string): string {
   return new Date(`${fecha}T00:00:00`).toLocaleDateString('es-UY');
 }
 
-export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotizacionBcuInicial }: DashboardClientProps) {
+/** `202610` → `10/2026`. */
+function formatearPeriodo(periodo: string): string {
+  return `${periodo.slice(4)}/${periodo.slice(0, 4)}`;
+}
+
+export function DashboardClient({ saludo, empresaId, empresaNombre, declaraciones, periodos, cotizacionBcuInicial }: DashboardClientProps) {
   const router = useRouter();
   const [importarAbierto, setImportarAbierto] = useState(false);
+  const [tipoImportacion, setTipoImportacion] = useState<TipoDeclaracion>('2181');
+  const [periodoImportado, setPeriodoImportado] = useState<string | null>(null);
   const [cotizacionBcu, setCotizacionBcu] = useState(cotizacionBcuInicial);
   const [reintentando, startReintentar] = useTransition();
+  const [periodoABorrar, setPeriodoABorrar] = useState<string | null>(null);
+  const [errorBorrado, setErrorBorrado] = useState<string | null>(null);
+  const [borrando, startBorrar] = useTransition();
+
+  const pendientesDeGenerar = declaraciones.filter(d => d.estado === 'abierta').length;
+  const generadas = declaraciones.filter(d => d.estado === 'generada').length;
+  const ultimaActualizacion = declaraciones.reduce<string | null>(
+    (max, d) => (max === null || d.updated_at > max ? d.updated_at : max),
+    null,
+  );
+
+  function handleAbrirImportacion(tipo: TipoDeclaracion): void {
+    setTipoImportacion(tipo);
+    setPeriodoImportado(null);
+    setImportarAbierto(true);
+  }
+
+  /** Al cerrar tras una carga exitosa del 1376, lleva a su revisión del período importado. */
+  function handleImportarOpenChange(open: boolean): void {
+    setImportarAbierto(open);
+    if (!open && tipoImportacion === '1376' && periodoImportado) {
+      router.push(`/dashboard/declaraciones-1376/${periodoImportado}`);
+    }
+  }
 
   function handleReintentarCotizacion(): void {
     startReintentar(async () => {
       setCotizacionBcu(await reintentarCotizacionBcu());
+    });
+  }
+
+  function handleBorrarOpenChange(open: boolean): void {
+    // No se cierra mientras el borrado está en vuelo.
+    if (!open && borrando) { return; }
+    if (!open) {
+      setPeriodoABorrar(null);
+      setErrorBorrado(null);
+    }
+  }
+
+  /** v1.0: borra el período entero -- 2181, 1376 y sus asientos -- en una sola transacción (`borrar_periodo`). */
+  function handleConfirmarBorrado(): void {
+    if (!periodoABorrar) { return; }
+    const periodo = periodoABorrar;
+    startBorrar(async () => {
+      const { error } = await createClient().rpc('borrar_periodo', { p_empresa_id: empresaId, p_periodo: periodo });
+      if (error) {
+        setErrorBorrado('No se pudo borrar el período. Intentá nuevamente en unos minutos.');
+        return;
+      }
+      setPeriodoABorrar(null);
+      setErrorBorrado(null);
+      router.refresh();
     });
   }
 
@@ -96,7 +181,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     return (count ?? 0) > 0;
   }
 
-  async function handleImportar(file: File, periodo: string, opciones: ImportarAsientoOpciones): Promise<ImportarAsientoError | null> {
+  async function handleImportar(file: File, periodo: string, opciones: ImportarAsientoOpciones): Promise<ImportarAsientoResultado> {
     const supabase = createClient();
 
     /**
@@ -109,7 +194,8 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     const { data: planCuentasRaw } = await supabase
       .from('plan_cuentas')
       .select('cuenta_contable, codigo_padi, codigo_iva')
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId)
+      .eq('declaracion', '2181');
     const planCuentas: PlanCuentaRow[] = (planCuentasRaw ?? []).map(row => ({
       cuentaContable: row.cuenta_contable,
       codigoPadi: row.codigo_padi,
@@ -117,7 +203,9 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     }));
 
     const contenido = await file.text();
-    const resultado = parseAsientosTxt(contenido, planCuentas, opciones.camposEspecialesHabilitados);
+    // ADR-0009: solo el 1376 lee las columnas por el título del encabezado; el 2181 sigue leyendo por posición.
+    const parsear = tipoImportacion === '1376' ? parseAsientosTxt1376 : parseAsientosTxt;
+    const resultado = parsear(contenido, planCuentas, opciones.camposEspecialesHabilitados);
 
     if (!resultado.ok) {
       return { kind: 'parse', line: resultado.line, errors: resultado.errors };
@@ -132,7 +220,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
     if (lineasEnDolaresSinCotizacion.length > 0) {
       const { ok } = await poblarCotizacionesBcuParaPeriodo(periodo);
       if (!ok) {
-        return { kind: 'cotizacion-no-disponible', message: 'No se pudo obtener la cotización del BCU para este período. Intentá nuevamente en unos minutos.' };
+        return { kind: 'cotizacion-no-disponible', message: 'No se pudo obtener la cotización del BCU para este período. Intentá nuevamente en unos minutos.', ayuda: ANCLAS_AYUDA.dolaresYCotizacion };
       }
     }
 
@@ -144,7 +232,7 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
       }
       const valor = await resolverCotizacionParaDia(supabase, periodo, linea.dia);
       if (valor === null) {
-        return { kind: 'cotizacion-no-disponible', message: `No se encontró cotización del BCU para el día hábil anterior al ${linea.dia} del período.` };
+        return { kind: 'cotizacion-no-disponible', message: `No se encontró cotización del BCU para el día hábil anterior al ${linea.dia} del período.`, ayuda: ANCLAS_AYUDA.dolaresYCotizacion };
       }
       lineas.push({ ...linea, cotizacion: valor });
     }
@@ -156,63 +244,24 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
       p_reemplazar: opciones.reemplazar,
     });
 
+    if (error?.message === 'demasiadas_lineas') {
+      return { kind: 'guardado', message: 'El archivo supera el máximo de 20.000 líneas por período.', ayuda: ANCLAS_AYUDA.limiteDeLineas };
+    }
     if (error) {
       return { kind: 'guardado', message: 'No se pudo guardar el archivo. Intentá nuevamente en unos minutos.' };
     }
 
     router.refresh();
-    return null;
+    setPeriodoImportado(periodo);
+    const tieneAsientosNegativos = lineas.some(linea => linea.total < 0 || linea.iva < 0);
+    return { kind: 'ok', tieneAsientosNegativos };
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
-      <aside className="grid content-start gap-4.5 border-b border-border bg-card p-5 lg:border-b-0 lg:border-r">
-        <div className="flex items-center gap-3 font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">
-            TD
-          </div>
-          <div>tuDeclaracion</div>
-        </div>
-
-        <nav className="grid gap-2">
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-primary/15 bg-accent px-3.5 text-left font-semibold text-primary"
-          >
-            Inicio
-          </button>
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Declaraciones generadas
-          </button>
-          <Link
-            href="/dashboard/cotizaciones"
-            className="min-h-12 content-center rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Cotizaciones
-          </Link>
-          <button
-            type="button"
-            className="min-h-12 rounded-md border border-transparent px-3.5 text-left font-semibold text-muted-foreground hover:bg-accent/60"
-          >
-            Ayuda
-          </button>
-        </nav>
-
-        <Link
-          href="/empresas"
-          className="mt-2 grid gap-0.5 rounded-md border border-border bg-muted p-3.5 text-sm transition-colors hover:border-primary/30"
-        >
-          <span className="text-muted-foreground">Empresa activa</span>
-          <span className="font-semibold text-foreground">
-            {empresaNombre}
-            {' '}
-            <span className="font-normal text-primary">(cambiar)</span>
-          </span>
-        </Link>
-
+    <DashboardShell
+      activeNav="panel"
+      empresaNombre={empresaNombre}
+      sidebarExtra={(
         <article
           className={
             cotizacionBcu.estado === 'error'
@@ -258,13 +307,15 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
             Ver tabla completa
           </Link>
         </article>
-      </aside>
+      )}
+    >
 
       <main className="grid content-start gap-5 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-heading text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-              Hola, Andrea.
+            <Link href="/inicio" className="text-primary hover:underline">← Volver a Inicio</Link>
+            <h1 className="mt-2 font-heading text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+              {`${saludo}.`}
             </h1>
             <p className="mt-2 text-muted-foreground">
               Acceso directo a la operación diaria del estudio. El siguiente paso principal está
@@ -276,35 +327,45 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <article className="grid gap-3.5 rounded-md border border-border bg-gradient-to-b from-primary/5 to-white p-6 shadow-sm">
             <Badge variant="success">Acción principal</Badge>
-            <h2 className="text-2xl font-semibold tracking-tight">Crear declaración 2181</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Crear declaración</h2>
             <p className="text-muted-foreground">
-              Cargá el TXT del proveedor contable, revisá validaciones y generá el archivo PADI en
-              un mismo flujo.
+              Elegí el formulario, cargá el TXT del proveedor contable, revisá validaciones y
+              generá el archivo PADI en un mismo flujo.
             </p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Button size="lg" className="h-[52px]" onClick={() => setImportarAbierto(true)}>
-                Iniciar nueva declaración
-              </Button>
-              <Button variant="outline" size="lg" className="h-[52px]">
-                Ver instructivo
-              </Button>
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {TIPOS_DECLARACION.map(({ tipo, disponible }) => (
+                <Button
+                  key={tipo}
+                  size="lg"
+                  variant={disponible ? 'default' : 'outline'}
+                  className="h-auto min-h-[52px] flex-col gap-0.5 py-2"
+                  disabled={!disponible}
+                  onClick={() => handleAbrirImportacion(tipo)}
+                >
+                  <span className="font-mono text-base">{tipo}</span>
+                  {!disponible && <span className="text-xs font-normal">Próximamente</span>}
+                </Button>
+              ))}
             </div>
+            <Button variant="outline" size="lg" className="h-[52px] justify-self-start">
+              Ver instructivo
+            </Button>
           </article>
 
           <Card className="grid content-start gap-3 p-6">
             <strong>Resumen rápido</strong>
             <div className="grid gap-3">
               <div className="flex items-center justify-between border-t border-border pt-3 first:border-t-0 first:pt-0">
-                <span className="text-muted-foreground">Declaraciones en curso</span>
-                <strong>3</strong>
+                <span className="text-muted-foreground">Pendientes de generar</span>
+                <strong>{pendientesDeGenerar}</strong>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-muted-foreground">Pendientes de revisión</span>
-                <strong>1</strong>
+                <span className="text-muted-foreground">Generadas</span>
+                <strong>{generadas}</strong>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-muted-foreground">Última generación PADI</span>
-                <strong>Hace 12 min</strong>
+                <span className="text-muted-foreground">Última actualización</span>
+                <strong>{ultimaActualizacion ? new Date(ultimaActualizacion).toLocaleDateString('es-UY') : '—'}</strong>
               </div>
             </div>
           </Card>
@@ -316,51 +377,130 @@ export function DashboardClient({ empresaId, empresaNombre, declaraciones, cotiz
             {' '}
             {empresaNombre}
           </strong>
-          <table className="mt-3 w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Declaración</th>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Período</th>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Estado</th>
-                <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Última actualización</th>
-              </tr>
-            </thead>
-            <tbody>
-              {declaraciones.map(fila => (
-                <tr key={fila.periodo}>
-                  <td className="border-b border-border p-3">2181</td>
-                  <td className="border-b border-border p-3 font-mono">
-                    <Link href={`/dashboard/declaraciones/${fila.periodo}`} className="text-primary hover:underline">
-                      {fila.periodo}
-                    </Link>
-                  </td>
-                  <td className="border-b border-border p-3">
-                    <Badge variant={badgeVariant[fila.estado] ?? 'warning'}>{estadoLabel[fila.estado] ?? fila.estado}</Badge>
-                  </td>
-                  <td className="border-b border-border p-3 text-muted-foreground">
-                    {new Date(fila.updated_at).toLocaleDateString('es-UY')}
-                  </td>
-                </tr>
-              ))}
-              {declaraciones.length === 0 && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
                 <tr>
-                  <td colSpan={4} className="border-b border-border p-3 text-center text-muted-foreground">
-                    Todavía no hay declaraciones para esta empresa.
-                  </td>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Período</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">2181 (anexo)</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">1376</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Estado del período</th>
+                  <th className="border-b border-border p-3 text-left text-xs uppercase tracking-wide text-muted-foreground">Última actualización</th>
+                  <th className="border-b border-border p-3">
+                    <span className="sr-only">Acciones</span>
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {periodos.map(fila => (
+                  <tr key={fila.periodo} data-testid={`periodo_${fila.periodo}`}>
+                    <td className="border-b border-border p-3 font-mono">{fila.periodo}</td>
+                    <td className="border-b border-border p-3">
+                      <Link
+                        href={`/dashboard/declaraciones/${fila.periodo}`}
+                        data-testid={`periodo_${fila.periodo}_2181`}
+                        aria-label={`Ver 2181 de ${formatearPeriodo(fila.periodo)}`}
+                      >
+                        <Badge variant={badgeVariant[fila.estado2181] ?? 'warning'}>{estadoLabel[fila.estado2181] ?? fila.estado2181}</Badge>
+                      </Link>
+                    </td>
+                    <td className="border-b border-border p-3">
+                      <Link
+                        href={`/dashboard/declaraciones-1376/${fila.periodo}`}
+                        data-testid={`periodo_${fila.periodo}_1376`}
+                        aria-label={`Ver 1376 de ${formatearPeriodo(fila.periodo)}`}
+                      >
+                        <Badge variant={badgeVariant[fila.estado1376] ?? 'warning'}>{estadoLabel[fila.estado1376] ?? fila.estado1376}</Badge>
+                      </Link>
+                    </td>
+                    <td className="border-b border-border p-3" data-testid={`periodo_${fila.periodo}_estado`}>
+                      {fila.completo
+                        ? <Badge variant="success">Completo</Badge>
+                        : <span className="text-sm text-muted-foreground">Incompleto</span>}
+                    </td>
+                    <td className="border-b border-border p-3 text-muted-foreground">
+                      {new Date(fila.updatedAt).toLocaleDateString('es-UY')}
+                    </td>
+                    <td className="border-b border-border p-3 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        data-testid={`borrar_periodo_${fila.periodo}`}
+                        aria-label={`Borrar período ${formatearPeriodo(fila.periodo)}`}
+                        title="Borrar período"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setPeriodoABorrar(fila.periodo)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {periodos.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="border-b border-border p-3 text-center text-muted-foreground">
+                      Todavía no hay declaraciones para esta empresa.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </main>
 
       <ImportarAsientoDialog
         open={importarAbierto}
-        onOpenChange={setImportarAbierto}
+        onOpenChange={handleImportarOpenChange}
         empresaActiva={empresaNombre}
+        leerEncabezado={tipoImportacion === '1376'}
         onCheckPeriodo={handleCheckPeriodo}
         onImportar={handleImportar}
       />
-    </div>
+
+      <Dialog open={periodoABorrar !== null} onOpenChange={handleBorrarOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Borrar período
+              {' '}
+              {periodoABorrar ? formatearPeriodo(periodoABorrar) : ''}
+            </DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div
+            data-testid="borrar_periodo_advertencia"
+            className="grid gap-1.5 rounded-md border border-warning/25 bg-warning-bg px-4 py-3 text-sm text-warning-text"
+          >
+            <p className="font-medium">También se borra la declaración vinculada.</p>
+            <p>
+              El 2181 y el 1376 de este período se calculan sobre los mismos asientos, así que se borran juntos: las dos declaraciones y todos los asientos importados. Para recuperarlos vas a tener que volver a importar el TXT.
+            </p>
+          </div>
+
+          {errorBorrado && (
+            <div
+              data-testid="borrar_periodo_error"
+              className="rounded-md border border-error/25 bg-error-bg px-4 py-3 text-sm text-error-text"
+            >
+              {errorBorrado}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={borrando} onClick={() => handleBorrarOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="destructive" disabled={borrando} onClick={handleConfirmarBorrado}>
+              {borrando ? 'Borrando…' : 'Sí, borrar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </DashboardShell>
   );
 }

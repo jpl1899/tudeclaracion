@@ -2,12 +2,16 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 /**
- * Minimal Vitest config — this repo has no React component tests yet, only
- * pure-function unit tests (see src/lib/validation/*.test.ts), so no
- * @vitejs/plugin-react / jsdom environment is configured. Add those when the
- * first component test lands.
+ * Minimal Vitest config — mostly pure-function unit tests. Server-rendered
+ * component tests (renderToStaticMarkup, node environment) need Vite's Oxc
+ * transform to compile JSX, because tsconfig keeps `jsx: preserve` for
+ * Next.js. No jsdom / @vitejs/plugin-react: add them when an interactive
+ * component test lands.
  */
 export default defineConfig({
+  oxc: {
+    jsx: { runtime: 'automatic' },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
