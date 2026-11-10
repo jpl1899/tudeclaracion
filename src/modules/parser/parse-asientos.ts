@@ -16,10 +16,30 @@ const COTIZACION_RE = /^\d{2}(?:\.\d+)?$/;
 /** Cotización 0 (pesos) también puede venir con decimales, ej. `0.0000`. */
 const COTIZACION_CERO_RE = /^0(?:\.0+)?$/;
 const LIBRO_VALUES = ['C', 'V', 'E', 'I', 'P'] as const;
-const TIPO_VALUES = ['504', 'CIE', 'RES', 'DIF', 'APE'] as const;
+const TIPO_504 = '504';
+const LETRA_RE = /\p{L}/u;
 
 export type Libro = (typeof LIBRO_VALUES)[number];
-type Tipo = (typeof TIPO_VALUES)[number];
+
+/**
+ * Regla del contador (2026-11-09): un Tipo con letras (CIE, RES, DIF, APE o
+ * cualquier otro) no se tiene en cuenta en ninguna declaración. Solo el Tipo
+ * numérico 504 entra al motor.
+ */
+export function esTipoIgnorado(tipo: string | null): boolean {
+  return tipo !== null && LETRA_RE.test(tipo);
+}
+
+/**
+ * Regla del usuario (2026-11-10): un Tipo sin letras distinto de 504 es un
+ * error de carga del usuario y no rechaza el archivo -- el motor lo pasa por
+ * alto como si el Tipo viniera vacío. Usar ese campo para el código PADI
+ * directo queda para la versión 2.0.
+ */
+function normalizarTipo(tipoRaw: string): string | null {
+  if (tipoRaw === TIPO_504 || esTipoIgnorado(tipoRaw)) { return tipoRaw; }
+  return null;
+}
 
 export interface AsientoLine {
   dia: number
@@ -33,7 +53,7 @@ export interface AsientoLine {
   iva: number
   cotizacion: number
   libro: Libro
-  tipo: Tipo | null
+  tipo: string | null
 }
 
 export interface ParseSuccess {
@@ -144,16 +164,16 @@ function splitFields(rawLine: string): string[] {
  * línea que el 2181 no va a resolver -- ej. pago de anticipo de IRAE, 13122
  * contra 11111 -- puede traer cualquier valor en esa columna. Espeja las
  * ramas de `resolveAsientoFiscal` (`normalize-asiento.ts`): Tipo 504 entra
- * siempre; el resto de los Tipo quedan fuera de alcance; Código IVA > 0
+ * siempre; un Tipo con letras queda fuera de alcance; Código IVA > 0
  * entra si está mapeado; Código IVA = 0 entra si Debe/Haber toca una cuenta
  * del plan de cuentas.
  */
 function requiereRut2181(
-  linea: { tipo: string, codigoIva: number, debe: string, haber: string, libro: string, total: number },
+  linea: { tipo: string | null, codigoIva: number, debe: string, haber: string, libro: string, total: number },
   planCuentas: PlanCuentaRow[],
 ): boolean {
-  if (linea.tipo === '504') { return true; }
-  if (linea.tipo.length > 0) { return false; }
+  if (linea.tipo === TIPO_504) { return true; }
+  if (linea.tipo !== null) { return false; }
   if (linea.codigoIva > 0) {
     return planCuentas.some(row => row.codigoIva === linea.codigoIva);
   }
@@ -348,8 +368,9 @@ function parseLine(rawLine: string, { lineNumber, planCuentas, layout, anchoExac
   const total = Number(totalRaw);
   const codigoIva = Number(codigoIvaRaw);
   const libro = libroRaw.toUpperCase();
+  const tipo = normalizarTipo(tipoRaw);
 
-  if (requiereRut2181({ tipo: tipoRaw, codigoIva, debe, haber, libro, total }, planCuentas) && !RUT_RE.test(rut)) {
+  if (requiereRut2181({ tipo, codigoIva, debe, haber, libro, total }, planCuentas) && !RUT_RE.test(rut)) {
     errors.push({ field: 'RUT', message: `"${rut}" no tiene el formato de 12 dígitos` });
   }
 
@@ -385,11 +406,6 @@ function parseLine(rawLine: string, { lineNumber, planCuentas, layout, anchoExac
     errors.push({ field: 'Libro', message: `"${libroRaw}" debe ser uno de: ${LIBRO_VALUES.join(', ')}` });
   }
 
-  const tipo = tipoRaw.length === 0 ? null : tipoRaw;
-  if (tipo !== null && !TIPO_VALUES.includes(tipo as (typeof TIPO_VALUES)[number])) {
-    errors.push({ field: 'Tipo', message: `"${tipo}" debe ser uno de: ${TIPO_VALUES.join(', ')} o estar vacío` });
-  }
-
   if (errors.length > 0) {
     return fail(lineNumber, errors);
   }
@@ -406,7 +422,7 @@ function parseLine(rawLine: string, { lineNumber, planCuentas, layout, anchoExac
     iva,
     cotizacion,
     libro: libro as Libro,
-    tipo: tipo as Tipo | null,
+    tipo,
   };
 }
 

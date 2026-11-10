@@ -1,11 +1,11 @@
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
 import type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
+import { esTipoIgnorado } from '@/modules/parser/parse-asientos';
 import { esConsistenteConLibro, resolverCuentaCamino2 } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 
 export type { PlanCuentaRow } from '@/modules/plan-cuentas/resolver-cuenta-camino-2';
 
 const TIPO_504 = '504';
-const TIPO_FUERA_DE_ALCANCE = ['CIE', 'RES', 'DIF', 'APE'] as const;
 const RUT_RE = /^\d{12}$/;
 
 /**
@@ -52,7 +52,7 @@ export function resolveAsientoFiscal(asiento: AsientoLine, planCuentas: PlanCuen
   if (asiento.tipo === TIPO_504) {
     resolucion = { codigoPadi: TIPO_504, importe: convertirImporte(asiento.total, asiento) };
   }
-  else if (asiento.tipo !== null && (TIPO_FUERA_DE_ALCANCE as readonly string[]).includes(asiento.tipo)) {
+  else if (asiento.tipo !== null && esTipoIgnorado(asiento.tipo)) {
     return noResuelto(asiento, 'tipo-fuera-de-alcance', asiento.tipo);
   }
   else if (asiento.codigoIva > 0) {

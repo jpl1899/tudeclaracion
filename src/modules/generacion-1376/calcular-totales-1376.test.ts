@@ -147,21 +147,22 @@ describe('calcularTotalesLinea1376', () => {
 });
 
 describe('asientosDelMotor1376', () => {
-  it('drops cierre, resultados and apertura asientos', () => {
+  it('drops every asiento whose Tipo has letters (CIE, RES, DIF, APE and unknown ones)', () => {
     const asientos = [
       asiento({ tipo: 'CIE' }),
       asiento({ tipo: 'RES' }),
+      asiento({ tipo: 'DIF' }),
       asiento({ tipo: 'APE' }),
+      asiento({ tipo: 'XYZ' }),
     ];
 
     expect(asientosDelMotor1376(asientos)).toEqual([]);
   });
 
-  it('keeps asientos without Tipo, Tipo 504 and DIF', () => {
+  it('keeps asientos without Tipo and with Tipo 504', () => {
     const asientos = [
       asiento({ tipo: null }),
       asiento({ tipo: '504' }),
-      asiento({ tipo: 'DIF' }),
     ];
 
     expect(asientosDelMotor1376(asientos)).toEqual(asientos);

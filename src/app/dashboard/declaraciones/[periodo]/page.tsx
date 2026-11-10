@@ -86,7 +86,7 @@ export default async function DeclaracionDetallePage({ params }: DeclaracionDeta
     iva: asiento.iva,
     cotizacion: asiento.cotizacion,
     libro: asiento.libro as AsientoLine['libro'],
-    tipo: asiento.tipo as AsientoLine['tipo'],
+    tipo: asiento.tipo,
   }));
 
   const resueltos = asientoLines.map(linea => resolveAsientoFiscal(linea, planCuentasRows));

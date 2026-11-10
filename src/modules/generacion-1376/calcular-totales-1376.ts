@@ -18,6 +18,7 @@
 import type { MapeoAsignacionInicial } from '@/modules/mapeo-1376/mapeo-1376';
 import type { AsientoLine } from '@/modules/parser/parse-asientos';
 import { convertirImporte } from '@/modules/normalizer/normalize-asiento';
+import { esTipoIgnorado } from '@/modules/parser/parse-asientos';
 
 export interface TotalLinea1376 {
   codigoLinea: string
@@ -25,15 +26,13 @@ export interface TotalLinea1376 {
 }
 
 /**
- * Tipos que el motor no tiene en cuenta: cierre, resultados y apertura
- * (confirmado con el contador 2026-10-26). Se filtran antes del cálculo y de
- * las advertencias de mapeo, para que una cuenta tocada solo por estos
- * asientos no aparezca como "sin mapear".
+ * El motor no tiene en cuenta los asientos con un Tipo con letras (CIE, RES,
+ * DIF, APE o cualquier otro; confirmado con el contador 2026-11-09). Se
+ * filtran antes del cálculo y de las advertencias de mapeo, para que una
+ * cuenta tocada solo por estos asientos no aparezca como "sin mapear".
  */
-const TIPOS_FUERA_DEL_MOTOR = ['CIE', 'RES', 'APE'];
-
 export function asientosDelMotor1376(asientos: AsientoLine[]): AsientoLine[] {
-  return asientos.filter(asiento => asiento.tipo === null || !TIPOS_FUERA_DEL_MOTOR.includes(asiento.tipo));
+  return asientos.filter(asiento => !esTipoIgnorado(asiento.tipo));
 }
 
 function cuentaDelLado(asiento: AsientoLine, lado: MapeoAsignacionInicial['lado']): string {

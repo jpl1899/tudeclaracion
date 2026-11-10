@@ -111,10 +111,12 @@ Abreviatura que identifica el asiento:
 | Tipo | Significado | 2181 | 1376 |
 |---|---|---|---|
 | `504` | Compra exenta | Entra | Entra |
-| `DIF` | Diferencia de cambio | No entra | Entra |
+| `DIF` | Diferencia de cambio | No entra | No entra |
 | `CIE` | Cierre | No entra | No entra |
 | `RES` | Resultados | No entra | No entra |
 | `APE` | Apertura | No entra | No entra |
+| Cualquier otro valor con letras | — | No entra | No entra |
 | *(vacío)* | Asiento común | Entra | Entra |
+| Cualquier otro número (ej. `502`) | Se toma como vacío | Entra | Entra |
 
-Mensaje: *"… debe ser uno de: 504, CIE, RES, DIF, APE o estar vacío"*. Los asientos que no entran en el 2181 se listan en [Asientos excluidos](#asientos-excluidos).
+El Tipo nunca rechaza el archivo. Un Tipo con letras deja ese asiento afuera. Un número distinto de 504 se pasa por alto: el asiento se procesa como si el Tipo viniera vacío. Los asientos que no entran en el 2181 se listan en [Asientos excluidos](#asientos-excluidos).
