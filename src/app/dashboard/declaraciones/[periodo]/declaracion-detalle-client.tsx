@@ -25,6 +25,11 @@ const MENSAJE_POR_RAZON: Record<AsientoSinResolver['reason'], string> = {
   'rut-invalido': 'tiene un RUT que no es de 12 dígitos (revisar el TXT de origen)',
 };
 
+/** ADR-0008: un asiento ajeno al 2181 (ej. anticipo de IRAE) puede venir sin RUT. */
+function describirRut(rut: string) {
+  return rut.trim() === '' ? 'sin RUT' : `RUT ${rut}`;
+}
+
 /** TD-51: una línea RUT+código PADI cuyo neto dio 0 o negativo no va al archivo PADI. */
 function describirLineaSinSaldo(linea: LineaDeclaracion) {
   const resultado = linea.importe === 0 ? 'quedó en 0' : `quedó en negativo (${linea.importe})`;
@@ -152,7 +157,7 @@ export function DeclaracionDetalleClient({
                 <ul className="grid gap-1 pl-4 text-sm">
                   {asientosSinResolver.map((asiento, indice) => (
                     <li key={`${asiento.rut}-${asiento.dia}-${indice}`} className="list-disc">
-                      {`Día ${asiento.dia}, RUT ${asiento.rut}: ${asiento.valor} ${MENSAJE_POR_RAZON[asiento.reason]}.`}
+                      {`Día ${asiento.dia}, ${describirRut(asiento.rut)}: ${asiento.valor} ${MENSAJE_POR_RAZON[asiento.reason]}.`}
                     </li>
                   ))}
                   {lineasSinSaldoPositivo.map(linea => (
