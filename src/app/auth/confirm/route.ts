@@ -25,6 +25,16 @@ export async function GET(request: NextRequest) {
     if (!error) {
       redirect(next);
     }
+
+    // Logs only a token prefix and length, never the full single-use token.
+    console.error('[auth/confirm] verifyOtp failed:', {
+      type,
+      tokenPrefix: tokenHash.slice(0, 8),
+      tokenLength: tokenHash.length,
+      code: error.code,
+      status: error.status,
+      message: error.message,
+    });
   }
 
   redirect(type === 'recovery' ? '/forgot-password?error=expired' : '/login?error=verification-failed');
