@@ -27,8 +27,27 @@ interface HookPayload {
   email_data: EmailData;
 }
 
+/**
+ * Builds the link to the app's own /auth/confirm route. `email_data.site_url`
+ * is the Supabase Auth API URL (https://<ref>.supabase.co/auth/v1), NOT the
+ * app, so the app origin comes from `redirect_to` — the emailRedirectTo /
+ * redirectTo the app passed (e.g. https://app/auth/confirm?next=/inicio).
+ * The route reads `next`, so it is forwarded from `redirect_to` as-is.
+ */
+function buildConfirmUrl(actionType: string, data: EmailData): string {
+  const target = new URL(data.redirect_to);
+  const url = new URL('/auth/confirm', target.origin);
+  url.searchParams.set('token_hash', data.token_hash);
+  url.searchParams.set('type', actionType);
+  const next = target.searchParams.get('next');
+  if (next) {
+    url.searchParams.set('next', next);
+  }
+  return url.toString();
+}
+
 function buildEmail(actionType: string, data: EmailData): { subject: string, html: string } {
-  const confirmUrl = `${data.site_url}/auth/confirm?token_hash=${data.token_hash}&type=${actionType}&redirect_to=${encodeURIComponent(data.redirect_to)}`;
+  const confirmUrl = buildConfirmUrl(actionType, data);
 
   if (actionType === 'recovery') {
     return {
